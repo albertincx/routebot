@@ -1,0 +1,59 @@
+{
+  "name": "RouteCab",
+  "version": "1.2.0",
+  "description": "Telegram Bot For InstantView",
+  "author": "Al <albertincx@gmail.com>",
+  "main": "src/index.js",
+  "private": false,
+  "license": "MIT",
+  "engines": {
+    "node": "14.x",
+    "yarn": "*"
+  },
+  "scripts": {
+    "precommit": "yarn lint",
+    "start": "NODE_ENV=production node ./src/index.js",
+    "dev": "NODE_ENV=production nodemon ./src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:/albertincx/formatbot1.git"
+  },
+  "keywords": [
+    "nodejs",
+    "es6",
+    "es7",
+    "es8",
+    "eslint"
+  ],
+  "dependencies": {
+    "amqplib": "^0.8.0",
+    "atob": "^2.1.2",
+    "co": "^4.6.0",
+    "cron": "^1.8.2",
+    "dotenv-safe": "^8.2.0",
+    "express": "^4.17.1",
+    "isomorphic-fetch": "^3.0.0",
+    "jsbn": "^1.1.0",
+    "lodash": "^4.17.21",
+    "mongoose": "^5.13.5",
+    "node-fetch": "^2.6.5",
+    "nodemon": "^2.0.12",
+    "showdown": "^1.9.1",
+    "statuses": "^2.0.1",
+    "sync-request": "^6.1.0",
+    "telegraf": "^4.4.1",
+    "wget-improved": "^3.2.1"
+  },
+  "devDependencies": {
+    "ava": "^3.15.0",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-flowtype": "^5.9.0",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-prettier": "^3.4.0",
+    "prettier": "^2.3.2"
+  }
+}
