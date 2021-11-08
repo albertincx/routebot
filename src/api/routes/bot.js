@@ -2,6 +2,8 @@ const fs = require('fs');
 const express = require('express');
 
 const BotHelper = require('../utils/bot');
+const messages = require('../../messages/format');
+const keyboards = require('../../keyboards/keyboards');
 // const route = require('./route');
 const db = require('../utils/db');
 
@@ -9,9 +11,38 @@ global.skipCount = 0;
 
 const router = express.Router();
 const filepath = 'count.txt';
+const USERIDS = (process.env.USERIDS || '').split(',');
+
 if (!fs.existsSync(filepath)) fs.writeFileSync(filepath, '0');
 
 let startCnt = parseInt(`${fs.readFileSync('count.txt')}`, 10);
+const startOrHelp = (ctx, botHelper) => {
+  if (!ctx.message) {
+    // return botHelper.sendAdmin(JSON.stringify(ctx.update));
+    const {
+      chat: {id: chatId},
+    } = ctx.message;
+    if (USERIDS.length && USERIDS.includes(`${chatId}`)) {
+      return;
+    }
+  } else {
+    const {
+      chat: {id: chatId},
+    } = ctx.message;
+    if (USERIDS.length && USERIDS.includes(`${chatId}`)) {
+      return;
+    }
+  }
+  let system = JSON.stringify(ctx.message.from);
+  try {
+    ctx.reply(messages.start(), keyboards.start());
+  } catch (e) {
+    system = `${e}${system}`;
+  }
+
+  botHelper.sendAdmin(system);
+};
+
 const botRoute = (bot, conn) => {
   const botHelper = new BotHelper(bot.telegram);
   if (conn) {
@@ -21,6 +52,9 @@ const botRoute = (bot, conn) => {
   } else {
     botHelper.disDb();
   }
+
+  bot.command(['/start', '/help'], ctx => startOrHelp(ctx, botHelper));
+
   bot.command('config', ({message}) => {
     if (botHelper.isAdmin(message.chat.id)) {
       botHelper.toggleConfig(message);
