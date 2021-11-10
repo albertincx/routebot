@@ -16,6 +16,7 @@ anySchema.method({
 });
 const Any = mongoose.model('Any', anySchema);
 
+const USERS = process.env.MONGO_COLL_LINKS || 'users';
 const LINKS_COLL = process.env.MONGO_COLL_LINKS || 'links';
 const ILINKS_COLL = process.env.MONGO_COLL_ILINKS || 'ilinks';
 
@@ -34,6 +35,7 @@ const connectDb2 = () =>
     useUnifiedTopology: true,
   });
 const links = Any.collection.conn.model(LINKS_COLL, Any.schema);
+const usersCol = Any.collection.conn.model(USERS, Any.schema);
 const inlineLinks = Any.collection.conn.model(ILINKS_COLL, Any.schema);
 
 const conn2 = mongoose.createConnection(process.env.MONGO_URI, {
@@ -255,10 +257,10 @@ const updateOne = (item, collection = links) => {
   return collection.updateOne({url}, item, {upsert: true});
 };
 
-const getFromCollection = async (url, coll, insert = true) => {
-  const me = await coll.findOne({url});
+const getFromCollection = async (id, coll, insert = true) => {
+  const me = await coll.findOne({id});
   if (insert || me) {
-    await updateOne({url}, coll);
+    await updateOne({id}, coll);
   }
   return me;
 };
@@ -284,6 +286,19 @@ const getIV = async url => {
   return false;
 };
 
+const updateUser = async (user, collection = usersCol) => {
+  const {id} = user;
+  // eslint-disable-next-line no-param-reassign
+  // item.$inc = {af: 1};
+  await collection.updateOne({id}, user, {upsert: true});
+  return getFromCollection(id, collection, false);
+};
+
+const changeType = async user => {
+  const u = await updateUser(user);
+  return u.routes;
+};
+
 module.exports.stat = stat;
 module.exports.clear = clear;
 module.exports.updateOne = updateOne;
@@ -293,3 +308,5 @@ module.exports.getIV = getIV;
 module.exports.createBroadcast = createBroadcast;
 module.exports.startBroadcast = startBroadcast;
 module.exports.processBroadcast = processBroadcast;
+module.exports.updateUser = updateUser;
+module.exports.changeType = changeType;

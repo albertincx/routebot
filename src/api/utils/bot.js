@@ -210,6 +210,10 @@ class BotHelper {
   delMessage(chatId, messageId) {
     return this.bot.deleteMessage(chatId, messageId).catch(() => {});
   }
+
+  getBot() {
+    return this.bot;
+  }
 }
 
 module.exports = BotHelper;

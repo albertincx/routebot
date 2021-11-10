@@ -1,11 +1,31 @@
 const BUTTONS = {
-  hello: {
-    label: '👋 Help',
-    command: '/help',
+  driver: {
+    label: "1. 🚘 I'm a driver (with car)",
+    command: '/driver',
   },
-  support: {
-    label: '👍Support',
-    command: '/support',
+  sharingDriver: {
+    label: "2. 🚖 I'm a car sharing driver",
+    command: '/sharing',
+  },
+  passenger: {
+    label: "3. 🐶 I'm a passenger",
+    command: '/passenger',
+  },
+  routes: {
+    label: 'My routes',
+    command: '/passenger',
+  },
+  change_type: {
+    label: 'Change account type',
+    command: '/passenger',
+  },
+  stop_routes: {
+    label: 'Stop all active routes',
+    command: '/passenger',
+  },
+  next: {
+    label: 'Next',
+    command: '/passenger',
   },
 };
 module.exports = BUTTONS;
