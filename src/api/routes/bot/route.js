@@ -192,24 +192,86 @@ class BotHelper {
       .catch(() => {});
   }
 
-  delMessage(chatId, messageId) {
-    return this.bot.deleteMessage(chatId, messageId).catch(() => {});
+  // eslint-disable-next-line class-methods-use-this
+  async nextProcess(ctx, isName = false, addRoute = false) {
+    const {from} = ctx.message;
+    const user = from;
+    const {
+      id,
+      routes: userRoutes,
+      name: userRouteName,
+    } = await db.GetUser(user.id);
+    let routes = addRoute ? undefined : userRoutes;
+    if (addRoute) {
+      routes = undefined;
+      await db.clearName(user.id);
+    }
+    if (!userRouteName) {
+      routes = undefined;
+    }
+    console.log('next routes ', routes);
+    let keyb = keyboards.nextProcess();
+    let txt = messages.whatNext();
+    let routeType = 0;
+    const edit = false;
+
+    if (!routes) {
+      txt = messages.driverNewRoute();
+      if (isName) {
+        const name = ctx.update.message.text;
+        await db.addRoute(user.id, name);
+        routeType = 1;
+      }
+    }
+    if (routes === 1) {
+      txt = messages.driverStartPoint();
+      routeType = 2;
+      if (isName) {
+        const name = ctx.update.message.text;
+        await db.addRoute(user.id, name);
+      }
+      // edit = true;
+    }
+    if (routes === 2) {
+      txt = messages.driverLastPoint();
+      routeType = 3;
+      // edit = true;
+    }
+    if (!routes || routes < 3) {
+      keyb = keyboards.nextProcess(routeType);
+      keyb.parse_mode = 'Markdown';
+      keyb.disable_web_page_preview = true;
+    }
+    try {
+      if (edit) {
+        console.log('test 2');
+        const messageId = ctx.message.message_id;
+        this.bot
+          .editMessageText(id, messageId, null, txt, keyb)
+          .catch(() => {});
+      } else {
+        console.log('test 1');
+        ctx.reply(txt, keyb);
+      }
+      // ctx.reply('test', keyboards.loc());
+    } catch (e) {
+      // system = `${e}${system}`;
+    }
   }
 
   // eslint-disable-next-line class-methods-use-this
-  driverType(ctx, type) {
+  async driverType(ctx, type) {
     const user = ctx.message.from;
     user.type = type;
-    const currentUser = db.changeType(user);
+    const {routes} = await db.updateUser(user);
     let system = '';
     try {
-      let txt = 'Whats next?';
-      let keyb = keyboards.next();
-      if (currentUser.routes) {
-        keyb = keyboards.driver(type, currentUser);
-      } else {
-        txt = messages.driver(type);
-      }
+      const txt = messages.whatNext();
+      const keyb = keyboards.driver(type, {routes});
+      // txt = messages.driverNewRoute(type);
+      // keyb = keyboards.fr();
+      // keyb.parse_mode = 'Markdown';
+      // keyb.disable_web_page_preview = true;
       ctx.reply(txt, keyb);
     } catch (e) {
       system = `${e}${system}`;
@@ -217,6 +279,43 @@ class BotHelper {
 
     if (system) {
       this.botHelper.sendAdmin(system);
+    }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async processLocation(ctx) {
+    const {update} = ctx;
+    const {message} = update;
+    const {location, chat} = message;
+    if (location.latitude && location.longitude) {
+      const {routes, type} = await db.GetUser(chat.id);
+      const route = {
+        userId: chat.id,
+        location: {
+          type: 'Point',
+          coordinates: [location.latitude, location.longitude],
+        },
+        category: 'Routes',
+        type,
+        direction: 1,
+        status: 0,
+      };
+      let txt = 'Completed';
+      let keyb = keyboards.nextProcess(1);
+      if (!routes) {
+        txt = messages.driverNewRoute();
+        keyb = keyboards.nextProcess();
+        // await db.addRouteA({...route, name: 'A point', direction: 1});
+      }
+      if (routes === 1) {
+        keyb = keyboards.nextProcess(1);
+        await db.addRouteB({...route, name: 'B point', direction: 2});
+      }
+      if (routes === 2) {
+        keyb = keyboards.nextProcess(2);
+        await db.addRouteB({...route, name: 'B point', direction: 2});
+      }
+      ctx.reply(txt, keyb);
     }
   }
 }

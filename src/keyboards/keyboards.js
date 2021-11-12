@@ -1,18 +1,23 @@
 const {Markup} = require('telegraf');
 
 const BUTTONS = require('../config/buttons');
+const messages = require('../messages/format');
 
 function start() {
   return Markup.keyboard([
     [BUTTONS.driver.label, BUTTONS.sharingDriver.label],
     [BUTTONS.passenger.label],
-  ]);
+  ]).resize();
 }
-function driver() {
-  return Markup.keyboard([
-    [BUTTONS.routes.label, BUTTONS.change_type.label],
-    [BUTTONS.stop_routes.label],
-  ]);
+function driver(type, user) {
+  let btns = [[BUTTONS.addroute.label, BUTTONS.change_type.label]];
+  if (user.routes === 3) {
+    btns = [
+      [BUTTONS.routes.label, BUTTONS.change_type.label],
+      [BUTTONS.stop_routes.label],
+    ];
+  }
+  return Markup.keyboard(btns).resize();
 }
 function startFirst() {
   return Markup.inlineKeyboard([
@@ -22,11 +27,39 @@ function startFirst() {
 function hide() {
   return Markup.removeKeyboard();
 }
-function next() {
-  return Markup.keyboard([[BUTTONS.next.label]]);
+function loc1() {
+  return Markup.keyboard([
+    Markup.button.locationRequest(messages.asDept()),
+    BUTTONS.next.label,
+  ]).resize();
+}
+function loc2() {
+  return Markup.keyboard([
+    Markup.button.locationRequest(messages.asDest()),
+    BUTTONS.next.label,
+  ]).resize();
+}
+function nextProcess(routeType) {
+  if (routeType === 1) {
+    return loc1();
+  }
+  if (routeType === 2) {
+    return loc2();
+  }
+  return Markup.keyboard([BUTTONS.next.label]).resize();
+}
+function fr() {
+  return Markup.forceReply();
+}
+function changeName(chatId) {
+  return Markup.inlineKeyboard([
+    Markup.button.callback('Change Name', `r_${chatId}`),
+  ]);
 }
 module.exports.start = start;
 module.exports.driver = driver;
 module.exports.startFirst = startFirst;
 module.exports.hide = hide;
-module.exports.next = next;
+module.exports.nextProcess = nextProcess;
+module.exports.fr = fr;
+module.exports.changeName = changeName;

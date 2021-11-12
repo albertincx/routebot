@@ -17,6 +17,7 @@ anySchema.method({
 const Any = mongoose.model('Any', anySchema);
 
 const USERS = process.env.MONGO_COLL_LINKS || 'users';
+const ROUTES = process.env.MONGO_COLL_LINKS || 'routes';
 const LINKS_COLL = process.env.MONGO_COLL_LINKS || 'links';
 const ILINKS_COLL = process.env.MONGO_COLL_ILINKS || 'ilinks';
 
@@ -36,17 +37,8 @@ const connectDb2 = () =>
   });
 const links = Any.collection.conn.model(LINKS_COLL, Any.schema);
 const usersCol = Any.collection.conn.model(USERS, Any.schema);
+const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
 const inlineLinks = Any.collection.conn.model(ILINKS_COLL, Any.schema);
-
-const conn2 = mongoose.createConnection(process.env.MONGO_URI, {
-  keepAlive: 1,
-  connectTimeoutMS: 30000,
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-
-const linksOld1 = conn2.model(LINKS_COLL, Any.schema);
-const inlineLinksOld1 = conn2.model(ILINKS_COLL, Any.schema);
 
 const stat = () => links.countDocuments();
 
@@ -253,60 +245,62 @@ const removeInline = url => inlineLinks.deleteMany({url});
 const updateOne = (item, collection = links) => {
   const {url} = item;
   // eslint-disable-next-line no-param-reassign
-  item.$inc = {af: 1};
   return collection.updateOne({url}, item, {upsert: true});
 };
 
 const getFromCollection = async (id, coll, insert = true) => {
-  const me = await coll.findOne({id});
+  const me = await coll.findOne({userId: id});
   if (insert || me) {
-    await updateOne({id}, coll);
+    await updateOne({userId: id}, coll);
   }
-  return me;
+  return me.toObject();
 };
 
-const getInine = async url => {
+const clearName = async id => {
+  await usersCol.updateOne({userId: id}, {name: ''});
+};
+
+const GetUser = async id => {
   // check from old DB without insert
-  let me = await getFromCollection(url, inlineLinksOld1, false);
+  let me = await getFromCollection(id, usersCol, false);
   if (!me) {
-    me = await getFromCollection(url, inlineLinks);
+    me = await getFromCollection(id, links);
   }
-  return me;
+  return me || {};
 };
 
-const getIV = async url => {
-  // check from old DB without insert
-  let me = await getFromCollection(url, linksOld1, false);
-  if (!me) {
-    me = await getFromCollection(url, links);
-  }
-  if (me) {
-    return me.toObject();
-  }
-  return false;
-};
-
-const updateUser = async (user, collection = usersCol) => {
-  const {id} = user;
+const updateUser = async (u, collection = usersCol) => {
+  const {id, ...user} = u;
   // eslint-disable-next-line no-param-reassign
-  // item.$inc = {af: 1};
-  await collection.updateOne({id}, user, {upsert: true});
-  return getFromCollection(id, collection, false);
+  await collection.updateOne({userId: id}, user, {upsert: true});
+  return getFromCollection(id, collection, false) || {};
 };
 
-const changeType = async user => {
-  const u = await updateUser(user);
-  return u.routes;
+const addRouteA = async (
+  userId,
+  loc,
+  dir = 'pointA',
+  collection = routesCol,
+) => {
+  const name = await usersCol.findOne({userId}, 'name');
+  await collection.updateOne({userId, name}, {[dir]: loc}, {upsert: true});
 };
+const addRoute = async (uid, name, collection = routesCol) => {
+  await collection.updateOne({userId: uid}, {name}, {upsert: true});
+  await usersCol.updateOne({userId: uid}, {name, routes: 1}, {upsert: true});
+};
+const addRouteB = (userId, loc) => addRouteA(userId, loc, 'pointB');
 
 module.exports.stat = stat;
 module.exports.clear = clear;
 module.exports.updateOne = updateOne;
 module.exports.removeInline = removeInline;
-module.exports.getInine = getInine;
-module.exports.getIV = getIV;
+module.exports.GetUser = GetUser;
 module.exports.createBroadcast = createBroadcast;
 module.exports.startBroadcast = startBroadcast;
 module.exports.processBroadcast = processBroadcast;
 module.exports.updateUser = updateUser;
-module.exports.changeType = changeType;
+module.exports.addRoute = addRoute;
+module.exports.addRouteA = addRouteA;
+module.exports.addRouteB = addRouteB;
+module.exports.clearName = clearName;

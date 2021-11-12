@@ -12,7 +12,15 @@ const BUTTONS = {
     command: '/passenger',
   },
   routes: {
-    label: 'My routes',
+    label: 'My Routes',
+    command: '/passenger',
+  },
+  addroute: {
+    label: 'Add route',
+    command: '/passenger',
+  },
+  editroute: {
+    label: 'Edit route',
     command: '/passenger',
   },
   change_type: {
@@ -20,7 +28,7 @@ const BUTTONS = {
     command: '/passenger',
   },
   stop_routes: {
-    label: 'Stop all active routes',
+    label: 'Stop all active Routes',
     command: '/passenger',
   },
   next: {
