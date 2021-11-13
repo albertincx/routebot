@@ -1,6 +1,9 @@
-const CHECK_MESSAGE = 'Send the name of your route';
+const NAME_MESSAGE = 'Enter the name of your route';
+const CR = 'Create your *regular* route';
+const CHECK_MESSAGE_URL =
+  '[what is it mean?](https://telegra.ph/Route-Cab-English-11-10)';
 module.exports = {
-  check: CHECK_MESSAGE,
+  check: NAME_MESSAGE,
   start: () => `Hello! Please select type of your account!
 https://telegra.ph/Route-Cab-English-11-10
   `,
@@ -10,16 +13,12 @@ https://telegra.ph/Route-Cab-English-11-10
   3. I am a passenger
   `,
   start3: () => 'Hello!',
-  driverNewRoute:
-    () => `Create your regular route [what is it?](https://telegra.ph/Route-Cab-English-11-10)
-${CHECK_MESSAGE}`,
-  driverStartPoint: (name = '') => `${
-    name ? `You already have a name "${name}"` : 'Create your first'
-  } regular route [what is it?](https://telegra.ph/Route-Cab-English-11-10)
-Send departure point`,
-  driverLastPoint:
-    () => `Create your first regular route [what is it?](https://telegra.ph/Route-Cab-English-11-10)
-Send destination point`,
+  driverNewRoute: () => `${CR} ${CHECK_MESSAGE_URL}
+${NAME_MESSAGE}`,
+  driverStartPoint: () => `${CR} ${CHECK_MESSAGE_URL}
+Send departure point (Start Point)`,
+  driverLastPoint: () => `Create your first *regular* route ${CHECK_MESSAGE_URL}
+Send destination point (Last Point)`,
   support: links => {
     let s = 'For support:';
     s += `${links.length ? `\n${links.join('\n\n')}` : ''}`;
@@ -27,6 +26,7 @@ Send destination point`,
   },
   asDept: () => 'Send my current location as departure',
   asDest: () => 'Send my current location as destination',
-  whatNext: (name = '') =>
-    `Whats next? ${name ? '\nIt looks like you already have a name' : ''}`,
+  whatNext: () => 'Whats next?',
+  stoppedAll: () => 'Active routes stopped',
+  routeStatus: () => 'Status changed',
 };

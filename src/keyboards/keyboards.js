@@ -9,13 +9,13 @@ function start() {
     [BUTTONS.passenger.label],
   ]).resize();
 }
-function driver(type, user) {
+function driver(routes, hasActive = 0) {
   let btns = [[BUTTONS.addroute.label, BUTTONS.change_type.label]];
-  if (user.routes === 3) {
-    btns = [
-      [BUTTONS.routes.label, BUTTONS.change_type.label],
-      [BUTTONS.stop_routes.label],
-    ];
+  if (routes === 3) {
+    btns = [[BUTTONS.routes.label, BUTTONS.change_type.label]];
+    if (hasActive) {
+      btns.push([BUTTONS.stop_routes.label]);
+    }
   }
   return Markup.keyboard(btns).resize();
 }
@@ -56,6 +56,9 @@ function changeName(chatId) {
     Markup.button.callback('Change Name', `r_${chatId}`),
   ]);
 }
+function inline(keys) {
+  return Markup.inlineKeyboard(keys);
+}
 module.exports.start = start;
 module.exports.driver = driver;
 module.exports.startFirst = startFirst;
@@ -63,3 +66,4 @@ module.exports.hide = hide;
 module.exports.nextProcess = nextProcess;
 module.exports.fr = fr;
 module.exports.changeName = changeName;
+module.exports.inline = inline;

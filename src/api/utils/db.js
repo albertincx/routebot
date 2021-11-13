@@ -39,8 +39,10 @@ const links = Any.collection.conn.model(LINKS_COLL, Any.schema);
 const usersCol = Any.collection.conn.model(USERS, Any.schema);
 const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
 const inlineLinks = Any.collection.conn.model(ILINKS_COLL, Any.schema);
+const DIR_A = 'pointA';
+const DIR_B = 'pointB';
 
-const stat = () => links.countDocuments();
+const stat = filter => routesCol.countDocuments(filter);
 
 const processRows = async (cc, limit = 25, timeout, cb) => {
   let items = [];
@@ -248,21 +250,34 @@ const updateOne = (item, collection = links) => {
   return collection.updateOne({url}, item, {upsert: true});
 };
 
-const getFromCollection = async (id, coll, insert = true) => {
-  const me = await coll.findOne({userId: id});
+const getFromCollection = async (id, coll, insert = true, proj = null) => {
+  const me = await coll.findOne({userId: id}, proj);
   if (insert || me) {
     await updateOne({userId: id}, coll);
   }
   return me.toObject();
 };
 
-const clearName = async id => {
-  await usersCol.updateOne({userId: id}, {name: ''});
+const clearRoutes = async id => {
+  await routesCol.deleteMany({userId: id, pointB: {$exists: false}});
+  const total = await routesCol.countDocuments({
+    userId: id,
+    pointA: {$exists: true},
+    pointB: {$exists: true},
+  });
+  const upd = {total};
+  const $unset = {name: 1};
+  if (total) {
+    upd.routes = 3;
+  } else {
+    $unset.routes = 1;
+  }
+  await usersCol.updateOne({userId: id}, {...upd, $unset});
 };
 
-const GetUser = async id => {
+const GetUser = async (id, project = null) => {
   // check from old DB without insert
-  let me = await getFromCollection(id, usersCol, false);
+  let me = await getFromCollection(id, usersCol, false, project);
   if (!me) {
     me = await getFromCollection(id, links);
   }
@@ -276,20 +291,44 @@ const updateUser = async (u, collection = usersCol) => {
   return getFromCollection(id, collection, false) || {};
 };
 
-const addRouteA = async (
-  userId,
-  loc,
-  dir = 'pointA',
-  collection = routesCol,
-) => {
-  const name = await usersCol.findOne({userId}, 'name');
-  await collection.updateOne({userId, name}, {[dir]: loc}, {upsert: true});
+const addRouteA = async (data, loc, dir = DIR_A) => {
+  const saveRoute = {...data};
+  saveRoute[dir] = loc;
+  const {userId} = data;
+  const u = await GetUser(userId, 'name');
+  const {name} = u;
+  const routes = dir === DIR_B ? 3 : 2;
+  // await collection.updateOne({userId, name}, saveRoute, {upsert: true});
+  // await usersCol.updateOne({userId}, {routes: 2}, {upsert: true});
+  await addRoute({userId, name}, saveRoute, routes);
 };
-const addRoute = async (uid, name, collection = routesCol) => {
-  await collection.updateOne({userId: uid}, {name}, {upsert: true});
-  await usersCol.updateOne({userId: uid}, {name, routes: 1}, {upsert: true});
+const addRoute = async (filter, route, routes = undefined) => {
+  await routesCol.updateOne(filter, route, {upsert: true});
+  const upd = {};
+  if (!routes) {
+    upd.routes = 1;
+    upd.name = route.name;
+  } else {
+    upd.routes = routes;
+  }
+  await usersCol.updateOne({userId: filter.userId}, upd, {upsert: true});
 };
-const addRouteB = (userId, loc) => addRouteA(userId, loc, 'pointB');
+const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
+const stopAll = userId => routesCol.updateMany({userId}, {status: 0});
+const routesCnt = userId => stat({userId});
+
+const getRoutes = (userId, pageP, perPage) => {
+  const page = parseInt(pageP, 10) || 1;
+  const limit = parseInt(perPage, 10) || 5;
+  const startIndex = (page - 1) * limit;
+  return routesCol.find({userId}).skip(startIndex).limit(limit);
+};
+
+const getActiveCnt = userId =>
+  routesCol.countDocuments({userId, status: {$ne: 0}});
+
+const statusRoute = (userId, _id, update) =>
+  routesCol.updateOne({userId, _id}, update);
 
 module.exports.stat = stat;
 module.exports.clear = clear;
@@ -303,4 +342,9 @@ module.exports.updateUser = updateUser;
 module.exports.addRoute = addRoute;
 module.exports.addRouteA = addRouteA;
 module.exports.addRouteB = addRouteB;
-module.exports.clearName = clearName;
+module.exports.clearRoutes = clearRoutes;
+module.exports.stopAll = stopAll;
+module.exports.getActiveCnt = getActiveCnt;
+module.exports.routesCnt = routesCnt;
+module.exports.getRoutes = getRoutes;
+module.exports.statusRoute = statusRoute;
