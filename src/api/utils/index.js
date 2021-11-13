@@ -21,9 +21,21 @@ function checkData(data, msg = 'missing data') {
   }
 }
 function checkAdmin(ctx) {
-  const {
-    chat: {id: chatId},
-  } = ctx.message;
+  let chatId = '';
+  
+  if (ctx.update.callback_query) {
+    const msg = ctx.update.callback_query;
+    const {message} = msg;
+    const {
+    chat: {id},
+    } = message;
+    chatId = id;
+  } else {
+    const {
+    chat: {id},
+    } = ctx.message;
+    chatId = id;
+  }
   return !(ADMINS.length && ADMINS.includes(`${chatId}`));
 }
 module.exports.checkAdmin = checkAdmin;
