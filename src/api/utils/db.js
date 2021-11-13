@@ -16,8 +16,13 @@ anySchema.method({
 });
 const Any = mongoose.model('Any', anySchema);
 
+<<<<<<< HEAD
 const LINKS_COLL = process.env.MONGO_COLL_LINKS || 'links';
 const ILINKS_COLL = process.env.MONGO_COLL_ILINKS || 'ilinks';
+=======
+const USERS = process.env.MONGO_COLL_LINKS || 'users';
+const ROUTES = process.env.MONGO_COLL_LINKS || 'routes';
+>>>>>>> 7284fba8010dfc6892d6ddf149d16ae33318382e
 
 const connectDb = () =>
   mongoose.createConnection(process.env.MONGO_URI_SECOND, {
@@ -33,6 +38,7 @@ const connectDb2 = () =>
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
+<<<<<<< HEAD
 const links = Any.collection.conn.model(LINKS_COLL, Any.schema);
 const inlineLinks = Any.collection.conn.model(ILINKS_COLL, Any.schema);
 
@@ -47,6 +53,14 @@ const linksOld1 = conn2.model(LINKS_COLL, Any.schema);
 const inlineLinksOld1 = conn2.model(ILINKS_COLL, Any.schema);
 
 const stat = () => links.countDocuments();
+=======
+const usersCol = Any.collection.conn.model(USERS, Any.schema);
+const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
+const DIR_A = 'pointA';
+const DIR_B = 'pointB';
+
+const stat = filter => routesCol.countDocuments(filter);
+>>>>>>> 7284fba8010dfc6892d6ddf149d16ae33318382e
 
 const processRows = async (cc, limit = 25, timeout, cb) => {
   let items = [];
@@ -235,6 +249,7 @@ const startBroadcast = async (ctx, txtParam, bot) => {
   return ctx.reply(`broad completed: ${r} with ${breakProcess || ''}`);
 };
 
+<<<<<<< HEAD
 const clear = async msg => {
   let search = msg.text.replace('/cleardb', '').trim();
   search = `${search}`.trim();
@@ -293,3 +308,116 @@ module.exports.getIV = getIV;
 module.exports.createBroadcast = createBroadcast;
 module.exports.startBroadcast = startBroadcast;
 module.exports.processBroadcast = processBroadcast;
+=======
+const updateOne = (userId, collection = usersCol) => {
+  const item = {$unset: {routes: 1}};
+  item.$inc = {total: 1};
+  // eslint-disable-next-line no-param-reassign
+  return collection.updateOne({userId}, item);
+};
+
+const getFromCollection = async (filter, coll, insert = true, proj = null) => {
+  const me = await coll.findOne(filter, proj);
+  if (insert || me) {
+    // await updateOne(filter, coll);
+  }
+  return me ? me.toObject() : null;
+};
+
+const clearRoutes = async id => {
+  await routesCol.deleteMany({
+    userId: id,
+    $or: [{pointB: {$exists: false}}, {pointA: {$exists: false}}],
+  });
+  const total = await routesCol.countDocuments({
+    userId: id,
+    pointA: {$exists: true},
+    pointB: {$exists: true},
+  });
+  const upd = {total};
+  const $unset = {name: 1};
+  if (total) {
+    upd.routes = 3;
+  } else {
+    $unset.routes = 1;
+  }
+  await usersCol.updateOne({userId: id}, {...upd, $unset});
+};
+
+const GetUser = async (id, project = null) => {
+  // check from old DB without insert
+  const me = await getFromCollection({userId: id}, usersCol, false, project);
+  // if (!me) {
+  //   me = await getFromCollection({userId: id}, links);
+  // }
+  return me || {};
+};
+
+const updateUser = async (u, collection = usersCol) => {
+  const {id, ...user} = u;
+  // eslint-disable-next-line no-param-reassign
+  await collection.updateOne({userId: id}, user, {upsert: true});
+  return (await getFromCollection({userId: id}, collection, false)) || {};
+};
+
+const addRouteA = async (data, loc, dir = DIR_A) => {
+  const saveRoute = {...data};
+  saveRoute[dir] = loc;
+  const {userId} = data;
+  const u = await GetUser(userId, 'name');
+  const {name} = u;
+  const routes = dir === DIR_B ? 3 : 2;
+  await addRoute({userId, name}, saveRoute, routes);
+};
+const addRoute = async (filter, route, routes = undefined) => {
+  if (!routes) {
+    // eslint-disable-next-line no-param-reassign
+    filter.name = route.name;
+  }
+  await routesCol.updateOne(filter, route, {upsert: true});
+  const upd = {};
+  if (!routes) {
+    upd.routes = 1;
+    upd.name = route.name;
+  } else {
+    upd.routes = routes;
+  }
+  await usersCol.updateOne({userId: filter.userId}, upd, {upsert: true});
+};
+const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
+const stopAll = userId => routesCol.updateMany({userId}, {status: 0});
+const routesCnt = userId => stat({userId});
+
+const getRoutes = (userId, pageP, perPage) => {
+  const page = parseInt(pageP, 10) || 1;
+  const limit = parseInt(perPage, 10) || 5;
+  const startIndex = (page - 1) * limit;
+  return routesCol.find({userId}).skip(startIndex).limit(limit);
+};
+const getRoute = (userId, _id) =>
+  getFromCollection({userId, _id}, routesCol, false);
+
+const getActiveCnt = userId =>
+  routesCol.countDocuments({userId, status: {$ne: 0}});
+
+const statusRoute = (userId, _id, update) =>
+  routesCol.updateOne({userId, _id}, update);
+
+module.exports.stat = stat;
+module.exports.updateOne = updateOne;
+module.exports.GetUser = GetUser;
+module.exports.createBroadcast = createBroadcast;
+module.exports.startBroadcast = startBroadcast;
+module.exports.processBroadcast = processBroadcast;
+module.exports.updateUser = updateUser;
+module.exports.addRoute = addRoute;
+module.exports.addRouteA = addRouteA;
+module.exports.addRouteB = addRouteB;
+module.exports.clearRoutes = clearRoutes;
+module.exports.stopAll = stopAll;
+module.exports.getActiveCnt = getActiveCnt;
+module.exports.routesCnt = routesCnt;
+module.exports.getRoutes = getRoutes;
+module.exports.statusRoute = statusRoute;
+module.exports.getRoute = getRoute;
+>>>>>>> 7284fba8010dfc6892d6ddf149d16ae33318382e
