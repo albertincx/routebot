@@ -306,10 +306,44 @@ const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
 const stopAll = userId => routesCol.updateMany({userId}, {status: 0});
 const routesCnt = userId => stat({userId});
 
-const getRoutes = (userId, pageP, perPage) => {
+const findRoutes = (route, skip, limit) => {
+  const aggr = routesCol.aggregate([
+    {
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [
+            route.pointA.coordinates[0],
+            route.pointA.coordinates[1],
+          ],
+        },
+        distanceField: 'dist.calculated',
+        maxDistance: 400,
+        query: {category: 'Routes'},
+        includeLocs: 'dist.pointA',
+        spherical: true,
+      },
+    },
+    {$match: {userId: {$ne: route.userId}}},
+    {$sort: {'dist.calculated': -1}},
+    {
+      $facet: {
+        metadata: [{$count: 'total'}],
+        data: [{$skip: skip}, {$limit: limit}], // add projection here wish you re-shape the docs
+      },
+    },
+  ]);
+  console.log(JSON.stringify(aggr));
+  return aggr;
+};
+
+const getRoutes = (userId, pageP, perPage, near = false) => {
   const page = parseInt(pageP, 10) || 1;
   const limit = parseInt(perPage, 10) || 5;
   const startIndex = (page - 1) * limit;
+  if (near) {
+    return findRoutes(userId, startIndex, limit);
+  }
   return routesCol.find({userId}).skip(startIndex).limit(limit);
 };
 const getRoute = (userId, _id) =>

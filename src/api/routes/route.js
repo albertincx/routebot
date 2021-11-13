@@ -5,7 +5,6 @@ const messages = require('../../messages/format');
 const BUTTONS = require('../../config/buttons');
 const db = require('../utils/db');
 const {checkAdmin} = require('../utils');
-const logger = require('../utils/logger');
 
 const rabbitmq = require('../../service/rabbitmq');
 const BotHelper2 = require('./bot/route');
@@ -29,29 +28,32 @@ const broadcast = (ctx, botHelper) => {
   db.processBroadcast(text, ctx, botHelper);
 };
 
-function getPage(i) {
+function getPage(i, fromRoute = '') {
+  if (fromRoute) {
+    return `find_${i}_${fromRoute}`;
+  }
   return `page_${i}`;
 }
 
-function getPagination(current, total, routs) {
+function getPagination(current, total, routs, fromRoute) {
   const keys = [];
   if (current > 1 && current <= 2) {
-    keys.push({text: '«', callback_data: getPage(1)});
+    keys.push({text: '«', callback_data: getPage(1, fromRoute)});
   }
   if (current > 2) {
     keys.push({
       text: '«',
-      callback_data: getPage(current - 1),
+      callback_data: getPage(current - 1, fromRoute),
     });
   }
   if (current < total - 1) {
     keys.push({
       text: '»',
-      callback_data: getPage(current + 1),
+      callback_data: getPage(current + 1, fromRoute),
     });
   }
   if (current < total && current >= total - 1) {
-    keys.push({text: '»', callback_data: getPage(total)});
+    keys.push({text: '»', callback_data: getPage(total, fromRoute)});
   }
   return keyboards.inline([...routs, keys]);
 }
@@ -75,14 +77,14 @@ function printRoute() {
 function getTotalPages(cnt, perPage) {
   return cnt <= perPage ? 1 : Math.ceil(cnt / perPage);
 }
-function getPagi(cnt, perPage, routes, pageNum = 1) {
+function getPagi(cnt, perPage, routes, pageNum = 1, fromRoute = '') {
   const routs1 = routes.map(r => ({
     text: `${messages.icon(r.status)} ${r.name}`,
     callback_data: `route_${r._id}_${pageNum}`,
   }));
   const routs = _.chunk(routs1, 3);
   const pagi = getTotalPages(cnt, perPage);
-  return getPagination(pageNum, pagi, routs);
+  return getPagination(pageNum, pagi, routs, fromRoute);
 }
 
 const format = (bot, botHelper) => {
@@ -126,8 +128,6 @@ const format = (bot, botHelper) => {
       return;
     }
     const [data] = ctx.match;
-    logger('action');
-    logger(data);
     if (data.match(/start_agree/)) {
       try {
         await ctx.reply(messages.start2(), keyboards.start());
@@ -163,6 +163,9 @@ const format = (bot, botHelper) => {
           `page_${page}`,
           `${status === 1 ? 'deactivate' : 'activate'}_${_id}_${page}`,
         ];
+        if (status === 1) {
+          callbacks.push(`find_1_${_id}_0`);
+        }
         const keyb = keyboards.editRoute(callbacks, status);
         BH2.edit(id, mId, null, printRouteOne(routes), keyb);
       } catch (e) {
@@ -184,11 +187,37 @@ const format = (bot, botHelper) => {
           `page_${page}`,
           `${status === 'activate' ? 'deactivate' : 'activate'}_${_id}_${page}`,
         ];
+        if (status === 'activate') {
+          callbacks.push(`find_${page}_${_id}_0`);
+        }
         const keyb = keyboards.editRoute(
           callbacks,
           status === 'activate' ? 1 : 0,
         );
         BH2.edit(id, mId, null, printRouteOne(routes), keyb);
+      } catch (e) {
+        console.log(e);
+        // system = `${e}${system}`;
+      }
+    }
+    if (data.match(/find_(.*?)/)) {
+      try {
+        const msg = ctx.update.callback_query;
+        const {message} = msg;
+        const {chat, message_id: mId} = message;
+        const {id} = chat;
+        console.log(data);
+        const [, page = '1', _id, newMid] = data.match(
+          /find_([0-9]+)_(.*?)_(.*?)$/,
+        );
+        const {cnt, routes = []} = await BH2.findRoutes(id, page, _id);
+        const pagi = getPagi(cnt, 1, [], parseInt(page, 10), `${_id}_${mId}`);
+        console.log(newMid);
+        if (newMid && newMid !== '0') {
+          BH2.edit(id, newMid, null, printRouteOne(routes), pagi);
+        } else {
+          BH2.botMessage(id, printRouteOne(routes), pagi);
+        }
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;

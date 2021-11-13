@@ -244,6 +244,24 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
+  async findRoutes(id, page = 1, _id = '') {
+    const route = await db.getRoute(id, _id);
+    let cnt = 0;
+    let r = [];
+    if (route) {
+      const [aggr] = await db.getRoutes(route, page, 1, true);
+      if (aggr) {
+        const {data, metadata} = aggr;
+        console.log(aggr, data, metadata);
+        r = data;
+        cnt = metadata[0].total;
+      }
+    }
+
+    return {cnt, routes: r};
+  }
+
+  // eslint-disable-next-line class-methods-use-this
   async setStatusRoute(chatId, _id, st) {
     const status = st === 'activate' ? 1 : 0;
     await db.statusRoute(chatId, _id, {status});

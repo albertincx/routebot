@@ -74,6 +74,12 @@ function editRoute(callbacks, status) {
       callback_data: callbacks[1],
     },
   ];
+  if (callbacks[2]) {
+    keys.push({
+      text: 'Find near and same route',
+      callback_data: callbacks[2],
+    });
+  }
   return Markup.inlineKeyboard(keys);
 }
 

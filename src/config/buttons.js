@@ -19,6 +19,10 @@ const BUTTONS = {
     label: 'Add route',
     command: '/passenger',
   },
+  findRoute: {
+    label: 'Find route',
+    command: '/passenger',
+  },
   editroute: {
     label: 'Edit route',
     command: '/passenger',
