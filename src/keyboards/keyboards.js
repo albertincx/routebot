@@ -13,6 +13,7 @@ function driver(routes, hasActive = 0) {
   let btns = [[BUTTONS.addroute.label, BUTTONS.change_type.label]];
   if (routes === 3) {
     btns = [[BUTTONS.routes.label, BUTTONS.change_type.label]];
+    btns.push([BUTTONS.addroute.label]);
     if (hasActive) {
       btns.push([BUTTONS.stop_routes.label]);
     }
@@ -75,6 +76,7 @@ function editRoute(callbacks, status) {
   ];
   return Markup.inlineKeyboard(keys);
 }
+
 module.exports.start = start;
 module.exports.driver = driver;
 module.exports.startFirst = startFirst;

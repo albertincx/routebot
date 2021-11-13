@@ -18,8 +18,6 @@ const Any = mongoose.model('Any', anySchema);
 
 const USERS = process.env.MONGO_COLL_LINKS || 'users';
 const ROUTES = process.env.MONGO_COLL_LINKS || 'routes';
-const LINKS_COLL = process.env.MONGO_COLL_LINKS || 'links';
-const ILINKS_COLL = process.env.MONGO_COLL_ILINKS || 'ilinks';
 
 const connectDb = () =>
   mongoose.createConnection(process.env.MONGO_URI_SECOND, {
@@ -35,10 +33,8 @@ const connectDb2 = () =>
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
-const links = Any.collection.conn.model(LINKS_COLL, Any.schema);
 const usersCol = Any.collection.conn.model(USERS, Any.schema);
 const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
-const inlineLinks = Any.collection.conn.model(ILINKS_COLL, Any.schema);
 const DIR_A = 'pointA';
 const DIR_B = 'pointB';
 
@@ -231,23 +227,11 @@ const startBroadcast = async (ctx, txtParam, bot) => {
   return ctx.reply(`broad completed: ${r} with ${breakProcess || ''}`);
 };
 
-const clear = async msg => {
-  let search = msg.text.replace('/cleardb', '').trim();
-  search = `${search}`.trim();
-  if (!search) {
-    return Promise.resolve('empty');
-  }
-  const s = new RegExp(`^https?://${search}`);
-  const d = await links.deleteMany({url: s});
-  return JSON.stringify(d);
-};
-
-const removeInline = url => inlineLinks.deleteMany({url});
-
-const updateOne = (item, collection = links) => {
-  const {url} = item;
+const updateOne = (userId, collection = usersCol) => {
+  const item = {$unset: {routes: 1}};
+  item.$inc = {total: 1};
   // eslint-disable-next-line no-param-reassign
-  return collection.updateOne({url}, item, {upsert: true});
+  return collection.updateOne({userId}, item);
 };
 
 const getFromCollection = async (filter, coll, insert = true, proj = null) => {
@@ -259,7 +243,10 @@ const getFromCollection = async (filter, coll, insert = true, proj = null) => {
 };
 
 const clearRoutes = async id => {
-  await routesCol.deleteMany({userId: id, pointB: {$exists: false}});
+  await routesCol.deleteMany({
+    userId: id,
+    $or: [{pointB: {$exists: false}}, {pointA: {$exists: false}}],
+  });
   const total = await routesCol.countDocuments({
     userId: id,
     pointA: {$exists: true},
@@ -277,10 +264,10 @@ const clearRoutes = async id => {
 
 const GetUser = async (id, project = null) => {
   // check from old DB without insert
-  let me = await getFromCollection({userId: id}, usersCol, false, project);
-  if (!me) {
-    me = await getFromCollection({userId: id}, links);
-  }
+  const me = await getFromCollection({userId: id}, usersCol, false, project);
+  // if (!me) {
+  //   me = await getFromCollection({userId: id}, links);
+  // }
   return me || {};
 };
 
@@ -288,7 +275,7 @@ const updateUser = async (u, collection = usersCol) => {
   const {id, ...user} = u;
   // eslint-disable-next-line no-param-reassign
   await collection.updateOne({userId: id}, user, {upsert: true});
-  return getFromCollection({userId: id}, collection, false) || {};
+  return (await getFromCollection({userId: id}, collection, false)) || {};
 };
 
 const addRouteA = async (data, loc, dir = DIR_A) => {
@@ -298,11 +285,13 @@ const addRouteA = async (data, loc, dir = DIR_A) => {
   const u = await GetUser(userId, 'name');
   const {name} = u;
   const routes = dir === DIR_B ? 3 : 2;
-  // await collection.updateOne({userId, name}, saveRoute, {upsert: true});
-  // await usersCol.updateOne({userId}, {routes: 2}, {upsert: true});
   await addRoute({userId, name}, saveRoute, routes);
 };
 const addRoute = async (filter, route, routes = undefined) => {
+  if (!routes) {
+    // eslint-disable-next-line no-param-reassign
+    filter.name = route.name;
+  }
   await routesCol.updateOne(filter, route, {upsert: true});
   const upd = {};
   if (!routes) {
@@ -333,9 +322,7 @@ const statusRoute = (userId, _id, update) =>
   routesCol.updateOne({userId, _id}, update);
 
 module.exports.stat = stat;
-module.exports.clear = clear;
 module.exports.updateOne = updateOne;
-module.exports.removeInline = removeInline;
 module.exports.GetUser = GetUser;
 module.exports.createBroadcast = createBroadcast;
 module.exports.startBroadcast = startBroadcast;

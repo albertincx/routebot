@@ -2,11 +2,9 @@ const fs = require('fs');
 const db = require('../../utils/db');
 const messages = require('../../../messages/format');
 const keyboards = require('../../../keyboards/keyboards');
+const {checkAdmin} = require('../../utils');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
-const OFF = 'Off';
-const ON = 'On';
-const INLINE_TITLE = 'InstantView created. Click me to send';
 
 class BotHelper {
   constructor(botHelper) {
@@ -27,141 +25,10 @@ class BotHelper {
     return chatId === this.tgAdmin;
   }
 
-  botMes(chatId, text, mark = true) {
-    let opts = {};
-    if (mark) {
-      opts = {parse_mode: 'Markdown'};
-    }
-    return this.bot
-      .sendMessage(chatId, text, opts)
-      .catch(e => this.sendError(e, `${chatId}${text}`));
-  }
-
   botMessage(chatId, text, opts) {
     return this.bot
       .sendMessage(chatId, text, opts)
       .catch(e => this.sendError(e, `${chatId}${text}`));
-  }
-
-  sendAdminOpts(text, opts) {
-    const chatId = process.env.TGGROUPBUGS || TG_ADMIN;
-    return this.bot.sendMessage(chatId, text, opts);
-  }
-
-  sendInline({title, messageId, ivLink}) {
-    let inlineTitle = title;
-    if (!title) {
-      inlineTitle = INLINE_TITLE;
-    }
-    const queryResult = {
-      type: 'article',
-      id: messageId,
-      title: inlineTitle,
-      input_message_content: {message_text: ivLink},
-    };
-
-    return this.bot.answerInlineQuery(messageId, [queryResult]);
-  }
-
-  sendAdminMark(text, chatId) {
-    return this.botHelper.sendAdmin(text, chatId, true);
-  }
-
-  getParams(hostname, chatId, force) {
-    const params = {};
-    const contentSelector =
-      force === 'content' || this.getConf(`${hostname}_content`);
-    if (contentSelector) {
-      params.content = contentSelector;
-    }
-    const puppetOnly = force === 'puppet' || this.getConf(`${hostname}_puppet`);
-    if (puppetOnly) {
-      params.isPuppet = true;
-    }
-    const customOnly = force === 'custom' || this.getConf(`${hostname}_custom`);
-    if (customOnly) {
-      params.isCustom = true;
-    }
-    const wget = force === 'wget' || this.getConf(`${hostname}_wget`);
-    if (wget) {
-      params.isWget = true;
-    }
-    const cached = force === 'cached' || this.getConf(`${hostname}_cached`);
-    if (cached) {
-      params.isCached = true;
-    }
-    const scroll = this.getConf(`${hostname}_scroll`);
-    if (scroll) {
-      params.scroll = scroll;
-    }
-    const noLinks =
-      force === 'no_links' || this.getConf(`${hostname}_no_links`);
-    if (noLinks) {
-      params.noLinks = true;
-    }
-    const pcache = force === 'p_cache';
-    if (pcache) {
-      params.isCached = true;
-      params.cachefile = 'puppet.html';
-      params.content = this.getConf('p_cache_content');
-    }
-    if (this.isAdmin(chatId)) {
-      if (this.getConf('test_puppet')) {
-        params.isPuppet = true;
-      }
-      if (this.getConf('test_custom')) {
-        params.isCustom = true;
-      }
-    }
-    return params;
-  }
-
-  getConf(param) {
-    let c = this.config[param] || '';
-    if (c === OFF) c = '';
-    return c;
-  }
-
-  togglecConfig(msg) {
-    const params = msg.text.replace('/cconfig', '').trim();
-    if (!params || !this.isAdmin(msg.chat.id)) {
-      return Promise.resolve('no param or forbidden');
-    }
-    const {param, content} = this.parseConfig(params);
-    const c = {};
-    c[param] = content;
-    fs.writeFileSync(`.conf/custom/${param}.json`, JSON.stringify(c));
-    return false;
-  }
-
-  parseConfig(params) {
-    let content;
-    let param;
-    const c = params.replace(' _content', '_content').split(/\s/);
-    if (c.length === 2) {
-      [param] = c;
-      content = c[1].replace(/~/g, ' ');
-    } else {
-      [param] = c;
-      if (this.config[param] === ON) {
-        content = OFF;
-      } else {
-        content = ON;
-      }
-    }
-    return {param, content};
-  }
-
-  toggleConfig(msg) {
-    const params = msg.text.replace('/config', '').trim();
-    if (!params || !this.isAdmin(msg.chat.id)) {
-      return Promise.resolve('no param or forbidden');
-    }
-
-    const {param, content} = this.parseConfig(params);
-    this.config[param] = content;
-    fs.writeFileSync('.conf/config.json', JSON.stringify(this.config));
-    return this.botMes(TG_ADMIN, content, false);
   }
 
   sendError(error, text = '') {
@@ -175,18 +42,6 @@ class BotHelper {
     }
 
     return this.botHelper.sendAdmin(e);
-  }
-
-  disDb() {
-    this.db = false;
-  }
-
-  setBlacklist(f) {
-    this.bllist = fs.readFileSync(f).toString() || '';
-  }
-
-  isBlackListed(h) {
-    return this.bllist.match(h);
   }
 
   forward(mid, from, to) {
@@ -205,14 +60,13 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async nextProcess(ctx, isName = false, addRoute = false) {
+    if (checkAdmin(ctx)) {
+      return;
+    }
     const {from} = ctx.message;
     const user = from;
-    const {
-      id,
-      routes: userRoutes,
-      name: userRouteName,
-    } = await db.GetUser(user.id);
-    let routes = addRoute ? undefined : userRoutes;
+    const {id, routes: ur, name: userRouteName} = await db.GetUser(user.id);
+    let routes = addRoute ? undefined : ur;
     if (addRoute) {
       routes = undefined;
       await db.clearRoutes(user.id);
@@ -234,7 +88,7 @@ class BotHelper {
         routes = 1;
       }
     }
-    if (routes === 1) {
+    if (routes === 1 || (routes === 3 && isName)) {
       txt = messages.driverStartPoint();
       routeType = 2;
       if (isName) {
@@ -256,6 +110,10 @@ class BotHelper {
       keyb.parse_mode = 'Markdown';
       keyb.disable_web_page_preview = true;
     }
+    if (routes === 3 && isName) {
+      keyb.parse_mode = 'Markdown';
+      keyb.disable_web_page_preview = true;
+    }
     try {
       if (edit) {
         const messageId = ctx.message.message_id;
@@ -273,6 +131,9 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async driverType(ctx, type) {
+    if (checkAdmin(ctx)) {
+      return;
+    }
     const user = ctx.message.from;
     user.type = type;
     const {routes, total: ttlCnt} = await db.updateUser(user);
@@ -302,7 +163,15 @@ class BotHelper {
   async processLocation(ctx, isFromText = false) {
     const {update} = ctx;
     const {message} = update;
-    const {location: msgLocation, chat, text} = message;
+    if (message.reply_to_message) {
+      if (message.reply_to_message.text.match(messages.check)) {
+        // Send the name of your route
+        this.nextProcess(ctx, true);
+        return;
+      }
+      return;
+    }
+    const {location: msgLocation, text} = message;
     let location = [];
     if (isFromText) {
       location = text.split(',').map(Number);
@@ -310,13 +179,15 @@ class BotHelper {
       location = [msgLocation.latitude, msgLocation.longitude];
     }
     if (location[0] && location[1]) {
-      const {routes, type} = await db.GetUser(chat.id);
+      const {chat} = message;
+      const {id: userId} = chat;
+      const {routes, type} = await db.GetUser(userId);
       const loc = {
         type: 'Point',
         coordinates: location,
       };
       const routeData = {
-        userId: chat.id,
+        userId,
         category: 'Routes',
         type,
         status: 0,
@@ -331,10 +202,14 @@ class BotHelper {
         keyb = keyboards.nextProcess(2);
         txt = messages.driverLastPoint();
         await db.addRouteA(routeData, loc);
+        keyb.parse_mode = 'Markdown';
+        keyb.disable_web_page_preview = true;
       }
       if (routes === 2) {
-        keyb = keyboards.driver(3, 1);
+        const total = await db.getActiveCnt(userId);
+        keyb = keyboards.driver(3, total);
         await db.addRouteB(routeData, loc);
+        await db.updateOne(userId);
       }
       ctx.reply(txt, keyb);
     }
@@ -342,8 +217,11 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   stopAll(ctx) {
+    if (checkAdmin(ctx)) {
+      return;
+    }
     const user = ctx.message.from;
-    return db.stopAll(user.id).then(() => {
+    db.stopAll(user.id).then(() => {
       const keyb = keyboards.driver(3, 0);
       ctx.reply(messages.stoppedAll(), keyb);
     });
@@ -374,17 +252,6 @@ class BotHelper {
       return {routes: [r]};
     }
     return {routes: []};
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  async setStatus(ctx) {
-    const {message} = ctx.update;
-    const {chat, text} = message;
-    const match = text.match(/(activate|deactivate)_(.*?)$/);
-    const _id = match[2];
-    const status = match[1] === 'activate' ? 1 : 0;
-    await db.statusRoute(chat.id, _id, {status});
-    ctx.reply(messages.routeStatus());
   }
 }
 

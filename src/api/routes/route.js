@@ -4,6 +4,7 @@ const keyboards = require('../../keyboards/keyboards');
 const messages = require('../../messages/format');
 const BUTTONS = require('../../config/buttons');
 const db = require('../utils/db');
+const {checkAdmin} = require('../utils');
 const logger = require('../utils/logger');
 
 const rabbitmq = require('../../service/rabbitmq');
@@ -70,20 +71,6 @@ Status: ${r.status === 0 ? 'inactive 🔴' : 'active 🟢'}
 }
 function printRoute() {
   return 'Choose a route from the list below:';
-  /*
-  let txt = 'Your regular routes\n';
-  if (routes.length === 0) {
-    return 'Nothing to show';
-  }
-  routes.forEach(r => {
-    txt += `
-Route name: ${r.name}
-Status: ${r.status === 0 ? 'inactive 🔴' : 'active 🟢'}
-${r.status === 0 ? `/activate_${r._id}` : `/deactivate_${r._id}`}
-`;
-  });
-  return txt;
-  */
 }
 function getTotalPages(cnt, perPage) {
   return cnt <= perPage ? 1 : Math.ceil(cnt / perPage);
@@ -97,12 +84,18 @@ function getPagi(cnt, perPage, routes, pageNum = 1) {
   const pagi = getTotalPages(cnt, perPage);
   return getPagination(pageNum, pagi, routs);
 }
+
 const format = (bot, botHelper) => {
   const BH2 = new BotHelper2(botHelper);
   bot.command(['/createBroadcast', '/startBroadcast'], ctx =>
     broadcast(ctx, botHelper),
   );
-  bot.hears(/[0-9]+,[0-9]+/, ctx => BH2.processLocation(ctx, true));
+  bot.hears(/[0-9]+,[0-9]+/, ctx => {
+    if (checkAdmin(ctx)) {
+      return;
+    }
+    BH2.processLocation(ctx, true);
+  });
   bot.hears(BUTTONS.driver.label, ctx => BH2.driverType(ctx, 1));
   bot.hears(BUTTONS.sharingDriver.label, ctx => BH2.driverType(ctx, 2));
   bot.hears(BUTTONS.passenger.label, ctx => BH2.driverType(ctx, 3));
@@ -111,19 +104,27 @@ const format = (bot, botHelper) => {
   bot.hears(BUTTONS.editroute.label, ctx => BH2.nextProcess(ctx));
   bot.hears(BUTTONS.stop_routes.label, ctx => BH2.stopAll(ctx));
   bot.hears(BUTTONS.routes.label, async ctx => {
+    if (checkAdmin(ctx)) {
+      return;
+    }
     const {cnt, routes} = await BH2.myRoutes(ctx.chat.id);
     const pagi = getPagi(cnt, BH2.perPage, routes, 1);
     BH2.botMessage(ctx.chat.id, printRoute(), pagi);
   });
   bot.hears(BUTTONS.change_type.label, ctx => {
+    if (checkAdmin(ctx)) {
+      return;
+    }
     ctx.reply(messages.start2(), keyboards.start());
   });
   bot.command(BUTTONS.driver.command, ctx => BH2.driverType(ctx, 1));
   bot.command(BUTTONS.sharingDriver.command, ctx => BH2.driverType(ctx, 2));
   bot.command(BUTTONS.passenger.command, ctx => BH2.driverType(ctx, 3));
-  // bot.hears(/(activate|deactivate)_(.*?)+/, ctx => BH2.setStatus(ctx));
 
   bot.action(/.*/, async ctx => {
+    if (checkAdmin(ctx)) {
+      return;
+    }
     const [data] = ctx.match;
     logger('action');
     logger(data);
@@ -196,17 +197,21 @@ const format = (bot, botHelper) => {
   });
 
   // eslint-disable-next-line consistent-return
-  function test(c) {
-    if (c.update && c.update.message) {
-      if (c.update.message.location) {
-        return BH2.processLocation(c);
+  function test(ctx) {
+    if (checkAdmin(ctx)) {
+      return;
+    }
+    if (ctx.update && ctx.update.message) {
+      if (ctx.update.message.location) {
+        BH2.processLocation(ctx);
+        return;
       }
       if (
-        c.update.message.reply_to_message &&
-        c.update.message.reply_to_message.text.match(messages.check)
+        ctx.update.message.reply_to_message &&
+        ctx.update.message.reply_to_message.text.match(messages.check)
       ) {
         // Send the name of your route
-        return BH2.nextProcess(c, true);
+        BH2.nextProcess(ctx, true);
       }
     }
   }

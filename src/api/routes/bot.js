@@ -6,6 +6,7 @@ const messages = require('../../messages/format');
 const keyboards = require('../../keyboards/keyboards');
 const route = require('./route');
 const db = require('../utils/db');
+const {checkAdmin} = require('../utils');
 
 global.skipCount = 0;
 
@@ -15,6 +16,7 @@ const USERIDS = (process.env.USERIDS || '').split(',');
 const IV_CHAN_ID = +process.env.IV_CHAN_ID;
 const IV_CHAN_MID = +process.env.IV_CHAN_MID;
 const supportLinks = [process.env.SUP_LINK];
+
 for (let i = 1; i < 10; i += 1) {
   if (process.env[`SUP_LINK${i}`]) {
     supportLinks.push(process.env[`SUP_LINK${i}`]);
@@ -28,6 +30,9 @@ const startOrHelp = async (ctx, botHelper) => {
   const {
     chat: {id: chatId},
   } = ctx.message;
+  if (checkAdmin(ctx)) {
+    return;
+  }
   if (USERIDS.length && USERIDS.includes(`${chatId}`)) {
     return;
   }
@@ -45,6 +50,9 @@ const startOrHelp = async (ctx, botHelper) => {
 };
 
 const support = async (ctx, botHelper) => {
+  if (checkAdmin(ctx)) {
+    return;
+  }
   let system = JSON.stringify(ctx.message.from);
   const {
     chat: {id: chatId},
