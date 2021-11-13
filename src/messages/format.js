@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-module.exports = {
-  start: () => 'Coming soon',
-=======
 const NAME_MESSAGE = 'Enter the name of your route';
 const CR = 'Create your *regular* route';
 const CHECK_MESSAGE_URL =
@@ -23,18 +19,14 @@ ${NAME_MESSAGE}`,
 Send departure point (Start Point)`,
   driverLastPoint: () => `Create your first *regular* route ${CHECK_MESSAGE_URL}
 Send destination point (Last Point)`,
->>>>>>> 7284fba8010dfc6892d6ddf149d16ae33318382e
   support: links => {
     let s = 'For support:';
     s += `${links.length ? `\n${links.join('\n\n')}` : ''}`;
     return s;
   },
-<<<<<<< HEAD
-=======
   asDept: () => 'Send my current location as departure',
   asDest: () => 'Send my current location as destination',
   whatNext: () => 'Whats next?',
   stoppedAll: () => 'Active routes stopped',
   icon: status => `${status === 0 ? '🔴' : '🟢'}`,
->>>>>>> 7284fba8010dfc6892d6ddf149d16ae33318382e
 };

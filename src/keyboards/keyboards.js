@@ -1,14 +1,6 @@
 const {Markup} = require('telegraf');
 
 const BUTTONS = require('../config/buttons');
-<<<<<<< HEAD
-
-function start() {
-  return Markup.keyboard([[BUTTONS.hello.label], [BUTTONS.support.label]]);
-}
-
-module.exports.start = start;
-=======
 const messages = require('../messages/format');
 
 function start() {
@@ -94,4 +86,3 @@ module.exports.fr = fr;
 module.exports.changeName = changeName;
 module.exports.inline = inline;
 module.exports.editRoute = editRoute;
->>>>>>> 7284fba8010dfc6892d6ddf149d16ae33318382e

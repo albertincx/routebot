@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-=======
 const ADMINS = (process.env.ADMINS || '').split(',');
 
->>>>>>> 7284fba8010dfc6892d6ddf149d16ae33318382e
 function check(txt) {
   const m = txt.match(
     /(p_cache|content|custom|puppet|wget|cached)_force(.*?)$/,
@@ -23,9 +20,6 @@ function checkData(data, msg = 'missing data') {
     throw Error(msg);
   }
 }
-<<<<<<< HEAD
-
-=======
 function checkAdmin(ctx) {
   const {
     chat: {id: chatId},
@@ -33,7 +27,6 @@ function checkAdmin(ctx) {
   return !(ADMINS.length && ADMINS.includes(`${chatId}`));
 }
 module.exports.checkAdmin = checkAdmin;
->>>>>>> 7284fba8010dfc6892d6ddf149d16ae33318382e
 module.exports.check = check;
 module.exports.timeout = timeout;
 module.exports.checkData = checkData;

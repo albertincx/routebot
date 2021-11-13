@@ -16,13 +16,8 @@ anySchema.method({
 });
 const Any = mongoose.model('Any', anySchema);
 
-<<<<<<< HEAD
-const LINKS_COLL = process.env.MONGO_COLL_LINKS || 'links';
-const ILINKS_COLL = process.env.MONGO_COLL_ILINKS || 'ilinks';
-=======
 const USERS = process.env.MONGO_COLL_LINKS || 'users';
 const ROUTES = process.env.MONGO_COLL_LINKS || 'routes';
->>>>>>> 7284fba8010dfc6892d6ddf149d16ae33318382e
 
 const connectDb = () =>
   mongoose.createConnection(process.env.MONGO_URI_SECOND, {
@@ -38,29 +33,12 @@ const connectDb2 = () =>
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
-<<<<<<< HEAD
-const links = Any.collection.conn.model(LINKS_COLL, Any.schema);
-const inlineLinks = Any.collection.conn.model(ILINKS_COLL, Any.schema);
-
-const conn2 = mongoose.createConnection(process.env.MONGO_URI, {
-  keepAlive: 1,
-  connectTimeoutMS: 30000,
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-
-const linksOld1 = conn2.model(LINKS_COLL, Any.schema);
-const inlineLinksOld1 = conn2.model(ILINKS_COLL, Any.schema);
-
-const stat = () => links.countDocuments();
-=======
 const usersCol = Any.collection.conn.model(USERS, Any.schema);
 const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
 const DIR_A = 'pointA';
 const DIR_B = 'pointB';
 
 const stat = filter => routesCol.countDocuments(filter);
->>>>>>> 7284fba8010dfc6892d6ddf149d16ae33318382e
 
 const processRows = async (cc, limit = 25, timeout, cb) => {
   let items = [];
@@ -249,66 +227,6 @@ const startBroadcast = async (ctx, txtParam, bot) => {
   return ctx.reply(`broad completed: ${r} with ${breakProcess || ''}`);
 };
 
-<<<<<<< HEAD
-const clear = async msg => {
-  let search = msg.text.replace('/cleardb', '').trim();
-  search = `${search}`.trim();
-  if (!search) {
-    return Promise.resolve('empty');
-  }
-  const s = new RegExp(`^https?://${search}`);
-  const d = await links.deleteMany({url: s});
-  return JSON.stringify(d);
-};
-
-const removeInline = url => inlineLinks.deleteMany({url});
-
-const updateOne = (item, collection = links) => {
-  const {url} = item;
-  // eslint-disable-next-line no-param-reassign
-  item.$inc = {af: 1};
-  return collection.updateOne({url}, item, {upsert: true});
-};
-
-const getFromCollection = async (url, coll, insert = true) => {
-  const me = await coll.findOne({url});
-  if (insert || me) {
-    await updateOne({url}, coll);
-  }
-  return me;
-};
-
-const getInine = async url => {
-  // check from old DB without insert
-  let me = await getFromCollection(url, inlineLinksOld1, false);
-  if (!me) {
-    me = await getFromCollection(url, inlineLinks);
-  }
-  return me;
-};
-
-const getIV = async url => {
-  // check from old DB without insert
-  let me = await getFromCollection(url, linksOld1, false);
-  if (!me) {
-    me = await getFromCollection(url, links);
-  }
-  if (me) {
-    return me.toObject();
-  }
-  return false;
-};
-
-module.exports.stat = stat;
-module.exports.clear = clear;
-module.exports.updateOne = updateOne;
-module.exports.removeInline = removeInline;
-module.exports.getInine = getInine;
-module.exports.getIV = getIV;
-module.exports.createBroadcast = createBroadcast;
-module.exports.startBroadcast = startBroadcast;
-module.exports.processBroadcast = processBroadcast;
-=======
 const updateOne = (userId, collection = usersCol) => {
   const item = {$unset: {routes: 1}};
   item.$inc = {total: 1};
@@ -420,4 +338,3 @@ module.exports.routesCnt = routesCnt;
 module.exports.getRoutes = getRoutes;
 module.exports.statusRoute = statusRoute;
 module.exports.getRoute = getRoute;
->>>>>>> 7284fba8010dfc6892d6ddf149d16ae33318382e
