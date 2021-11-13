@@ -20,7 +20,7 @@ class BotHelper {
     }
     this.config = c;
     this.tgAdmin = TG_ADMIN;
-    this.perPage = 1;
+    this.perPage = 6;
   }
 
   isAdmin(chatId) {
@@ -194,9 +194,13 @@ class BotHelper {
   }
 
   edit(chatId, messageId, inlineMessageId, messageText, extra) {
-    return this.bot
-      .editMessageText(chatId, messageId, inlineMessageId, messageText, extra)
-      .catch(() => {});
+    return this.bot.editMessageText(
+      chatId,
+      messageId,
+      inlineMessageId,
+      messageText,
+      extra,
+    );
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -216,7 +220,6 @@ class BotHelper {
     if (!userRouteName && !isName) {
       routes = undefined;
     }
-    console.log('next routes ', routes);
     let keyb = keyboards.nextProcess();
     let txt = messages.whatNext();
     let routeType = 0;
@@ -255,7 +258,6 @@ class BotHelper {
     }
     try {
       if (edit) {
-        console.log('test 2');
         const messageId = ctx.message.message_id;
         this.bot
           .editMessageText(id, messageId, null, txt, keyb)
@@ -348,10 +350,30 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async myRoutes(id, page = 1) {
+  async myRoutes(id, page = 1, _id = '') {
     const cnt = await db.routesCnt(id);
-    const routes = await db.getRoutes(id, page, this.perPage);
-    return {cnt, routes: routes.map(i => i.toObject())};
+    let r;
+    if (_id) {
+      r = await db.getRoute(id, _id);
+      if (r) {
+        r = [r];
+      }
+    } else {
+      r = await db.getRoutes(id, page, this.perPage);
+      r = r.map(i => i.toObject());
+    }
+    return {cnt, routes: r};
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async setStatusRoute(chatId, _id, st) {
+    const status = st === 'activate' ? 1 : 0;
+    await db.statusRoute(chatId, _id, {status});
+    const r = await db.getRoute(chatId, _id);
+    if (r) {
+      return {routes: [r]};
+    }
+    return {routes: []};
   }
 
   // eslint-disable-next-line class-methods-use-this

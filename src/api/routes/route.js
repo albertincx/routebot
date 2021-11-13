@@ -1,3 +1,5 @@
+const _ = require('lodash');
+
 const keyboards = require('../../keyboards/keyboards');
 const messages = require('../../messages/format');
 const BUTTONS = require('../../config/buttons');
@@ -30,35 +32,45 @@ function getPage(i) {
   return `page_${i}`;
 }
 
-function getPagination(current, total) {
+function getPagination(current, total, routs) {
   const keys = [];
-  if (current > 1) {
-    keys.push({text: '«1', callback_data: getPage(1)});
+  if (current > 1 && current <= 2) {
+    keys.push({text: '«', callback_data: getPage(1)});
   }
   if (current > 2) {
     keys.push({
-      text: `‹${current - 1}`,
+      text: '«',
       callback_data: getPage(current - 1),
     });
   }
-  keys.push({text: `-${current}-`, callback_data: getPage(current)});
   if (current < total - 1) {
     keys.push({
-      text: `${current + 1}›`,
+      text: '»',
       callback_data: getPage(current + 1),
     });
   }
-  if (current < total) {
-    keys.push({text: `${total}»`, callback_data: getPage(total)});
+  if (current < total && current >= total - 1) {
+    keys.push({text: '»', callback_data: getPage(total)});
   }
-  console.log(keys);
-  if (keys.length === 1) {
-    return null;
-  }
-  return keyboards.inline(keys);
+  return keyboards.inline([...routs, keys]);
 }
 
-function printRoute(routes) {
+function printRouteOne(routes) {
+  let txt = '';
+  if (routes.length === 0) {
+    return 'Nothing to show';
+  }
+  routes.forEach(r => {
+    txt += `
+Route name: ${r.name}
+Status: ${r.status === 0 ? 'inactive 🔴' : 'active 🟢'}
+`;
+  });
+  return txt;
+}
+function printRoute() {
+  return 'Choose a route from the list below:';
+  /*
   let txt = 'Your regular routes\n';
   if (routes.length === 0) {
     return 'Nothing to show';
@@ -71,9 +83,19 @@ ${r.status === 0 ? `/activate_${r._id}` : `/deactivate_${r._id}`}
 `;
   });
   return txt;
+  */
 }
 function getTotalPages(cnt, perPage) {
-  return cnt <= perPage ? 1 : cnt / perPage;
+  return cnt <= perPage ? 1 : Math.ceil(cnt / perPage);
+}
+function getPagi(cnt, perPage, routes, pageNum = 1) {
+  const routs1 = routes.map(r => ({
+    text: `${messages.icon(r.status)} ${r.name}`,
+    callback_data: `route_${r._id}_${pageNum}`,
+  }));
+  const routs = _.chunk(routs1, 3);
+  const pagi = getTotalPages(cnt, perPage);
+  return getPagination(pageNum, pagi, routs);
 }
 const format = (bot, botHelper) => {
   const BH2 = new BotHelper2(botHelper);
@@ -90,11 +112,8 @@ const format = (bot, botHelper) => {
   bot.hears(BUTTONS.stop_routes.label, ctx => BH2.stopAll(ctx));
   bot.hears(BUTTONS.routes.label, async ctx => {
     const {cnt, routes} = await BH2.myRoutes(ctx.chat.id);
-    BH2.botMessage(
-      ctx.chat.id,
-      printRoute(routes),
-      getPagination(1, getTotalPages(cnt, BH2.perPage)),
-    );
+    const pagi = getPagi(cnt, BH2.perPage, routes, 1);
+    BH2.botMessage(ctx.chat.id, printRoute(), pagi);
   });
   bot.hears(BUTTONS.change_type.label, ctx => {
     ctx.reply(messages.start2(), keyboards.start());
@@ -102,20 +121,18 @@ const format = (bot, botHelper) => {
   bot.command(BUTTONS.driver.command, ctx => BH2.driverType(ctx, 1));
   bot.command(BUTTONS.sharingDriver.command, ctx => BH2.driverType(ctx, 2));
   bot.command(BUTTONS.passenger.command, ctx => BH2.driverType(ctx, 3));
-  bot.hears(/(activate|deactivate)_(.*?)+/, ctx => BH2.setStatus(ctx));
+  // bot.hears(/(activate|deactivate)_(.*?)+/, ctx => BH2.setStatus(ctx));
 
   bot.action(/.*/, async ctx => {
     const [data] = ctx.match;
     logger('action');
+    logger(data);
     if (data.match(/start_agree/)) {
       try {
         await ctx.reply(messages.start2(), keyboards.start());
       } catch (e) {
         // system = `${e}${system}`;
       }
-      // await bot.telegram
-      //   .editMessageText(from.id, message_id, null, RESULT, keyboards.start())
-      //   .catch(console.log);
       return;
     }
     if (data.match(/page_([0-9]+)/)) {
@@ -125,54 +142,62 @@ const format = (bot, botHelper) => {
         const {id} = from;
         const [, page] = data.match(/page_([0-9]+)/);
         const {cnt, routes = []} = await BH2.myRoutes(id, parseInt(page, 10));
-        BH2.edit(
-          id,
-          message.message_id,
-          null,
-          printRoute(routes),
-          getPagination(parseInt(page, 10), getTotalPages(cnt, BH2.perPage)),
-        );
+        const pagi = getPagi(cnt, BH2.perPage, routes, parseInt(page, 10));
+        BH2.edit(id, message.message_id, null, printRoute(), pagi);
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
       }
-      // await bot.telegram
-      //   .editMessageText(from.id, message_id, null, RESULT, keyboards.start())
-      //   .catch(console.log);
     }
-    if (data.match(/(inactive|active)_(.*?)/)) {
+    if (data.match(/route_(.*?)/)) {
       try {
-        // const msg = ctx.update.callback_query;
-        // const {from, message} = msg;
-        // const {id} = from;
-        // const [, page] = data.match(/page_([0-9]+)/);
-        // console.log('page = ', page);
-        // const {cnt, routes = []} = await BH2.myRoutes(id, parseInt(page, 10));
-        // BH2.edit(
-        //   id,
-        //   message.message_id,
-        //   null,
-        //   printRoute(routes),
-        //   getPagination(parseInt(page, 10), getTotalPages(cnt, BH2.perPage)),
-        // );
+        const msg = ctx.update.callback_query;
+        const {message} = msg;
+        const {chat, message_id: mId} = message;
+        const {id} = chat;
+        const [, _id, page] = data.match(/route_(.*?)_([0-9]+)$/);
+        const {routes = []} = await BH2.myRoutes(id, 1, _id);
+        const {status} = routes[0];
+        const callbacks = [
+          `page_${page}`,
+          `${status === 1 ? 'deactivate' : 'activate'}_${_id}_${page}`,
+        ];
+        const keyb = keyboards.editRoute(callbacks, status);
+        BH2.edit(id, mId, null, printRouteOne(routes), keyb);
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
       }
-      // await bot.telegram
-      //   .editMessageText(from.id, message_id, null, RESULT, keyboards.start())
-      //   .catch(console.log);
     }
-  });
-
-  bot.on('chosen_inline_result', ({chosenInlineResult}) => {
-    console.log('chosen inline result', chosenInlineResult);
+    if (data.match(/(activate|deactivate)_(.*?)/)) {
+      try {
+        const msg = ctx.update.callback_query;
+        const {message} = msg;
+        const {chat, message_id: mId} = message;
+        const {id} = chat;
+        const [, status, _id, page] = data.match(
+          /(activate|deactivate)_(.*?)_([0-9]+)$/,
+        );
+        const {routes = []} = await BH2.setStatusRoute(id, _id, status);
+        const callbacks = [
+          `page_${page}`,
+          `${status === 'activate' ? 'deactivate' : 'activate'}_${_id}_${page}`,
+        ];
+        const keyb = keyboards.editRoute(
+          callbacks,
+          status === 'activate' ? 1 : 0,
+        );
+        BH2.edit(id, mId, null, printRouteOne(routes), keyb);
+      } catch (e) {
+        console.log(e);
+        // system = `${e}${system}`;
+      }
+    }
   });
 
   // eslint-disable-next-line consistent-return
   function test(c) {
     if (c.update && c.update.message) {
-      // console.log(c, t,  ' 2');
       if (c.update.message.location) {
         return BH2.processLocation(c);
       }
@@ -187,23 +212,6 @@ const format = (bot, botHelper) => {
   }
 
   bot.on('message', ctx => test(ctx));
-
-  // bot.on('callback_query', async message => {
-  //   console.log('test')
-  //   const msg = message.message;
-  //   const {total: cnt, routes = []} = await BH2.myRoutes(
-  //     msg.chat.id,
-  //     parseInt(message.data, 10),
-  //   );
-  //   console.log(routes);
-  //   const editOptions = {
-  //     ...getPagination(parseInt(message.data, 10), cnt),
-  //     chat_id: msg.chat.id,
-  //     message_id: msg.message_id,
-  //   };
-  //
-  //   bot.editMessageText(`Page: ${message.data}`, editOptions);
-  // });
 };
 
 module.exports = format;

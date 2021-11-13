@@ -250,12 +250,12 @@ const updateOne = (item, collection = links) => {
   return collection.updateOne({url}, item, {upsert: true});
 };
 
-const getFromCollection = async (id, coll, insert = true, proj = null) => {
-  const me = await coll.findOne({userId: id}, proj);
+const getFromCollection = async (filter, coll, insert = true, proj = null) => {
+  const me = await coll.findOne(filter, proj);
   if (insert || me) {
-    await updateOne({userId: id}, coll);
+    // await updateOne(filter, coll);
   }
-  return me.toObject();
+  return me ? me.toObject() : null;
 };
 
 const clearRoutes = async id => {
@@ -277,9 +277,9 @@ const clearRoutes = async id => {
 
 const GetUser = async (id, project = null) => {
   // check from old DB without insert
-  let me = await getFromCollection(id, usersCol, false, project);
+  let me = await getFromCollection({userId: id}, usersCol, false, project);
   if (!me) {
-    me = await getFromCollection(id, links);
+    me = await getFromCollection({userId: id}, links);
   }
   return me || {};
 };
@@ -288,7 +288,7 @@ const updateUser = async (u, collection = usersCol) => {
   const {id, ...user} = u;
   // eslint-disable-next-line no-param-reassign
   await collection.updateOne({userId: id}, user, {upsert: true});
-  return getFromCollection(id, collection, false) || {};
+  return getFromCollection({userId: id}, collection, false) || {};
 };
 
 const addRouteA = async (data, loc, dir = DIR_A) => {
@@ -323,6 +323,8 @@ const getRoutes = (userId, pageP, perPage) => {
   const startIndex = (page - 1) * limit;
   return routesCol.find({userId}).skip(startIndex).limit(limit);
 };
+const getRoute = (userId, _id) =>
+  getFromCollection({userId, _id}, routesCol, false);
 
 const getActiveCnt = userId =>
   routesCol.countDocuments({userId, status: {$ne: 0}});
@@ -348,3 +350,4 @@ module.exports.getActiveCnt = getActiveCnt;
 module.exports.routesCnt = routesCnt;
 module.exports.getRoutes = getRoutes;
 module.exports.statusRoute = statusRoute;
+module.exports.getRoute = getRoute;

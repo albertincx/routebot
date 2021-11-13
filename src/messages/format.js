@@ -29,4 +29,5 @@ Send destination point (Last Point)`,
   whatNext: () => 'Whats next?',
   stoppedAll: () => 'Active routes stopped',
   routeStatus: () => 'Status changed',
+  icon: status => `${status === 0 ? '🔴' : '🟢'}`,
 };

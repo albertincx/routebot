@@ -59,6 +59,22 @@ function changeName(chatId) {
 function inline(keys) {
   return Markup.inlineKeyboard(keys);
 }
+function editRoute(callbacks, status) {
+  const keys = [
+    {
+      text: BUTTONS.routes_back.label,
+      callback_data: callbacks[0],
+    },
+    {
+      text: (status === 1
+        ? BUTTONS.routes_deaactivate
+        : BUTTONS.routes_activate
+      ).label,
+      callback_data: callbacks[1],
+    },
+  ];
+  return Markup.inlineKeyboard(keys);
+}
 module.exports.start = start;
 module.exports.driver = driver;
 module.exports.startFirst = startFirst;
@@ -67,3 +83,4 @@ module.exports.nextProcess = nextProcess;
 module.exports.fr = fr;
 module.exports.changeName = changeName;
 module.exports.inline = inline;
+module.exports.editRoute = editRoute;

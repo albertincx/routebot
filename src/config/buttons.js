@@ -35,5 +35,17 @@ const BUTTONS = {
     label: 'Next',
     command: '/passenger',
   },
+  routes_back: {
+    label: 'Back to routes',
+    command: '/passenger',
+  },
+  routes_activate: {
+    label: 'Activate',
+    command: '/passenger',
+  },
+  routes_deaactivate: {
+    label: 'Deactivate',
+    command: '/passenger',
+  },
 };
 module.exports = BUTTONS;
