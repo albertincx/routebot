@@ -40,7 +40,7 @@ const BUTTONS = {
     command: '/passenger',
   },
   routes_back: {
-    label: 'Back to routes',
+    label: 'Back to Routes List',
     command: '/passenger',
   },
   routes_activate: {

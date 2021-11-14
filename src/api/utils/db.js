@@ -360,16 +360,28 @@ const getPipeline = (
 
 const findRoutes = async (route, skip, limit) => {
   const $match = {userId: {$ne: route.userId}, status: 1};
-  const pipeline = getPipeline(route, $match, skip, limit);
-  const pipelineB = getPipeline(route, $match, skip, limit, DIR_B, {
-    name: 1,
-    pointAId: 1,
-  });
+  const pipeline = getPipeline(route, $match, 0, 50);
   const aggr = await routesCol.aggregate(pipeline);
-  const aggrB = await routesBCol.aggregate(pipelineB);
-  // console.log(JSON.stringify(aggr, null, 4));
-  // console.log(JSON.stringify(aggrB, null, 4));
-  return {aggr, aggrB};
+  const pointAIds = [];
+  if (aggr[0]) {
+    const {data} = aggr[0];
+    data.forEach(r => pointAIds.push(r._id));
+    // console.log(JSON.stringify(pipeline, null, 4));
+    // console.log(JSON.stringify(aggr, null, 4));
+  }
+  let aggrB = [];
+  if (pointAIds.length) {
+    const pointBMatch = {...$match, pointAId: {$in: pointAIds}};
+    const pipelineB = getPipeline(route, pointBMatch, skip, limit, DIR_B, {
+      name: 1,
+      pointAId: 1,
+    });
+    aggrB = await routesBCol.aggregate(pipelineB);
+    // console.log(JSON.stringify(pipelineB, null, 4));
+    // console.log(JSON.stringify(aggrB, null, 4));
+  }
+
+  return aggrB;
 };
 
 const getRoutes = (userId, pageP, perPage, near = false) => {
@@ -381,6 +393,7 @@ const getRoutes = (userId, pageP, perPage, near = false) => {
   }
   return routesCol.find({userId}).skip(startIndex).limit(limit);
 };
+
 const getRoute = (userId, _id) =>
   getFromCollection({userId, _id}, routesCol, false);
 
@@ -390,7 +403,12 @@ const getActiveCnt = userId =>
 const statusRoute = (userId, _id, update) =>
   routesCol
     .updateOne({userId, _id}, update)
-    .then(() => routesBCol.updateOne({userId, pointAId: _id}, update));
+    .then(() =>
+      routesBCol.updateOne(
+        {userId, pointAId: mongoose.Types.ObjectId(_id)},
+        update,
+      ),
+    );
 
 module.exports.stat = stat;
 module.exports.updateOne = updateOne;

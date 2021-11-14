@@ -249,7 +249,7 @@ class BotHelper {
     let cnt = 0;
     let r = [];
     if (route) {
-      const {aggr} = await db.getRoutes(route, page, 1, true);
+      const [aggr] = await db.getRoutes(route, page, 1, true);
       if (aggr) {
         const {data, metadata = []} = aggr;
         r = data;

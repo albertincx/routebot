@@ -223,7 +223,6 @@ const format = (bot, botHelper) => {
         const {message} = msg;
         const {chat, message_id: mId} = message;
         const {id} = chat;
-        console.log(data);
         const [, page = '1', _id, isNew] = data.match(
           /find_([0-9]+)_(.*?)_([0-9])$/,
         );
