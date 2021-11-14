@@ -292,7 +292,7 @@ const addRouteA = async (data, loc, dir = DIR_A) => {
   const routes = dir === DIR_B ? 3 : 2;
   const res = await addRoute({userId, name}, saveRoute, routes);
   if (dir === DIR_B) {
-    saveRoute.pointAId = res._id.toString();
+    saveRoute.pointAId = res._id;
     await addRoute({userId, name}, saveRoute, routes, routesBCol);
   }
 };
@@ -363,7 +363,7 @@ const findRoutes = async (route, skip, limit) => {
   const pipeline = getPipeline(route, $match, skip, limit);
   const pipelineB = getPipeline(route, $match, skip, limit, DIR_B, {
     name: 1,
-    parentAId: 1,
+    pointAId: 1,
   });
   const aggr = await routesCol.aggregate(pipeline);
   const aggrB = await routesBCol.aggregate(pipelineB);
@@ -388,7 +388,9 @@ const getActiveCnt = userId =>
   routesCol.countDocuments({userId, status: {$ne: 0}});
 
 const statusRoute = (userId, _id, update) =>
-  routesCol.updateOne({userId, _id}, update);
+  routesCol
+    .updateOne({userId, _id}, update)
+    .then(() => routesBCol.updateOne({userId, pointAId: _id}, update));
 
 module.exports.stat = stat;
 module.exports.updateOne = updateOne;

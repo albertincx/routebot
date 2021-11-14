@@ -74,13 +74,15 @@ function editRoute(callbacks, status) {
       callback_data: callbacks[1],
     },
   ];
+  let keysArray = keys;
   if (callbacks[2]) {
-    keys.push({
-      text: 'Find near and same route',
+    const findBtn = {
+      text: messages.nearBy(),
       callback_data: callbacks[2],
-    });
+    };
+    keysArray = [keys, [findBtn]];
   }
-  return Markup.inlineKeyboard(keys);
+  return Markup.inlineKeyboard(keysArray);
 }
 
 module.exports.start = start;

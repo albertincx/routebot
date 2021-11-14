@@ -71,9 +71,7 @@ Status: ${r.status === 0 ? 'inactive 🔴' : 'active 🟢'}
   });
   return txt;
 }
-function printRoute() {
-  return 'Choose a route from the list below:';
-}
+
 function getTotalPages(cnt, perPage) {
   return cnt <= perPage ? 1 : Math.ceil(cnt / perPage);
 }
@@ -110,6 +108,7 @@ const format = (bot, botHelper) => {
       return;
     }
     const {cnt, routes} = await BH2.myRoutes(ctx.chat.id);
+    let txt = messages.routesList();
     if (cnt === 0 && routes.length === 0) {
       const uuser = await BH2.checkUser(ctx.chat.id);
       if (!uuser) {
@@ -126,9 +125,10 @@ const format = (bot, botHelper) => {
         }
         return;
       }
+      txt = messages.routesEmpty();
     }
     const pagi = getPagi(cnt, BH2.perPage, routes, 1);
-    BH2.botMessage(ctx.chat.id, printRoute(), pagi);
+    BH2.botMessage(ctx.chat.id, txt, pagi);
   });
   bot.hears(BUTTONS.change_type.label, ctx => {
     if (checkAdmin(ctx)) {
@@ -161,7 +161,7 @@ const format = (bot, botHelper) => {
         const [, page] = data.match(/page_([0-9]+)/);
         const {cnt, routes = []} = await BH2.myRoutes(id, parseInt(page, 10));
         const pagi = getPagi(cnt, BH2.perPage, routes, parseInt(page, 10));
-        BH2.edit(id, message.message_id, null, printRoute(), pagi);
+        BH2.edit(id, message.message_id, null, messages.routesList(), pagi);
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
