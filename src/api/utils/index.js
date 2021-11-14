@@ -12,6 +12,7 @@ function check(txt) {
 
 function timeout(s) {
   const tm = r => setTimeout(() => r(true), s * 1000);
+  // eslint-disable-next-line no-promise-executor-return
   return new Promise(r => tm(r));
 }
 

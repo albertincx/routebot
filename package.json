@@ -1,5 +1,5 @@
 {
-  "name": "RouteCab",
+  "name": "routecab",
   "version": "1.2.0",
   "description": "Telegram Bot For InstantView",
   "author": "Al <albertincx@gmail.com>",
@@ -36,24 +36,25 @@
     "isomorphic-fetch": "^3.0.0",
     "jsbn": "^1.1.0",
     "lodash": "^4.17.21",
-    "mongoose": "^5.13.5",
-    "node-fetch": "^2.6.5",
-    "nodemon": "^2.0.12",
+    "mongoose": "^6.0.12",
+    "node-fetch": "^3.1.0",
+    "nodemon": "^2.0.15",
+    "npm-check-updates": "^12.0.2",
     "showdown": "^1.9.1",
     "statuses": "^2.0.1",
     "sync-request": "^6.1.0",
-    "telegraf": "^4.4.1",
+    "telegraf": "^4.4.2",
     "wget-improved": "^3.2.1"
   },
   "devDependencies": {
     "ava": "^3.15.0",
     "babel-eslint": "^10.1.0",
-    "eslint": "^7.32.0",
-    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint": "^8.2.0",
+    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-flowtype": "^5.9.0",
-    "eslint-plugin-import": "^2.23.4",
-    "eslint-plugin-prettier": "^3.4.0",
-    "prettier": "^2.3.2"
+    "eslint-plugin-flowtype": "^8.0.3",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.4.1"
   }
 }

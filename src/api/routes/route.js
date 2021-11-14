@@ -102,7 +102,7 @@ const format = (bot, botHelper) => {
   bot.hears(BUTTONS.sharingDriver.label, ctx => BH2.driverType(ctx, 2));
   bot.hears(BUTTONS.passenger.label, ctx => BH2.driverType(ctx, 3));
   bot.hears(BUTTONS.next.label, ctx => BH2.nextProcess(ctx));
-  bot.hears(BUTTONS.addroute.label, ctx => BH2.nextProcess(ctx, false, true));
+  bot.hears(BUTTONS.addroute.label, ctx => BH2.addRoute(ctx));
   bot.hears(BUTTONS.editroute.label, ctx => BH2.nextProcess(ctx));
   bot.hears(BUTTONS.stop_routes.label, ctx => BH2.stopAll(ctx));
   bot.hears(BUTTONS.routes.label, async ctx => {
@@ -110,6 +110,23 @@ const format = (bot, botHelper) => {
       return;
     }
     const {cnt, routes} = await BH2.myRoutes(ctx.chat.id);
+    if (cnt === 0 && routes.length === 0) {
+      const uuser = await BH2.checkUser(ctx.chat.id);
+      if (!uuser) {
+        const chatId = ctx.chat.id;
+        let system = JSON.stringify(ctx.message.from);
+        try {
+          await ctx.reply(messages.start3(), keyboards.hide());
+          ctx.reply(messages.start(), keyboards.startFirst());
+        } catch (e) {
+          system = `${e}${system}`;
+        }
+        if (!BH2.isAdmin(chatId)) {
+          BH2.botHelper.sendAdmin(system);
+        }
+        return;
+      }
+    }
     const pagi = getPagi(cnt, BH2.perPage, routes, 1);
     BH2.botMessage(ctx.chat.id, printRoute(), pagi);
   });
@@ -207,14 +224,13 @@ const format = (bot, botHelper) => {
         const {chat, message_id: mId} = message;
         const {id} = chat;
         console.log(data);
-        const [, page = '1', _id, newMid] = data.match(
-          /find_([0-9]+)_(.*?)_(.*?)$/,
+        const [, page = '1', _id, isNew] = data.match(
+          /find_([0-9]+)_(.*?)_([0-9])$/,
         );
         const {cnt, routes = []} = await BH2.findRoutes(id, page, _id);
-        const pagi = getPagi(cnt, 1, [], parseInt(page, 10), `${_id}_${mId}`);
-        console.log(newMid);
-        if (newMid && newMid !== '0') {
-          BH2.edit(id, newMid, null, printRouteOne(routes), pagi);
+        const pagi = getPagi(cnt, 1, [], parseInt(page, 10), `${_id}_1`);
+        if (isNew === '1') {
+          BH2.edit(id, mId, null, printRouteOne(routes), pagi);
         } else {
           BH2.botMessage(id, printRouteOne(routes), pagi);
         }
@@ -232,15 +248,15 @@ const format = (bot, botHelper) => {
     }
     if (ctx.update && ctx.update.message) {
       if (ctx.update.message.location) {
-        BH2.processLocation(ctx);
-        return;
+        // eslint-disable-next-line consistent-return
+        return BH2.processLocation(ctx);
       }
       if (
         ctx.update.message.reply_to_message &&
         ctx.update.message.reply_to_message.text.match(messages.check)
       ) {
         // Send the name of your route
-        BH2.nextProcess(ctx, true);
+        BH2.nextProcessName(ctx);
       }
     }
   }

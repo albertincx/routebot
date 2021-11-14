@@ -1,4 +1,3 @@
-const fs = require('fs');
 const db = require('../../utils/db');
 const messages = require('../../../messages/format');
 const keyboards = require('../../../keyboards/keyboards');
@@ -10,13 +9,6 @@ class BotHelper {
   constructor(botHelper) {
     this.bot = botHelper.getBot();
     this.botHelper = botHelper;
-    let c = {no_puppet: false};
-    try {
-      c = JSON.parse(`${fs.readFileSync('.conf/config.json')}`);
-    } catch (e) {
-      //
-    }
-    this.config = c;
     this.tgAdmin = TG_ADMIN;
     this.perPage = 6;
   }
@@ -59,48 +51,67 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async nextProcess(ctx, isName = false, addRoute = false) {
+  async addRoute(ctx) {
+    if (checkAdmin(ctx)) {
+      return;
+    }
+    const {from} = ctx.message;
+    await db.clearRoutes(from.id);
+    const keyb = keyboards.fr();
+    const txt = messages.driverNewRoute();
+    keyb.parse_mode = 'Markdown';
+    keyb.disable_web_page_preview = true;
+    try {
+      ctx.reply(txt, keyb);
+    } catch (e) {
+      // system = `${e}${system}`;
+    }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async nextProcessName(ctx) {
     if (checkAdmin(ctx)) {
       return;
     }
     const {from} = ctx.message;
     const user = from;
-    const {id, routes: ur, name: userRouteName} = await db.GetUser(user.id);
-    let routes = addRoute ? undefined : ur;
-    if (addRoute) {
-      routes = undefined;
-      await db.clearRoutes(user.id);
+    const keyb = keyboards.nextProcess(1);
+    const txt = messages.driverStartPoint();
+    const name = ctx.update.message.text;
+    await db.addRoute({userId: user.id}, {name});
+    keyb.parse_mode = 'Markdown';
+    keyb.disable_web_page_preview = true;
+    try {
+      ctx.reply(txt, keyb);
+    } catch (e) {
+      // system = `${e}${system}`;
     }
-    if (!userRouteName && !isName) {
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async nextProcess(ctx) {
+    if (checkAdmin(ctx)) {
+      return;
+    }
+    const {from} = ctx.message;
+    const {routes: ur, name: userRouteName} = await db.GetUser(from.id);
+    let routes = ur;
+    if (!userRouteName) {
       routes = undefined;
     }
     let keyb = keyboards.nextProcess();
     let txt = messages.whatNext();
     let routeType = 0;
-    const edit = false;
-
     if (!routes) {
       txt = messages.driverNewRoute();
-      if (isName) {
-        const name = ctx.update.message.text;
-        await db.addRoute({userId: user.id}, {name});
-        routeType = 1;
-        routes = 1;
-      }
     }
-    if (routes === 1 || (routes === 3 && isName)) {
+    if (routes === 1) {
       txt = messages.driverStartPoint();
       routeType = 2;
-      if (isName) {
-        const name = ctx.update.message.text;
-        await db.addRoute({userId: user.id}, {name});
-      }
-      // edit = true;
     }
     if (routes === 2) {
       txt = messages.driverLastPoint();
       routeType = 3;
-      // edit = true;
     }
     if (!routes || routes < 3) {
       keyb = keyboards.nextProcess(routeType);
@@ -110,20 +121,8 @@ class BotHelper {
       keyb.parse_mode = 'Markdown';
       keyb.disable_web_page_preview = true;
     }
-    if (routes === 3 && isName) {
-      keyb.parse_mode = 'Markdown';
-      keyb.disable_web_page_preview = true;
-    }
     try {
-      if (edit) {
-        const messageId = ctx.message.message_id;
-        this.bot
-          .editMessageText(id, messageId, null, txt, keyb)
-          .catch(() => {});
-      } else {
-        ctx.reply(txt, keyb);
-      }
-      // ctx.reply('test', keyboards.loc());
+      ctx.reply(txt, keyb);
     } catch (e) {
       // system = `${e}${system}`;
     }
@@ -159,16 +158,17 @@ class BotHelper {
     }
   }
 
-  // eslint-disable-next-line class-methods-use-this
+  // eslint-disable-next-line class-methods-use-this,consistent-return
   async processLocation(ctx, isFromText = false) {
     const {update} = ctx;
     const {message} = update;
     if (message.reply_to_message) {
       if (message.reply_to_message.text.match(messages.check)) {
         // Send the name of your route
-        this.nextProcess(ctx, true);
-        return;
+
+        return this.nextProcessName(ctx);
       }
+      // eslint-disable-next-line consistent-return
       return;
     }
     const {location: msgLocation, text} = message;
@@ -249,12 +249,11 @@ class BotHelper {
     let cnt = 0;
     let r = [];
     if (route) {
-      const [aggr] = await db.getRoutes(route, page, 1, true);
+      const {aggr} = await db.getRoutes(route, page, 1, true);
       if (aggr) {
-        const {data, metadata} = aggr;
-        console.log(aggr, data, metadata);
+        const {data, metadata = []} = aggr;
         r = data;
-        cnt = metadata[0].total;
+        cnt = (metadata[0] && metadata[0].total) || 0;
       }
     }
 
@@ -270,6 +269,11 @@ class BotHelper {
       return {routes: [r]};
     }
     return {routes: []};
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  checkUser(id) {
+    return db.checkUser(id);
   }
 }
 
