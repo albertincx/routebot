@@ -29,4 +29,7 @@ Send destination point (Last Point)`,
   whatNext: () => 'Whats next?',
   stoppedAll: () => 'Active routes stopped',
   icon: status => `${status === 0 ? '🔴' : '🟢'}`,
+  nearBy: () => '👀 Search the same route nearby',
+  routesList: () => 'Choose a route from the list below:',
+  routesEmpty: () => 'Empty list',
 };

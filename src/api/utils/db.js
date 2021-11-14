@@ -18,6 +18,7 @@ const Any = mongoose.model('Any', anySchema);
 
 const USERS = process.env.MONGO_COLL_LINKS || 'users';
 const ROUTES = process.env.MONGO_COLL_LINKS || 'routes';
+const ROUTES_B = process.env.MONGO_COLL_ROUTES_B || 'routes_bs';
 
 const connectDb = () =>
   mongoose.createConnection(process.env.MONGO_URI_SECOND, {
@@ -35,12 +36,13 @@ const connectDb2 = () =>
   });
 const usersCol = Any.collection.conn.model(USERS, Any.schema);
 const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
+const routesBCol = Any.collection.conn.model(ROUTES_B, Any.schema);
 const DIR_A = 'pointA';
 const DIR_B = 'pointB';
 
 const stat = filter => routesCol.countDocuments(filter);
 
-const processRows = async (cc, limit = 25, timeout, cb) => {
+const processRows = async (cc, limit, timeout, cb) => {
   let items = [];
   if (!cb) {
     return;
@@ -58,6 +60,7 @@ const processRows = async (cc, limit = 25, timeout, cb) => {
         }
         items = [];
         if (timeout) {
+          // eslint-disable-next-line no-promise-executor-return
           yield new Promise(resolve => setTimeout(() => resolve(), timeout));
         }
       }
@@ -261,6 +264,8 @@ const clearRoutes = async id => {
   }
   await usersCol.updateOne({userId: id}, {...upd, $unset});
 };
+const checkUser = (id, project = 'name') =>
+  getFromCollection({userId: id}, usersCol, false, project);
 
 const GetUser = async (id, project = null) => {
   // check from old DB without insert
@@ -285,14 +290,26 @@ const addRouteA = async (data, loc, dir = DIR_A) => {
   const u = await GetUser(userId, 'name');
   const {name} = u;
   const routes = dir === DIR_B ? 3 : 2;
-  await addRoute({userId, name}, saveRoute, routes);
+  const res = await addRoute({userId, name}, saveRoute, routes);
+  if (dir === DIR_B) {
+    saveRoute.pointAId = res._id;
+    await addRoute({userId, name}, saveRoute, routes, routesBCol);
+  }
 };
-const addRoute = async (filter, route, routes = undefined) => {
+const addRoute = async (
+  filter,
+  route,
+  routes = undefined,
+  collection = routesCol,
+) => {
   if (!routes) {
     // eslint-disable-next-line no-param-reassign
     filter.name = route.name;
   }
-  await routesCol.updateOne(filter, route, {upsert: true});
+  const res = await collection.findOneAndUpdate(filter, route, {
+    upsert: true,
+    new: true,
+  });
   const upd = {};
   if (!routes) {
     upd.routes = 1;
@@ -301,17 +318,82 @@ const addRoute = async (filter, route, routes = undefined) => {
     upd.routes = routes;
   }
   await usersCol.updateOne({userId: filter.userId}, upd, {upsert: true});
+  return res;
 };
 const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
 const stopAll = userId => routesCol.updateMany({userId}, {status: 0});
 const routesCnt = userId => stat({userId});
+const coord = (route, dir = DIR_A) => route[dir].coordinates;
 
-const getRoutes = (userId, pageP, perPage) => {
+const getNear = (route, dir = DIR_A) => ({
+  $geoNear: {
+    near: {
+      type: 'Point',
+      coordinates: coord(route, dir),
+    },
+    distanceField: 'dist.calculated',
+    maxDistance: 400,
+    query: {category: 'Routes'},
+    spherical: true,
+  },
+});
+
+const getPipeline = (
+  route,
+  $match,
+  skip,
+  limit,
+  dir = DIR_A,
+  $project = {_id: 1},
+) => [
+  {...getNear(route, dir)},
+  {$match},
+  {$project},
+  {$sort: {'dist.calculated': -1}},
+  {
+    $facet: {
+      metadata: [{$count: 'total'}],
+      data: [{$skip: skip}, {$limit: limit}], // add projection here wish you re-shape the docs
+    },
+  },
+];
+
+const findRoutes = async (route, skip, limit) => {
+  const $match = {userId: {$ne: route.userId}, status: 1};
+  const pipeline = getPipeline(route, $match, 0, 50);
+  const aggr = await routesCol.aggregate(pipeline);
+  const pointAIds = [];
+  if (aggr[0]) {
+    const {data} = aggr[0];
+    data.forEach(r => pointAIds.push(r._id));
+    // console.log(JSON.stringify(pipeline, null, 4));
+    // console.log(JSON.stringify(aggr, null, 4));
+  }
+  let aggrB = [];
+  if (pointAIds.length) {
+    const pointBMatch = {...$match, pointAId: {$in: pointAIds}};
+    const pipelineB = getPipeline(route, pointBMatch, skip, limit, DIR_B, {
+      name: 1,
+      pointAId: 1,
+    });
+    aggrB = await routesBCol.aggregate(pipelineB);
+    // console.log(JSON.stringify(pipelineB, null, 4));
+    // console.log(JSON.stringify(aggrB, null, 4));
+  }
+
+  return aggrB;
+};
+
+const getRoutes = (userId, pageP, perPage, near = false) => {
   const page = parseInt(pageP, 10) || 1;
   const limit = parseInt(perPage, 10) || 5;
   const startIndex = (page - 1) * limit;
+  if (near) {
+    return findRoutes(userId, startIndex, limit);
+  }
   return routesCol.find({userId}).skip(startIndex).limit(limit);
 };
+
 const getRoute = (userId, _id) =>
   getFromCollection({userId, _id}, routesCol, false);
 
@@ -319,7 +401,14 @@ const getActiveCnt = userId =>
   routesCol.countDocuments({userId, status: {$ne: 0}});
 
 const statusRoute = (userId, _id, update) =>
-  routesCol.updateOne({userId, _id}, update);
+  routesCol
+    .updateOne({userId, _id}, update)
+    .then(() =>
+      routesBCol.updateOne(
+        {userId, pointAId: mongoose.Types.ObjectId(_id)},
+        update,
+      ),
+    );
 
 module.exports.stat = stat;
 module.exports.updateOne = updateOne;
@@ -338,3 +427,4 @@ module.exports.routesCnt = routesCnt;
 module.exports.getRoutes = getRoutes;
 module.exports.statusRoute = statusRoute;
 module.exports.getRoute = getRoute;
+module.exports.checkUser = checkUser;
