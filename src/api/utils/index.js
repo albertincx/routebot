@@ -23,30 +23,17 @@ function checkData(data, msg = 'missing data') {
 }
 
 function checkAdmin(ctx) {
-<<<<<<< HEAD
-  let chatId = '';
-  
-=======
   let chatId;
->>>>>>> 6225d648b0617b1757d92bf5fb39b33844f44f7b
   if (ctx.update.callback_query) {
     const msg = ctx.update.callback_query;
     const {message} = msg;
     const {
-<<<<<<< HEAD
-    chat: {id},
-=======
       chat: {id},
->>>>>>> 6225d648b0617b1757d92bf5fb39b33844f44f7b
     } = message;
     chatId = id;
   } else {
     const {
-<<<<<<< HEAD
-    chat: {id},
-=======
       chat: {id},
->>>>>>> 6225d648b0617b1757d92bf5fb39b33844f44f7b
     } = ctx.message;
     chatId = id;
   }
