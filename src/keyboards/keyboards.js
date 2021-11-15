@@ -3,28 +3,55 @@ const {Markup} = require('telegraf');
 const BUTTONS = require('../config/buttons');
 const messages = require('../messages/format');
 
-function start() {
-  return Markup.keyboard([
-    [BUTTONS.driver.label, BUTTONS.sharingDriver.label],
-    [BUTTONS.passenger.label],
-  ]).resize();
+const actions = {
+  addRoute: 'add_route',
+  stopAll: 'stop_all',
+  changeType: 'change_type',
+  page1: 'page_1',
+  startAgree: 'start_agree',
+  startHome: 'start_home',
+  driver: 'type_1',
+  sharing: 'type_2',
+  passenger: 'type_3',
+};
+
+function begin(lang) {
+  const type1 = Markup.button.callback(messages.driver(lang), actions.driver);
+  const type2 = Markup.button.callback(messages.sharing(lang), actions.sharing);
+  const t = Markup.button.callback(messages.passenger(lang), actions.passenger);
+  return Markup.inlineKeyboard([[type1, type2], [t]]).resize();
 }
+
 function driver(routes, hasActive = 0) {
-  let btns = [[BUTTONS.addroute.label, BUTTONS.change_type.label]];
+  const addR = Markup.button.callback(BUTTONS.addroute.label, actions.addRoute);
+  const st = Markup.button.callback(BUTTONS.stopRoutes.label, actions.stopAll);
+  let btns = [
+    [
+      addR,
+      Markup.button.callback(BUTTONS.changetype.label, actions.changeType),
+    ],
+  ];
   if (routes === 3) {
-    btns = [[BUTTONS.routes.label, BUTTONS.change_type.label]];
-    btns.push([BUTTONS.addroute.label]);
+    btns = [
+      [
+        Markup.button.callback(BUTTONS.myroutes.label, actions.page1),
+        Markup.button.callback(BUTTONS.changetype.label, actions.changeType),
+      ],
+    ];
+    btns.push([addR]);
     if (hasActive) {
-      btns.push([BUTTONS.stop_routes.label]);
+      btns.push([st]);
     }
   }
-  return Markup.keyboard(btns).resize();
+  return Markup.inlineKeyboard(btns);
 }
-function startFirst() {
+
+function startFirst(txt) {
   return Markup.inlineKeyboard([
-    Markup.button.callback("I've read and agree", 'start_agree'),
+    Markup.button.callback(txt, actions.startAgree),
   ]);
 }
+
 function hide() {
   return Markup.removeKeyboard();
 }
@@ -32,31 +59,36 @@ function loc1() {
   return Markup.keyboard([
     Markup.button.locationRequest(messages.asDept()),
     BUTTONS.next.label,
-  ]).resize();
-}
-function loc2() {
-  return Markup.keyboard([
-    Markup.button.locationRequest(messages.asDest()),
-    BUTTONS.next.label,
-  ]).resize();
-}
-function nextProcess(routeType) {
-  if (routeType === 1) {
-    return loc1();
-  }
-  if (routeType === 2) {
-    return loc2();
-  }
-  return Markup.keyboard([BUTTONS.next.label]).resize();
-}
-function fr() {
-  return Markup.forceReply();
-}
-function changeName(chatId) {
-  return Markup.inlineKeyboard([
-    Markup.button.callback('Change Name', `r_${chatId}`),
   ]);
 }
+function loc2() {
+  return Markup.inlineKeyboard([
+    Markup.button.locationRequest(messages.asDest()),
+    BUTTONS.next.label,
+  ]);
+}
+function nextProcess(routeType) {
+  let k = Markup.keyboard([BUTTONS.next.label]);
+  if (routeType === 1) {
+    k = loc1();
+  }
+  if (routeType === 2) {
+    k = loc2();
+  }
+  k = k.resize();
+  if (routeType === 1 || routeType === 2 || routeType === 3) {
+    k.parse_mode = 'Markdown';
+    k.disable_web_page_preview = true;
+  }
+  return k;
+}
+function fr() {
+  const k = Markup.forceReply();
+  k.parse_mode = 'Markdown';
+  k.disable_web_page_preview = true;
+  return k;
+}
+
 function inline(keys) {
   return Markup.inlineKeyboard(keys);
 }
@@ -84,13 +116,21 @@ function editRoute(callbacks, status) {
   }
   return Markup.inlineKeyboard(keysArray);
 }
-
-module.exports.start = start;
+function home() {
+  return [
+    {
+      text: 'Home',
+      callback_data: actions.startHome,
+    },
+  ];
+}
+module.exports.begin = begin;
 module.exports.driver = driver;
 module.exports.startFirst = startFirst;
 module.exports.hide = hide;
 module.exports.nextProcess = nextProcess;
 module.exports.fr = fr;
-module.exports.changeName = changeName;
 module.exports.inline = inline;
 module.exports.editRoute = editRoute;
+module.exports.home = home;
+module.exports.actions = actions;

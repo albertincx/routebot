@@ -11,7 +11,7 @@ const BUTTONS = {
     label: "3. 🐶 I'm a passenger",
     command: '/passenger',
   },
-  routes: {
+  myroutes: {
     label: 'My Routes',
     command: '/passenger',
   },
@@ -23,15 +23,11 @@ const BUTTONS = {
     label: 'Find route',
     command: '/passenger',
   },
-  editroute: {
-    label: 'Edit route',
-    command: '/passenger',
-  },
-  change_type: {
+  changetype: {
     label: 'Change account type',
     command: '/passenger',
   },
-  stop_routes: {
+  stopRoutes: {
     label: 'Stop all active Routes',
     command: '/passenger',
   },

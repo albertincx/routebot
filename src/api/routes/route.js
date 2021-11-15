@@ -55,7 +55,8 @@ function getPagination(current, total, routs, fromRoute) {
   if (current < total && current >= total - 1) {
     keys.push({text: '»', callback_data: getPage(total, fromRoute)});
   }
-  return keyboards.inline([...routs, keys]);
+  const home = keyboards.home();
+  return keyboards.inline([...routs, keys, home]);
 }
 
 function printRouteOne(routes) {
@@ -90,52 +91,13 @@ const format = (bot, botHelper) => {
   bot.command(['/createBroadcast', '/startBroadcast'], ctx =>
     broadcast(ctx, botHelper),
   );
-  bot.hears(/[0-9]+,[0-9]+/, ctx => {
+  bot.hears(/([0-9.]+),\s?([0-9.]+)/, ctx => {
     if (checkAdmin(ctx)) {
       return;
     }
-    BH2.processLocation(ctx, true);
+    BH2.processLocation(ctx, [ctx.match[1], ctx.match[2]].map(Number));
   });
-  bot.hears(BUTTONS.driver.label, ctx => BH2.driverType(ctx, 1));
-  bot.hears(BUTTONS.sharingDriver.label, ctx => BH2.driverType(ctx, 2));
-  bot.hears(BUTTONS.passenger.label, ctx => BH2.driverType(ctx, 3));
   bot.hears(BUTTONS.next.label, ctx => BH2.nextProcess(ctx));
-  bot.hears(BUTTONS.addroute.label, ctx => BH2.addRoute(ctx));
-  bot.hears(BUTTONS.editroute.label, ctx => BH2.nextProcess(ctx));
-  bot.hears(BUTTONS.stop_routes.label, ctx => BH2.stopAll(ctx));
-  bot.hears(BUTTONS.routes.label, async ctx => {
-    if (checkAdmin(ctx)) {
-      return;
-    }
-    const {cnt, routes} = await BH2.myRoutes(ctx.chat.id);
-    let txt = messages.routesList();
-    if (cnt === 0 && routes.length === 0) {
-      const uuser = await BH2.checkUser(ctx.chat.id);
-      if (!uuser) {
-        const chatId = ctx.chat.id;
-        let system = JSON.stringify(ctx.message.from);
-        try {
-          await ctx.reply(messages.start3(), keyboards.hide());
-          ctx.reply(messages.start(), keyboards.startFirst());
-        } catch (e) {
-          system = `${e}${system}`;
-        }
-        if (!BH2.isAdmin(chatId)) {
-          BH2.botHelper.sendAdmin(system);
-        }
-        return;
-      }
-      txt = messages.routesEmpty();
-    }
-    const pagi = getPagi(cnt, BH2.perPage, routes, 1);
-    BH2.botMessage(ctx.chat.id, txt, pagi);
-  });
-  bot.hears(BUTTONS.change_type.label, ctx => {
-    if (checkAdmin(ctx)) {
-      return;
-    }
-    ctx.reply(messages.start2(), keyboards.start());
-  });
   bot.command(BUTTONS.driver.command, ctx => BH2.driverType(ctx, 1));
   bot.command(BUTTONS.sharingDriver.command, ctx => BH2.driverType(ctx, 2));
   bot.command(BUTTONS.passenger.command, ctx => BH2.driverType(ctx, 3));
@@ -145,13 +107,39 @@ const format = (bot, botHelper) => {
       return;
     }
     const [data] = ctx.match;
-    if (data.match(/start_agree/)) {
+    if (data.match(keyboards.actions.startHome)) {
+      // eslint-disable-next-line consistent-return
+      return BH2.goHome(ctx);
+    }
+    if (data.match(keyboards.actions.stopAll)) {
+      // eslint-disable-next-line consistent-return
+      return BH2.stopAll(ctx);
+    }
+    if (data.match(keyboards.actions.addRoute)) {
+      // eslint-disable-next-line consistent-return
+      return BH2.addRoute(ctx);
+    }
+    if (
+      data.match(keyboards.actions.startAgree) ||
+      data.match(keyboards.actions.changeType)
+    ) {
       try {
-        await ctx.reply(messages.start2(), keyboards.start());
+        const msg = ctx.update.callback_query;
+        const {from} = msg;
+        const {language_code: lang} = from;
+        ctx.reply(messages.start2(lang), keyboards.begin(lang));
       } catch (e) {
         // system = `${e}${system}`;
       }
-      return;
+    }
+    if (data.match(/type_([0-9])/)) {
+      try {
+        const [, type] = data.match(/type_([0-9])/);
+        BH2.driverType(ctx, type);
+      } catch (e) {
+        console.log(e);
+        // system = `${e}${system}`;
+      }
     }
     if (data.match(/page_([0-9]+)/)) {
       try {

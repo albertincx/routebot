@@ -36,10 +36,12 @@ const startOrHelp = async (ctx, botHelper) => {
   if (USERIDS.length && USERIDS.includes(`${chatId}`)) {
     return;
   }
-  let system = JSON.stringify(ctx.message.from);
+  const {from} = ctx.message;
+  const {language_code: lang} = from;
+  let system = JSON.stringify(from);
   try {
-    await ctx.reply(messages.start3(), keyboards.hide());
-    ctx.reply(messages.start(), keyboards.startFirst());
+    await ctx.reply(messages.start3(lang), keyboards.hide());
+    ctx.reply(messages.start(lang), keyboards.startFirst(messages.agree(lang)));
   } catch (e) {
     system = `${e}${system}`;
   }
@@ -77,10 +79,10 @@ const botRoute = (bot, conn) => {
   const botHelper = new BotHelper(bot.telegram);
   if (conn) {
     conn.on('error', () => {
-      botHelper.disDb();
+      botHelper.sendAdmin('db conn error');
     });
   } else {
-    botHelper.disDb();
+    botHelper.sendAdmin('db conn error');
   }
 
   bot.command(['/start', '/help'], ctx => startOrHelp(ctx, botHelper));
@@ -104,10 +106,10 @@ const botRoute = (bot, conn) => {
     }
   });
 
-  route(bot, botHelper);
+  route(bot, botHelper, startOrHelp);
   bot.launch();
 
-  if (startCnt % 10 === 0 || process.env.DEV) {
+  if (startCnt % 10 === 0) {
     botHelper.sendAdmin(`started ${startCnt} times`);
   }
   startCnt += 1;

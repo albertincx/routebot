@@ -106,7 +106,7 @@ const createBroadcast = async (ctx, txt) => {
     return ctx.reply('broad completed no id');
   }
   const connSecond = connectDb2();
-  const messages = Any.collection.conn.model('messages', Any.schema);
+  const messCol = Any.collection.conn.model('messages', Any.schema);
   const model = connSecond.model('broadcasts', Any.schema);
   const filter = {};
   if (process.env.DEV) {
@@ -118,7 +118,7 @@ const createBroadcast = async (ctx, txt) => {
   // );
   /* await model.updateMany({ cId: 10, code: 403 },
     { $unset: { sent: '', error: '', code:'' } }); */
-  const cursor = messages.find(filter).cursor();
+  const cursor = messCol.find(filter).cursor();
   await processRows(cursor, 500, 10, items => {
     const updates = [];
     items.forEach(({id}) => {
