@@ -18,10 +18,10 @@ global.lastIvTime = +new Date();
  */
 const broadcast = (ctx, botHelper) => {
   const {
-    chat: {id: chatId},
+    from: {id},
     text,
   } = ctx.message;
-  if (!botHelper.isAdmin(chatId) || !text) {
+  if (!botHelper.isAdmin(id) || !text) {
     return;
   }
 
@@ -55,8 +55,7 @@ function getPagination(current, total, routs, fromRoute) {
   if (current < total && current >= total - 1) {
     keys.push({text: '»', callback_data: getPage(total, fromRoute)});
   }
-  const home = keyboards.home();
-  return keyboards.inline([...routs, keys, home]);
+  return [...routs, keys];
 }
 
 function printRouteOne(routes) {
@@ -97,7 +96,6 @@ const format = (bot, botHelper) => {
     }
     BH2.processLocation(ctx, [ctx.match[1], ctx.match[2]].map(Number));
   });
-  bot.hears(BUTTONS.next.label, ctx => BH2.nextProcess(ctx));
   bot.command(BUTTONS.driver.command, ctx => BH2.driverType(ctx, 1));
   bot.command(BUTTONS.sharingDriver.command, ctx => BH2.driverType(ctx, 2));
   bot.command(BUTTONS.passenger.command, ctx => BH2.driverType(ctx, 3));
@@ -145,10 +143,12 @@ const format = (bot, botHelper) => {
       try {
         const msg = ctx.update.callback_query;
         const {from, message} = msg;
-        const {id} = from;
+        const {id, language_code: lang} = from;
         const [, page] = data.match(/page_([0-9]+)/);
         const {cnt, routes = []} = await BH2.myRoutes(id, parseInt(page, 10));
         const pagi = getPagi(cnt, BH2.perPage, routes, parseInt(page, 10));
+        const home = keyboards.home(lang);
+        pagi.push(home);
         BH2.edit(id, message.message_id, null, messages.routesList(), pagi);
       } catch (e) {
         console.log(e);
@@ -159,8 +159,8 @@ const format = (bot, botHelper) => {
       try {
         const msg = ctx.update.callback_query;
         const {message} = msg;
-        const {chat, message_id: mId} = message;
-        const {id} = chat;
+        const {from, message_id: mId} = message;
+        const {id, language_code: lang} = from;
         const [, _id, page] = data.match(/route_(.*?)_([0-9]+)$/);
         const {routes = []} = await BH2.myRoutes(id, 1, _id);
         const {status} = routes[0];
@@ -171,7 +171,7 @@ const format = (bot, botHelper) => {
         if (status === 1) {
           callbacks.push(`find_1_${_id}_0`);
         }
-        const keyb = keyboards.editRoute(callbacks, status);
+        const keyb = keyboards.editRoute(lang, callbacks, status);
         BH2.edit(id, mId, null, printRouteOne(routes), keyb);
       } catch (e) {
         console.log(e);
@@ -182,8 +182,8 @@ const format = (bot, botHelper) => {
       try {
         const msg = ctx.update.callback_query;
         const {message} = msg;
-        const {chat, message_id: mId} = message;
-        const {id} = chat;
+        const {from, message_id: mId} = message;
+        const {id, language_code: lang} = from;
         const [, status, _id, page] = data.match(
           /(activate|deactivate)_(.*?)_([0-9]+)$/,
         );
@@ -196,6 +196,7 @@ const format = (bot, botHelper) => {
           callbacks.push(`find_${page}_${_id}_0`);
         }
         const keyb = keyboards.editRoute(
+          lang,
           callbacks,
           status === 'activate' ? 1 : 0,
         );
@@ -209,13 +210,15 @@ const format = (bot, botHelper) => {
       try {
         const msg = ctx.update.callback_query;
         const {message} = msg;
-        const {chat, message_id: mId} = message;
-        const {id} = chat;
+        const {from, message_id: mId} = message;
+        const {id, language_code: lang} = from;
         const [, page = '1', _id, isNew] = data.match(
           /find_([0-9]+)_(.*?)_([0-9])$/,
         );
         const {cnt, routes = []} = await BH2.findRoutes(id, page, _id);
         const pagi = getPagi(cnt, 1, [], parseInt(page, 10), `${_id}_1`);
+        const home = keyboards.home(lang);
+        pagi.push(home);
         if (isNew === '1') {
           BH2.edit(id, mId, null, printRouteOne(routes), pagi);
         } else {
@@ -238,9 +241,12 @@ const format = (bot, botHelper) => {
         // eslint-disable-next-line consistent-return
         return BH2.processLocation(ctx);
       }
+      const {
+        from: {language_code: lang},
+      } = ctx.update.message;
       if (
         ctx.update.message.reply_to_message &&
-        ctx.update.message.reply_to_message.text.match(messages.check)
+        ctx.update.message.reply_to_message.text.match(messages.check(lang))
       ) {
         // Send the name of your route
         BH2.nextProcessName(ctx);

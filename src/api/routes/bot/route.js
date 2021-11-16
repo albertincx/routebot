@@ -83,69 +83,31 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async nextProcess(ctx) {
-    if (checkAdmin(ctx)) {
-      return;
-    }
-    const {from} = ctx.message;
-    const {routes: ur, name: userRouteName} = await db.GetUser(
-      from.id,
-      'routes name',
-    );
-    let routes = ur;
-    if (!userRouteName) {
-      routes = undefined;
-    }
-    let keyb = keyboards.nextProcess();
-    let txt = messages.whatNext();
-    let routeType = 0;
-    if (!routes) {
-      txt = messages.driverNewRoute();
-    }
-    if (routes === 1) {
-      txt = messages.driverStartPoint();
-      routeType = 2;
-    }
-    if (routes === 2) {
-      txt = messages.driverLastPoint();
-      routeType = 3;
-    }
-    if (!routes || routes < 3) {
-      keyb = keyboards.nextProcess(routeType);
-      if (!routes) {
-        keyb = keyboards.fr();
-      }
-    }
-    try {
-      ctx.reply(txt, keyb);
-    } catch (e) {
-      // system = `${e}${system}`;
-    }
-  }
-
-  // eslint-disable-next-line class-methods-use-this
   async driverType(ctx, type) {
     if (checkAdmin(ctx)) {
       return;
     }
-    let user;
+    let from;
     if (ctx.update && ctx.update.callback_query) {
       const msg = ctx.update.callback_query;
-      const {from} = msg;
-      user = from;
+      const {from: f} = msg;
+      from = f;
     } else {
-      user = ctx.message.from;
+      const {from: f} = ctx.message;
+      from = f;
     }
+    const {id, language_code: lang} = from;
+    const user = from;
     user.type = type;
     const {routes, total: totalRoutesCount} = await db.updateUser(user);
     let total = 0;
     if (routes === 3 && totalRoutesCount) {
-      total = await db.getActiveCnt(user.id);
+      total = await db.getActiveCnt(id);
     }
     let system = '';
     try {
       const txt = messages.whatNext();
-      const keyb = keyboards.driver(routes, total);
+      const keyb = keyboards.driver(lang, routes, total);
       ctx.reply(txt, keyb);
     } catch (e) {
       system = `${e}${system}`;
@@ -158,6 +120,7 @@ class BotHelper {
 
   async goHome(ctx) {
     const {from, message} = ctx.update.callback_query;
+    const {id, language_code: lang} = from;
     const user = from;
     const mid = message.message_id;
     const {routes: r, total: ttlCnt} = await db.GetUser(
@@ -169,12 +132,12 @@ class BotHelper {
 
     let total = 0;
     if (routes === 3 && totalRoutesCount) {
-      total = await db.getActiveCnt(user.id);
+      total = await db.getActiveCnt(id);
     }
     let system = '';
     try {
       const txt = messages.whatNext();
-      const keyb = keyboards.driver(routes, total);
+      const keyb = keyboards.driver(lang, routes, total);
       this.edit(user.id, mid, null, txt, keyb);
     } catch (e) {
       system = `${e}${system}`;
@@ -189,8 +152,11 @@ class BotHelper {
   async processLocation(ctx, locationFromTxt = []) {
     const {update} = ctx;
     const {message} = update;
+    const {
+      from: {language_code: lang},
+    } = message;
     if (message.reply_to_message) {
-      if (message.reply_to_message.text.match(messages.check)) {
+      if (message.reply_to_message.text.match(messages.check(lang))) {
         // Send the name of your route
 
         return this.nextProcessName(ctx);
@@ -206,8 +172,8 @@ class BotHelper {
       location = [msgLocation.latitude, msgLocation.longitude];
     }
     if (location[0] && location[1]) {
-      const {chat} = message;
-      const {id: userId} = chat;
+      const {from} = message;
+      const {id: userId} = from;
       const {routes, type} = await db.GetUser(userId);
       const loc = {
         type: 'Point',
@@ -232,7 +198,7 @@ class BotHelper {
       }
       if (routes === 2) {
         const total = await db.getActiveCnt(userId);
-        keyb = keyboards.driver(3, total);
+        keyb = keyboards.driver(lang, 3, total);
         await db.addRouteB(routeData, loc);
         await db.updateOne(userId);
       }
@@ -244,8 +210,9 @@ class BotHelper {
   stopAll(ctx) {
     const msg = ctx.update.callback_query;
     const {from} = msg;
-    db.stopAll(from.id).then(() => {
-      const keyb = keyboards.driver(3, 0);
+    const {id, language_code: lang} = from;
+    db.stopAll(id).then(() => {
+      const keyb = keyboards.driver(lang, 3, 0);
       ctx.reply(messages.stoppedAll(), keyb);
     });
   }

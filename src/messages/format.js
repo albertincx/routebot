@@ -1,10 +1,11 @@
 const NAME_MESSAGE = 'Enter the name of your route';
+const NAME_MESSAGE_RU = 'Введите название регулярного маршрута';
 const CR = 'Create your *regular* route';
 const AGREE_EN = "I've read and agree";
 const AGREE_RU = 'Я прочитал и согласен';
 const TGPH_LINK = 'https://telegra.ph/Route-Cab-English-11-10';
 const TGPH_LINK_RU = 'https://telegra.ph/Route-Cab-Russkaya-versiya-11-10';
-const CHECK_MESSAGE_URL = `[what is it mean?](${TGPH_LINK})`;
+const CHECK_MESSAGE_URL = `[what's it mean?](${TGPH_LINK})`;
 
 const START_RU = `Пожалуйста прочтите информацию о боте, перед началом
 ${TGPH_LINK_RU}
@@ -20,8 +21,11 @@ const TYPE_1_EN = 'I am a driver (with car)';
 const TYPE_2_EN = 'I am a car sharing driver (without car)';
 const TYPE_3_EN = 'I am a passenger';
 
+const MENU_RU = 'Меню';
+const MENU_EN = 'Menu';
 module.exports = {
-  check: NAME_MESSAGE,
+  home: lang => (lang === 'ru' ? MENU_RU : MENU_EN),
+  check: lang => (lang === 'ru' ? NAME_MESSAGE_RU : NAME_MESSAGE),
   start: lang => (lang === 'ru' ? START_RU : START_EN),
   agree: lang => (lang === 'ru' ? AGREE_RU : AGREE_EN),
   start2: () => `Hello! Please select type of your account!
@@ -52,4 +56,12 @@ Send destination point (Last Point)`,
   nearBy: () => '👀 Search the same route nearby',
   routesList: () => 'Choose a route from the list below:',
   routesEmpty: () => 'Empty list',
+  next: lang => (lang === 'ru' ? 'Далее' : 'Next'),
+  activate: lang => (lang === 'ru' ? 'Активировать' : 'Activate'),
+  deactivate: lang => (lang === 'ru' ? 'Выключить' : 'Deactivate'),
+  back: lang => (lang === 'ru' ? 'Список Маршрутов' : 'Back to Routes List'),
+  addRoute: lang => (lang === 'ru' ? 'Добавить маршрут' : 'Add route'),
+  stopRoutes: l => (l === 'ru' ? 'Откл. все маршруты' : 'Stop all Routes'),
+  changeType: lang => (lang === 'ru' ? 'Изменить тип' : 'Change account type'),
+  myRoutes: lang => (lang === 'ru' ? 'Мои маршруты' : 'My Routes'),
 };

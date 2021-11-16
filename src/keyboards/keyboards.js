@@ -22,20 +22,19 @@ function begin(lang) {
   return Markup.inlineKeyboard([[type1, type2], [t]]).resize();
 }
 
-function driver(routes, hasActive = 0) {
-  const addR = Markup.button.callback(BUTTONS.addroute.label, actions.addRoute);
-  const st = Markup.button.callback(BUTTONS.stopRoutes.label, actions.stopAll);
-  let btns = [
-    [
-      addR,
-      Markup.button.callback(BUTTONS.changetype.label, actions.changeType),
-    ],
-  ];
+function driver(lang, routes, hasActive = 0) {
+  const addRoute = messages.addRoute(lang);
+  const stopRoutes = messages.stopRoutes(lang);
+  const changeType = messages.changeType(lang);
+  const myRoutes = messages.myRoutes(lang);
+  const addR = Markup.button.callback(addRoute, actions.addRoute);
+  const st = Markup.button.callback(stopRoutes, actions.stopAll);
+  let btns = [[addR, Markup.button.callback(changeType, actions.changeType)]];
   if (routes === 3) {
     btns = [
       [
-        Markup.button.callback(BUTTONS.myroutes.label, actions.page1),
-        Markup.button.callback(BUTTONS.changetype.label, actions.changeType),
+        Markup.button.callback(myRoutes, actions.page1),
+        Markup.button.callback(changeType, actions.changeType),
       ],
     ];
     btns.push([addR]);
@@ -56,19 +55,13 @@ function hide() {
   return Markup.removeKeyboard();
 }
 function loc1() {
-  return Markup.keyboard([
-    Markup.button.locationRequest(messages.asDept()),
-    BUTTONS.next.label,
-  ]);
+  return Markup.keyboard([Markup.button.locationRequest(messages.asDept())]);
 }
 function loc2() {
-  return Markup.inlineKeyboard([
-    Markup.button.locationRequest(messages.asDest()),
-    BUTTONS.next.label,
-  ]);
+  return Markup.keyboard([Markup.button.locationRequest(messages.asDest())]);
 }
 function nextProcess(routeType) {
-  let k = Markup.keyboard([BUTTONS.next.label]);
+  let k;
   if (routeType === 1) {
     k = loc1();
   }
@@ -76,10 +69,8 @@ function nextProcess(routeType) {
     k = loc2();
   }
   k = k.resize();
-  if (routeType === 1 || routeType === 2 || routeType === 3) {
-    k.parse_mode = 'Markdown';
-    k.disable_web_page_preview = true;
-  }
+  k.parse_mode = 'Markdown';
+  k.disable_web_page_preview = true;
   return k;
 }
 function fr() {
@@ -92,17 +83,14 @@ function fr() {
 function inline(keys) {
   return Markup.inlineKeyboard(keys);
 }
-function editRoute(callbacks, status) {
+function editRoute(lang, callbacks, status) {
   const keys = [
     {
-      text: BUTTONS.routes_back.label,
+      text: messages.back(lang),
       callback_data: callbacks[0],
     },
     {
-      text: (status === 1
-        ? BUTTONS.routes_deaactivate
-        : BUTTONS.routes_activate
-      ).label,
+      text: status === 1 ? messages.deactivate(lang) : messages.activate(lang),
       callback_data: callbacks[1],
     },
   ];
@@ -116,14 +104,16 @@ function editRoute(callbacks, status) {
   }
   return Markup.inlineKeyboard(keysArray);
 }
-function home() {
+
+function home(lang) {
   return [
     {
-      text: 'Home',
+      text: messages.home(lang),
       callback_data: actions.startHome,
     },
   ];
 }
+
 module.exports.begin = begin;
 module.exports.driver = driver;
 module.exports.startFirst = startFirst;

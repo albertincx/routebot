@@ -109,7 +109,7 @@ const botRoute = (bot, conn) => {
   route(bot, botHelper, startOrHelp);
   bot.launch();
 
-  if (startCnt % 10 === 0) {
+  if (startCnt % 10 === 0 || process.env.DEV) {
     botHelper.sendAdmin(`started ${startCnt} times`);
   }
   startCnt += 1;
