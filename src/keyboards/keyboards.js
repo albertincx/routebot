@@ -49,19 +49,22 @@ function startFirst(txt) {
 function hide() {
   return Markup.removeKeyboard();
 }
-function loc1() {
-  return Markup.keyboard([Markup.button.locationRequest(messages.asDept())]);
+function locationBtn(txt) {
+  return Markup.button.locationRequest(txt);
 }
-function loc2() {
-  return Markup.keyboard([Markup.button.locationRequest(messages.asDest())]);
+function loc1(txt) {
+  return Markup.keyboard([locationBtn(txt)]);
 }
-function nextProcess(routeType) {
+function loc2(txt) {
+  return Markup.keyboard([locationBtn(txt)]);
+}
+function nextProcess(routeType, lang) {
   let k;
   if (routeType === 1) {
-    k = loc1();
+    k = loc1(messages.asDept(lang));
   }
   if (routeType === 2) {
-    k = loc2();
+    k = loc2(messages.asDest(lang));
   }
   k = k.resize();
   k.parse_mode = 'Markdown';

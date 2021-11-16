@@ -25,7 +25,24 @@ const MENU_RU = 'Меню';
 const MENU_EN = 'Menu';
 const ROUTE_LIST_RU = 'Выберите маршрут из списка ниже:';
 const ROUTE_LIST_EN = 'Choose a route from the list below:';
+const ROUTE_ADDED_RU = 'Маршрут успешно добавлен';
+const ROUTE_ADDED_EN = 'Route added successfully';
+
+const STATUS_ON_RU = 'Включен';
+const STATUS_OFF_RU = 'Выключен';
+const STATUS_ON_EN = 'Enabled';
+const STATUS_OFF_EN = 'Disabled';
+
+const getStatus = (status, lang, icon) => {
+  if (lang === 'ru') {
+    return `${status === 0 ? STATUS_OFF_RU : STATUS_ON_RU} ${icon}`;
+  }
+  return `${status === 0 ? STATUS_OFF_EN : STATUS_ON_EN} ${icon}`;
+};
+
 module.exports = {
+  success: lang => (lang === 'ru' ? ROUTE_ADDED_RU : ROUTE_ADDED_EN),
+  statusDone: lang => (lang === 'ru' ? ROUTE_ADDED_RU : ROUTE_ADDED_EN),
   home: lang => (lang === 'ru' ? MENU_RU : MENU_EN),
   check: lang => (lang === 'ru' ? NAME_MESSAGE_RU : NAME_MESSAGE),
   start: lang => (lang === 'ru' ? START_RU : START_EN),
@@ -41,10 +58,16 @@ module.exports = {
   passenger: lang => (lang === 'ru' ? TYPE_3_RU : TYPE_3_EN),
   driverNewRoute: () => `${CR} ${CHECK_MESSAGE_URL}
 ${NAME_MESSAGE}`,
-  driverStartPoint: () => `${CR} ${CHECK_MESSAGE_URL}
-Send departure point (Start Point)`,
-  driverLastPoint: () => `${CR} ${CHECK_MESSAGE_URL}
-Send destination point (Last Point)`,
+  point: (routeType, lang) => {
+    if (routeType === 1) {
+      return `${CR} ${CHECK_MESSAGE_URL}
+Send departure point (Start Point)`;
+    }
+    if (routeType === 2) {
+      return `${CR} ${CHECK_MESSAGE_URL}
+Send destination point (Last Point)`;
+    }
+  },
   support: links => {
     let s = 'For support:';
     s += `${links.length ? `\n${links.join('\n\n')}` : ''}`;
@@ -52,12 +75,12 @@ Send destination point (Last Point)`,
   },
   asDept: () => 'Send my current location as departure',
   asDest: () => 'Send my current location as destination',
-  whatNext: () => 'Whats next?',
   stoppedAll: () => 'Active routes stopped',
-  icon: status => `${status === 0 ? '▫' : '▪'}`,
+  icon: status => `${status === 0 ? '🔴' : '🟢'}`,
+  status: getStatus,
   nearBy: () => '👀 Search the same route nearby',
   routesList: lang => (lang === 'ru' ? ROUTE_LIST_RU : ROUTE_LIST_EN),
-  routesEmpty: () => 'Empty list',
+  routesEmpty: lang => (lang === 'ru' ? 'Маршруты отсутствуют' : 'No routes'),
   next: lang => (lang === 'ru' ? 'Далее' : 'Next'),
   activate: lang => (lang === 'ru' ? 'Активировать' : 'Activate'),
   deactivate: lang => (lang === 'ru' ? 'Выключить' : 'Deactivate'),

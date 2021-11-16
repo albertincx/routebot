@@ -4,7 +4,16 @@ const keyboards = require('../../../keyboards/keyboards');
 const {checkAdmin} = require('../../utils');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
-
+function checkLoc(l) {
+  const val = parseFloat(l);
+  if (!Number.isNaN(val) && val <= 90 && val >= -90) {
+    return true;
+  }
+  return false;
+}
+function checkLocation(loc) {
+  return checkLoc(loc[0]) && checkLoc(loc[1]);
+}
 class BotHelper {
   constructor(botHelper) {
     this.bot = botHelper.getBot();
@@ -70,11 +79,11 @@ class BotHelper {
       return;
     }
     const {from} = ctx.message;
-    const user = from;
+    const {id: userId, language_code: lang} = from;
     const keyb = keyboards.nextProcess(1);
-    const txt = messages.driverStartPoint();
+    const txt = messages.point(1, lang);
     const name = ctx.update.message.text;
-    await db.addRoute({userId: user.id}, {name});
+    await db.addRoute({userId}, {name});
     try {
       ctx.reply(txt, keyb);
     } catch (e) {
@@ -107,7 +116,7 @@ class BotHelper {
     }
     let system = '';
     try {
-      const txt = messages.whatNext();
+      const txt = messages.home(lang);
       const keyb = keyboards.driver(lang, routes, totalRoutesCount, total);
       ctx.reply(txt, keyb);
     } catch (e) {
@@ -137,7 +146,7 @@ class BotHelper {
     }
     let system = '';
     try {
-      const txt = messages.whatNext();
+      const txt = messages.home(lang);
       const keyb = keyboards.driver(lang, routes, totalRoutesCount, total);
       this.edit(user.id, mid, null, txt, keyb);
     } catch (e) {
@@ -176,6 +185,13 @@ class BotHelper {
       const {from} = message;
       const {id: userId} = from;
       const {routes, type, total: ttlCnt} = await db.GetUser(userId);
+      if (!checkLocation(location)) {
+        const txt = messages.point(routes, lang);
+        const keyb = keyboards.nextProcess(routes, lang);
+        ctx.reply(txt, keyb);
+        // eslint-disable-next-line consistent-return
+        return;
+      }
       const loc = {
         type: 'Point',
         coordinates: location,
@@ -186,7 +202,7 @@ class BotHelper {
         type,
         status: 0,
       };
-      let txt = 'Completed';
+      let txt = messages.success(lang);
       let keyb = keyboards.nextProcess(1);
       if (!routes) {
         txt = messages.driverNewRoute();
@@ -194,16 +210,20 @@ class BotHelper {
       }
       if (routes === 1) {
         keyb = keyboards.nextProcess(2);
-        txt = messages.driverLastPoint();
+        txt = messages.point(2, lang);
         await db.addRouteA(routeData, loc);
       }
       if (routes === 2) {
-        const total = await db.getActiveCnt(userId);
-        keyb = keyboards.driver(lang, 3, ttlCnt, total);
+        keyb = keyboards.hide();
         await db.addRouteB(routeData, loc);
         await db.updateOne(userId);
       }
       ctx.reply(txt, keyb);
+      if (routes === 2) {
+        const total = await db.getActiveCnt(userId);
+        keyb = keyboards.driver(lang, 3, ttlCnt, total);
+        this.botMessage(userId, messages.home(lang), keyb);
+      }
     }
   }
 

@@ -61,15 +61,16 @@ function getPagination(current, total, routs, fromRoute) {
   return [...routs];
 }
 
-function printRouteOne(routes) {
+function printRouteOne(routes, lang) {
   let txt = '';
   if (routes.length === 0) {
-    return 'Nothing to show';
+    return messages.routesEmpty(lang);
   }
   routes.forEach(r => {
+    const status = messages.status(r.status, lang, messages.icon(r.status));
     txt += `
 Route name: ${r.name}
-Status: ${r.status === 0 ? 'inactive 🔴' : 'active 🟢'}
+Status: ${status}
 `;
   });
   return txt;
@@ -93,7 +94,7 @@ const format = (bot, botHelper) => {
   bot.command(['/createBroadcast', '/startBroadcast'], ctx =>
     broadcast(ctx, botHelper),
   );
-  bot.hears(/([0-9.]+),\s?([0-9.]+)/, ctx => {
+  bot.hears(/([0-9.]+),[\s+]?([0-9.]+)/, ctx => {
     if (checkAdmin(ctx)) {
       return;
     }
@@ -107,44 +108,59 @@ const format = (bot, botHelper) => {
     if (checkAdmin(ctx)) {
       return;
     }
+    const msg = ctx.update.callback_query;
+    const {id: cbqId} = msg;
     const [data] = ctx.match;
+    /** @alias startHome */
     if (data.match(keyboards.actions.startHome)) {
       // eslint-disable-next-line consistent-return
       return BH2.goHome(ctx);
     }
+    /** @alias stopAll */
     if (data.match(keyboards.actions.stopAll)) {
       // eslint-disable-next-line consistent-return
       return BH2.stopAll(ctx);
     }
+    /** @alias addRoute */
     if (data.match(keyboards.actions.addRoute)) {
       // eslint-disable-next-line consistent-return
-      return BH2.addRoute(ctx);
+      await BH2.addRoute(ctx);
+      ctx.answerCbQuery(cbqId, {text: 'Account type changed'});
+      return;
     }
+    /** @alias start */
+    /** @alias changeType */
     if (
       data.match(keyboards.actions.startAgree) ||
       data.match(keyboards.actions.changeType)
     ) {
       try {
-        const msg = ctx.update.callback_query;
-        const {from} = msg;
-        const {language_code: lang} = from;
-        ctx.reply(messages.start2(lang), keyboards.begin(lang));
+        const {
+          from,
+          message: {message_id: mId},
+        } = msg;
+        const {id: userId, language_code: lang} = from;
+        const txt = messages.start2(lang);
+        BH2.edit(userId, mId, null, txt, keyboards.begin(lang));
       } catch (e) {
         // system = `${e}${system}`;
       }
+      return;
     }
+    /** @alias type */
     if (data.match(/type_([0-9])/)) {
       try {
         const [, type] = data.match(/type_([0-9])/);
-        BH2.driverType(ctx, type);
+        await BH2.driverType(ctx, type);
+        ctx.answerCbQuery(cbqId, {text: 'Account type changed'});
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
       }
     }
+    /** @alias page */
     if (data.match(/page_([0-9]+)/)) {
       try {
-        const msg = ctx.update.callback_query;
         const {from, message} = msg;
         const {id, language_code: lang} = from;
         const [, page] = data.match(/page_([0-9]+)/);
@@ -161,9 +177,9 @@ const format = (bot, botHelper) => {
         // system = `${e}${system}`;
       }
     }
+    /** @alias route */
     if (data.match(/route_(.*?)/)) {
       try {
-        const msg = ctx.update.callback_query;
         const {message} = msg;
         const {chat, message_id: mId} = message;
         const {id, language_code: lang} = chat;
@@ -178,15 +194,15 @@ const format = (bot, botHelper) => {
           callbacks.push(`find_1_${_id}_0`);
         }
         const keyb = keyboards.editRoute(lang, callbacks, status);
-        BH2.edit(id, mId, null, printRouteOne([route]), keyb);
+        BH2.edit(id, mId, null, printRouteOne([route], lang), keyb);
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
       }
     }
+    /** @alias status */
     if (data.match(/(activate|deactivate)_(.*?)/)) {
       try {
-        const msg = ctx.update.callback_query;
         const {message} = msg;
         const {chat, message_id: mId} = message;
         const {id, language_code: lang} = chat;
@@ -201,23 +217,22 @@ const format = (bot, botHelper) => {
         if (status === 'activate') {
           callbacks.push(`find_${page}_${_id}_0`);
         }
-        const keyb = keyboards.editRoute(
-          lang,
-          callbacks,
-          status === 'activate' ? 1 : 0,
-        );
-        BH2.edit(id, mId, null, printRouteOne(routes), keyb);
+        const stNum = status === 'activate' ? 1 : 0;
+        const keyb = keyboards.editRoute(lang, callbacks, stNum);
+        await BH2.edit(id, mId, null, printRouteOne(routes, lang), keyb);
+        const text = messages.status(stNum, lang, messages.icon(stNum));
+        ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
       }
     }
+    /** @alias find */
     if (data.match(/find_(.*?)/)) {
       try {
-        const msg = ctx.update.callback_query;
         const {message} = msg;
-        const {from, message_id: mId} = message;
-        const {id, language_code: lang} = from;
+        const {chat, message_id: mId} = message;
+        const {id, language_code: lang} = chat;
         const [, page = '1', _id, isNew] = data.match(
           /find_([0-9]+)_(.*?)_([0-9])$/,
         );
@@ -227,9 +242,9 @@ const format = (bot, botHelper) => {
         pagi.push(home);
         const pagination = keyboards.inline(pagi);
         if (isNew === '1') {
-          BH2.edit(id, mId, null, printRouteOne(routes), pagination);
+          BH2.edit(id, mId, null, printRouteOne(routes, lang), pagination);
         } else {
-          BH2.botMessage(id, printRouteOne(routes), pagination);
+          BH2.botMessage(id, printRouteOne(routes, lang), pagination);
         }
       } catch (e) {
         console.log(e);
