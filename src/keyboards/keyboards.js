@@ -1,6 +1,5 @@
 const {Markup} = require('telegraf');
 
-const BUTTONS = require('../config/buttons');
 const messages = require('../messages/format');
 
 const actions = {
@@ -22,21 +21,17 @@ function begin(lang) {
   return Markup.inlineKeyboard([[type1, type2], [t]]).resize();
 }
 
-function driver(lang, routes, hasActive = 0) {
+function driver(lang, routes, total, hasActive = 0) {
   const addRoute = messages.addRoute(lang);
   const stopRoutes = messages.stopRoutes(lang);
   const changeType = messages.changeType(lang);
   const myRoutes = messages.myRoutes(lang);
   const addR = Markup.button.callback(addRoute, actions.addRoute);
   const st = Markup.button.callback(stopRoutes, actions.stopAll);
-  let btns = [[addR, Markup.button.callback(changeType, actions.changeType)]];
-  if (routes === 3) {
-    btns = [
-      [
-        Markup.button.callback(myRoutes, actions.page1),
-        Markup.button.callback(changeType, actions.changeType),
-      ],
-    ];
+  const ct = Markup.button.callback(changeType, actions.changeType);
+  let btns = [[addR, ct]];
+  if (total) {
+    btns = [[Markup.button.callback(myRoutes, actions.page1), ct]];
     btns.push([addR]);
     if (hasActive) {
       btns.push([st]);

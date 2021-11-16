@@ -23,6 +23,8 @@ const TYPE_3_EN = 'I am a passenger';
 
 const MENU_RU = 'Меню';
 const MENU_EN = 'Menu';
+const ROUTE_LIST_RU = 'Выберите маршрут из списка ниже:';
+const ROUTE_LIST_EN = 'Choose a route from the list below:';
 module.exports = {
   home: lang => (lang === 'ru' ? MENU_RU : MENU_EN),
   check: lang => (lang === 'ru' ? NAME_MESSAGE_RU : NAME_MESSAGE),
@@ -52,9 +54,9 @@ Send destination point (Last Point)`,
   asDest: () => 'Send my current location as destination',
   whatNext: () => 'Whats next?',
   stoppedAll: () => 'Active routes stopped',
-  icon: status => `${status === 0 ? '🔴' : '🟢'}`,
+  icon: status => `${status === 0 ? '▫' : '▪'}`,
   nearBy: () => '👀 Search the same route nearby',
-  routesList: () => 'Choose a route from the list below:',
+  routesList: lang => (lang === 'ru' ? ROUTE_LIST_RU : ROUTE_LIST_EN),
   routesEmpty: () => 'Empty list',
   next: lang => (lang === 'ru' ? 'Далее' : 'Next'),
   activate: lang => (lang === 'ru' ? 'Активировать' : 'Activate'),

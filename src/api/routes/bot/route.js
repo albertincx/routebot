@@ -101,13 +101,14 @@ class BotHelper {
     user.type = type;
     const {routes, total: totalRoutesCount} = await db.updateUser(user);
     let total = 0;
-    if (routes === 3 && totalRoutesCount) {
+    console.log(totalRoutesCount);
+    if (totalRoutesCount) {
       total = await db.getActiveCnt(id);
     }
     let system = '';
     try {
       const txt = messages.whatNext();
-      const keyb = keyboards.driver(lang, routes, total);
+      const keyb = keyboards.driver(lang, routes, totalRoutesCount, total);
       ctx.reply(txt, keyb);
     } catch (e) {
       system = `${e}${system}`;
@@ -137,7 +138,7 @@ class BotHelper {
     let system = '';
     try {
       const txt = messages.whatNext();
-      const keyb = keyboards.driver(lang, routes, total);
+      const keyb = keyboards.driver(lang, routes, totalRoutesCount, total);
       this.edit(user.id, mid, null, txt, keyb);
     } catch (e) {
       system = `${e}${system}`;
@@ -174,7 +175,7 @@ class BotHelper {
     if (location[0] && location[1]) {
       const {from} = message;
       const {id: userId} = from;
-      const {routes, type} = await db.GetUser(userId);
+      const {routes, type, total: ttlCnt} = await db.GetUser(userId);
       const loc = {
         type: 'Point',
         coordinates: location,
@@ -198,7 +199,7 @@ class BotHelper {
       }
       if (routes === 2) {
         const total = await db.getActiveCnt(userId);
-        keyb = keyboards.driver(lang, 3, total);
+        keyb = keyboards.driver(lang, 3, ttlCnt, total);
         await db.addRouteB(routeData, loc);
         await db.updateOne(userId);
       }
@@ -212,24 +213,20 @@ class BotHelper {
     const {from} = msg;
     const {id, language_code: lang} = from;
     db.stopAll(id).then(() => {
-      const keyb = keyboards.driver(lang, 3, 0);
+      const keyb = keyboards.driver(lang, 3, 1);
       ctx.reply(messages.stoppedAll(), keyb);
     });
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async myRoutes(id, page = 1, _id = '') {
+  getRoute(id, _id) {
+    return db.getRoute(id, _id);
+  }
+
+  async myRoutes(id, page = 1) {
     const cnt = await db.routesCnt(id);
-    let r;
-    if (_id) {
-      r = await db.getRoute(id, _id);
-      if (r) {
-        r = [r];
-      }
-    } else {
-      r = await db.getRoutes(id, page, this.perPage);
-      r = r.map(i => i.toObject());
-    }
+    let r = await db.getRoutes(id, page, this.perPage);
+    r = r.map(i => i.toObject());
     return {cnt, routes: r};
   }
 
