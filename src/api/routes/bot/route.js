@@ -6,10 +6,7 @@ const {checkAdmin} = require('../../utils');
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 function checkLoc(l) {
   const val = parseFloat(l);
-  if (!Number.isNaN(val) && val <= 90 && val >= -90) {
-    return true;
-  }
-  return false;
+  return !Number.isNaN(val) && val <= 90 && val >= -90;
 }
 function checkLocation(loc) {
   return checkLoc(loc[0]) && checkLoc(loc[1]);
@@ -60,17 +57,8 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async addRoute(ctx) {
-    const msg = ctx.update.callback_query;
-    const {from} = msg;
-    await db.clearRoutes(from.id);
-    const keyb = keyboards.fr();
-    const txt = messages.driverNewRoute();
-    try {
-      ctx.reply(txt, keyb);
-    } catch (e) {
-      // system = `${e}${system}`;
-    }
+  async addRoute(id) {
+    await db.clearRoutes(id);
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -80,7 +68,7 @@ class BotHelper {
     }
     const {from} = ctx.message;
     const {id: userId, language_code: lang} = from;
-    const keyb = keyboards.nextProcess(1);
+    const keyb = keyboards.nextProcess(1, lang);
     const txt = messages.point(1, lang);
     const name = ctx.update.message.text;
     await db.addRoute({userId}, {name});
@@ -96,28 +84,16 @@ class BotHelper {
     if (checkAdmin(ctx)) {
       return;
     }
-    let from;
-    if (ctx.update && ctx.update.callback_query) {
-      const msg = ctx.update.callback_query;
-      const {from: f} = msg;
-      from = f;
-    } else {
-      const {from: f} = ctx.message;
-      from = f;
-    }
-    const {id, language_code: lang} = from;
+    const {from: f} = ctx.message;
+    const from = f;
+    const {language_code: lang} = from;
     const user = from;
     user.type = type;
-    const {routes, total: totalRoutesCount} = await db.updateUser(user);
-    let total = 0;
-    console.log(totalRoutesCount);
-    if (totalRoutesCount) {
-      total = await db.getActiveCnt(id);
-    }
+    const {total: totalRoutesCount} = await db.updateUser(user);
     let system = '';
     try {
       const txt = messages.home(lang);
-      const keyb = keyboards.driver(lang, routes, totalRoutesCount, total);
+      const keyb = keyboards.driver(lang, totalRoutesCount);
       ctx.reply(txt, keyb);
     } catch (e) {
       system = `${e}${system}`;
@@ -128,27 +104,41 @@ class BotHelper {
     }
   }
 
-  async goHome(ctx) {
-    const {from, message} = ctx.update.callback_query;
-    const {id, language_code: lang} = from;
-    const user = from;
-    const mid = message.message_id;
-    const {routes: r, total: ttlCnt} = await db.GetUser(
-      user.id,
-      'routes total',
-    );
-    const routes = r;
-    const totalRoutesCount = ttlCnt;
-
+  // eslint-disable-next-line class-methods-use-this
+  async getCounts(id) {
+    const {total: totalRoutesCount} = await db.GetUser(id);
     let total = 0;
-    if (routes === 3 && totalRoutesCount) {
+    if (totalRoutesCount) {
       total = await db.getActiveCnt(id);
     }
+    return {total, count: totalRoutesCount};
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async driverTypeChange(chat, type) {
+    const user = chat;
+    user.type = parseInt(type, 10);
+    const {routes, total: totalRoutesCount} = await db.updateUser(user);
+    return {routes, count: totalRoutesCount};
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async goHome(from) {
+    const {id, language_code: lang} = from;
+    const {total: ttlCnt} = await db.GetUser(id, 'total');
+    const totalRoutesCount = ttlCnt;
+    const txt = messages.home(lang);
+    const keyb = keyboards.driver(lang, totalRoutesCount);
+    return {txt, keyb};
+  }
+
+  async goHomeCb(ctx) {
+    const {from, message} = ctx.update.callback_query;
+    const mid = message.message_id;
     let system = '';
     try {
-      const txt = messages.home(lang);
-      const keyb = keyboards.driver(lang, routes, totalRoutesCount, total);
-      this.edit(user.id, mid, null, txt, keyb);
+      const {txt, keyb} = await this.goHome(from);
+      this.edit(from.id, mid, null, txt, keyb);
     } catch (e) {
       system = `${e}${system}`;
     }
@@ -203,13 +193,13 @@ class BotHelper {
         status: 0,
       };
       let txt = messages.success(lang);
-      let keyb = keyboards.nextProcess(1);
+      let keyb = keyboards.nextProcess(1, lang);
       if (!routes) {
         txt = messages.driverNewRoute();
         keyb = keyboards.fr();
       }
       if (routes === 1) {
-        keyb = keyboards.nextProcess(2);
+        keyb = keyboards.nextProcess(2, lang);
         txt = messages.point(2, lang);
         await db.addRouteA(routeData, loc);
       }
@@ -220,22 +210,15 @@ class BotHelper {
       }
       ctx.reply(txt, keyb);
       if (routes === 2) {
-        const total = await db.getActiveCnt(userId);
-        keyb = keyboards.driver(lang, 3, ttlCnt, total);
+        keyb = keyboards.driver(lang, ttlCnt + 1);
         this.botMessage(userId, messages.home(lang), keyb);
       }
     }
   }
 
   // eslint-disable-next-line class-methods-use-this
-  stopAll(ctx) {
-    const msg = ctx.update.callback_query;
-    const {from} = msg;
-    const {id, language_code: lang} = from;
-    db.stopAll(id).then(() => {
-      const keyb = keyboards.driver(lang, 3, 1);
-      ctx.reply(messages.stoppedAll(), keyb);
-    });
+  stopAll(id) {
+    return db.stopAll(id);
   }
 
   // eslint-disable-next-line class-methods-use-this
