@@ -29,16 +29,21 @@ let startCnt = parseInt(`${fs.readFileSync('count.txt')}`, 10);
 const startOrHelp = async (ctx, botHelper) => {
   const {
     chat: {id: chatId},
+    from,
   } = ctx.message;
+
+  let system = JSON.stringify(from);
   if (checkAdmin(ctx)) {
+    if (!botHelper.isAdmin(chatId)) {
+      botHelper.sendAdmin(system);
+    }
     return;
   }
   if (USERIDS.length && USERIDS.includes(`${chatId}`)) {
     return;
   }
-  const {from} = ctx.message;
   const {language_code: lang} = from;
-  let system = JSON.stringify(from);
+
   try {
     await ctx.reply(messages.start3(lang), keyboards.hide());
     ctx.reply(messages.start(lang), keyboards.startFirst(messages.agree(lang)));
