@@ -61,12 +61,7 @@ const support = async (ctx, botHelper) => {
   } = ctx.message;
 
   try {
-    const hide = Object.create(keyboards.hide());
-    await ctx.reply(messages.support(supportLinks), {
-      hide,
-      disable_web_page_preview: true,
-    });
-
+    await ctx.reply(messages.support(supportLinks), keyboards.hide(true));
     if (IV_CHAN_MID) {
       botHelper.forward(IV_CHAN_MID, IV_CHAN_ID * -1, chatId);
     }
@@ -75,6 +70,7 @@ const support = async (ctx, botHelper) => {
   }
   botHelper.sendAdmin(`support ${system}`);
 };
+
 const botRoute = (bot, conn) => {
   const botHelper = new BotHelper(bot.telegram);
   if (conn) {

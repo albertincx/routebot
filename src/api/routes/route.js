@@ -142,7 +142,7 @@ const format = (bot, botHelper) => {
       await BH2.stopAll(id);
       ctx.answerCbQuery(cbqId, {text: messages.stoppedAll(lang)});
       ctx.reply(messages.stoppedAll(lang), keyboards.hide());
-      const keyb = keyboards.driver(lang, 1);
+      const keyb = keyboards.driver(lang);
       BH2.edit(id, mId, null, messages.home(lang), keyb);
     }
     /** @alias addRoute */
@@ -150,16 +150,14 @@ const format = (bot, botHelper) => {
       const {id, language_code: lang} = from;
       // eslint-disable-next-line consistent-return
       await BH2.addRoute(id);
-      const txt = messages.driverNewRoute(lang);
-      const keyb = keyboards.fr();
-      const text = messages.driverStartNewRoute(lang);
-      BH2.botMessage(id, text, keyboards.next(lang));
       try {
+        const txt = messages.driverStartNewRoute(lang);
+        const keyb = keyboards.fr();
         ctx.reply(txt, keyb);
       } catch (e) {
         // system = `${e}${system}`;
       }
-      ctx.answerCbQuery(cbqId, {text: messages.addRoute(lang)});
+      ctx.answerCbQuery(cbqId, {text: messages.addName(lang)});
       return;
     }
     /** @alias start */
@@ -195,9 +193,9 @@ const format = (bot, botHelper) => {
       try {
         const [, type] = data.match(/type_([0-9])/);
         const {id, language_code: lang} = from;
-        const {count} = await BH2.driverTypeChange(from, type);
+        await BH2.driverTypeChange(from, type);
         const txt = messages.home(lang);
-        const keyb = keyboards.driver(lang, count);
+        const keyb = keyboards.driver(lang);
         BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text: messages.account(lang)});
       } catch (e) {
@@ -213,6 +211,7 @@ const format = (bot, botHelper) => {
         const {cnt, routes = []} = await BH2.myRoutes(id, parseInt(page, 10));
         const pagi = getPagi(cnt, BH2.perPage, routes, parseInt(page, 10));
         const home = keyboards.home(lang);
+        pagi.push(keyboards.addRoute(lang));
         pagi.push(home);
         const pagination = keyboards.inline(pagi);
         const txt = messages.routesList();
@@ -234,8 +233,9 @@ const format = (bot, botHelper) => {
           `${status === 1 ? 'deactivate' : 'activate'}_${_id}_${page}`,
         ];
         if (status === 1) {
-          callbacks.push(`find_1_${_id}_0`);
+          callbacks.push(`find_1_${_id}`);
         }
+        console.log(lang);
         const keyb = keyboards.editRoute(lang, callbacks, status);
         BH2.edit(id, mId, null, printRouteOne([route], lang), keyb);
       } catch (e) {
@@ -246,8 +246,7 @@ const format = (bot, botHelper) => {
     /** @alias status */
     if (data.match(/(activate|deactivate)_(.*?)/)) {
       try {
-        const {chat} = message;
-        const {id, language_code: lang} = chat;
+        const {id, language_code: lang} = from;
         const [, status, _id, page] = data.match(
           /(activate|deactivate)_(.*?)_([0-9]+)$/,
         );
@@ -257,9 +256,10 @@ const format = (bot, botHelper) => {
           `${status === 'activate' ? 'deactivate' : 'activate'}_${_id}_${page}`,
         ];
         if (status === 'activate') {
-          callbacks.push(`find_${page}_${_id}_0`);
+          callbacks.push(`find_${page}_${_id}`);
         }
         const stNum = status === 'activate' ? 1 : 0;
+        console.log(lang);
         const keyb = keyboards.editRoute(lang, callbacks, stNum);
         await BH2.edit(id, mId, null, printRouteOne(routes, lang), keyb);
         const text = messages.status(stNum, lang, messages.icon(stNum));
@@ -272,11 +272,8 @@ const format = (bot, botHelper) => {
     /** @alias find */
     if (data.match(/find_(.*?)/)) {
       try {
-        console.log('from ', from, 'mess ', message);
         const {id, language_code: lang} = from;
-        const [, page = '1', _id, isNew] = data.match(
-          /find_([0-9]+)_(.*?)_([0-9])$/,
-        );
+        const [, page = '1', _id] = data.match(/find_([0-9]+)_(.*?)$/);
         const {cnt, routes = []} = await BH2.findRoutes(id, page, _id);
         const pagi = getPagi(cnt, 1, [], parseInt(page, 10), `${_id}_1`);
         const home = keyboards.home(lang);

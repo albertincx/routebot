@@ -14,7 +14,15 @@ const actions = {
   passenger: 'type_3',
   settings: 'menu_settings',
 };
-
+function addRoute(lang) {
+  const txt = messages.addRoute(lang);
+  return [
+    {
+      text: txt,
+      callback_data: actions.addRoute,
+    },
+  ];
+}
 function home(lang, txt = '') {
   return [
     {
@@ -32,19 +40,14 @@ function begin(lang) {
   return Markup.inlineKeyboard([[type1, type2], [t], back]).resize();
 }
 
-function driver(lang, total) {
-  const addRoute = messages.addRoute(lang);
+function driver(lang) {
   const settings1 = messages.settings(lang);
   const myRoutes = messages.myRoutes(lang);
-  const addR = Markup.button.callback(addRoute, actions.addRoute);
   const st = Markup.button.callback(settings1, actions.settings);
-  let btns = [[addR]];
-  if (total) {
-    btns = [[Markup.button.callback(myRoutes, actions.page1), addR]];
-    btns.push([st]);
-  }
+  const btns = [[Markup.button.callback(myRoutes, actions.page1)], [st]];
   return Markup.inlineKeyboard(btns);
 }
+
 function settings(lang, total, hasActive = 0) {
   const changeType = messages.changeType(lang);
   const stop = messages.stopRoutes(lang);
@@ -65,8 +68,13 @@ function startFirst(txt) {
   ]);
 }
 
-function hide() {
-  return Markup.removeKeyboard();
+function hide(mark = false) {
+  const k = Markup.removeKeyboard();
+  if (mark) {
+    k.parse_mode = 'Markdown';
+    k.disable_web_page_preview = true;
+  }
+  return k;
 }
 function locationBtn(txt) {
   return Markup.button.locationRequest(txt);
@@ -76,18 +84,6 @@ function loc1(txt) {
 }
 function loc2(txt) {
   return Markup.keyboard([locationBtn(txt)]);
-}
-
-function next(lang) {
-  const k = Markup.inlineKeyboard([
-    {
-      text: messages.next(lang),
-      callback_data: 'next_process',
-    },
-  ]);
-  k.parse_mode = 'Markdown';
-  k.disable_web_page_preview = true;
-  return k;
 }
 
 function nextProcess(routeType, lang) {
@@ -147,4 +143,4 @@ module.exports.inline = inline;
 module.exports.home = home;
 module.exports.settings = settings;
 module.exports.editRoute = editRoute;
-module.exports.next = next;
+module.exports.addRoute = addRoute;

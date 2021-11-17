@@ -89,11 +89,11 @@ class BotHelper {
     const {language_code: lang} = from;
     const user = from;
     user.type = type;
-    const {total: totalRoutesCount} = await db.updateUser(user);
+    await db.updateUser(user);
     let system = '';
     try {
       const txt = messages.home(lang);
-      const keyb = keyboards.driver(lang, totalRoutesCount);
+      const keyb = keyboards.driver(lang);
       ctx.reply(txt, keyb);
     } catch (e) {
       system = `${e}${system}`;
@@ -106,7 +106,7 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async getCounts(id) {
-    const {total: totalRoutesCount} = await db.GetUser(id);
+    const {total: totalRoutesCount} = await db.GetUser(id, 'total');
     let total = 0;
     if (totalRoutesCount) {
       total = await db.getActiveCnt(id);
@@ -124,11 +124,9 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async goHome(from) {
-    const {id, language_code: lang} = from;
-    const {total: ttlCnt} = await db.GetUser(id, 'total');
-    const totalRoutesCount = ttlCnt;
+    const {language_code: lang} = from;
     const txt = messages.home(lang);
-    const keyb = keyboards.driver(lang, totalRoutesCount);
+    const keyb = keyboards.driver(lang);
     return {txt, keyb};
   }
 
@@ -174,7 +172,7 @@ class BotHelper {
     if (location[0] && location[1]) {
       const {from} = message;
       const {id: userId} = from;
-      const {routes, type, total: ttlCnt} = await db.GetUser(userId);
+      const {routes, type} = await db.GetUser(userId, 'routes type');
       if (!checkLocation(location)) {
         const txt = messages.point(routes, lang);
         const keyb = keyboards.nextProcess(routes, lang);
@@ -195,7 +193,7 @@ class BotHelper {
       let txt = messages.success(lang);
       let keyb = keyboards.nextProcess(1, lang);
       if (!routes) {
-        txt = messages.driverNewRoute();
+        txt = messages.driverStartNewRoute(lang);
         keyb = keyboards.fr();
       }
       if (routes === 1) {
@@ -208,9 +206,9 @@ class BotHelper {
         await db.addRouteB(routeData, loc);
         await db.updateOne(userId);
       }
-      ctx.reply(txt, keyb);
+      await ctx.reply(txt, keyb);
       if (routes === 2) {
-        keyb = keyboards.driver(lang, ttlCnt + 1);
+        keyb = keyboards.driver(lang);
         this.botMessage(userId, messages.home(lang), keyb);
       }
     }
