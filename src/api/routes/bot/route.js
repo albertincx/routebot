@@ -4,7 +4,13 @@ const keyboards = require('../../../keyboards/keyboards');
 const {checkAdmin} = require('../../utils');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
-
+function checkLoc(l) {
+  const val = parseFloat(l);
+  return !Number.isNaN(val) && val <= 90 && val >= -90;
+}
+function checkLocation(loc) {
+  return checkLoc(loc[0]) && checkLoc(loc[1]);
+}
 class BotHelper {
   constructor(botHelper) {
     this.bot = botHelper.getBot();
@@ -51,21 +57,8 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async addRoute(ctx) {
-    if (checkAdmin(ctx)) {
-      return;
-    }
-    const {from} = ctx.message;
-    await db.clearRoutes(from.id);
-    const keyb = keyboards.fr();
-    const txt = messages.driverNewRoute();
-    keyb.parse_mode = 'Markdown';
-    keyb.disable_web_page_preview = true;
-    try {
-      ctx.reply(txt, keyb);
-    } catch (e) {
-      // system = `${e}${system}`;
-    }
+  async addRoute(id) {
+    await db.clearRoutes(id);
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -74,53 +67,11 @@ class BotHelper {
       return;
     }
     const {from} = ctx.message;
-    const user = from;
-    const keyb = keyboards.nextProcess(1);
-    const txt = messages.driverStartPoint();
+    const {id: userId, language_code: lang} = from;
+    const keyb = keyboards.nextProcess(1, lang);
+    const txt = messages.point(1, lang);
     const name = ctx.update.message.text;
-    await db.addRoute({userId: user.id}, {name});
-    keyb.parse_mode = 'Markdown';
-    keyb.disable_web_page_preview = true;
-    try {
-      ctx.reply(txt, keyb);
-    } catch (e) {
-      // system = `${e}${system}`;
-    }
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  async nextProcess(ctx) {
-    if (checkAdmin(ctx)) {
-      return;
-    }
-    const {from} = ctx.message;
-    const {routes: ur, name: userRouteName} = await db.GetUser(from.id);
-    let routes = ur;
-    if (!userRouteName) {
-      routes = undefined;
-    }
-    let keyb = keyboards.nextProcess();
-    let txt = messages.whatNext();
-    let routeType = 0;
-    if (!routes) {
-      txt = messages.driverNewRoute();
-    }
-    if (routes === 1) {
-      txt = messages.driverStartPoint();
-      routeType = 2;
-    }
-    if (routes === 2) {
-      txt = messages.driverLastPoint();
-      routeType = 3;
-    }
-    if (!routes || routes < 3) {
-      keyb = keyboards.nextProcess(routeType);
-      if (!routes) {
-        keyb = keyboards.fr();
-      }
-      keyb.parse_mode = 'Markdown';
-      keyb.disable_web_page_preview = true;
-    }
+    await db.addRoute({userId}, {name});
     try {
       ctx.reply(txt, keyb);
     } catch (e) {
@@ -133,21 +84,16 @@ class BotHelper {
     if (checkAdmin(ctx)) {
       return;
     }
-    const user = ctx.message.from;
+    const {from: f} = ctx.message;
+    const from = f;
+    const {language_code: lang} = from;
+    const user = from;
     user.type = type;
-    const {routes, total: ttlCnt} = await db.updateUser(user);
-    let total = 0;
-    if (routes === 3 && ttlCnt) {
-      total = await db.getActiveCnt(user.id);
-    }
+    await db.updateUser(user);
     let system = '';
     try {
-      const txt = messages.whatNext();
-      const keyb = keyboards.driver(routes, total);
-      // txt = messages.driverNewRoute(type);
-      // keyb = keyboards.fr();
-      // keyb.parse_mode = 'Markdown';
-      // keyb.disable_web_page_preview = true;
+      const txt = messages.home(lang);
+      const keyb = keyboards.driver(lang);
       ctx.reply(txt, keyb);
     } catch (e) {
       system = `${e}${system}`;
@@ -158,12 +104,57 @@ class BotHelper {
     }
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  async getCounts(id) {
+    const {total: totalRoutesCount} = await db.GetUser(id, 'total');
+    let total = 0;
+    if (totalRoutesCount) {
+      total = await db.getActiveCnt(id);
+    }
+    return {total, count: totalRoutesCount};
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async driverTypeChange(chat, type) {
+    const user = chat;
+    user.type = parseInt(type, 10);
+    const {routes, total: totalRoutesCount} = await db.updateUser(user);
+    return {routes, count: totalRoutesCount};
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async goHome(from) {
+    const {language_code: lang} = from;
+    const txt = messages.home(lang);
+    const keyb = keyboards.driver(lang);
+    return {txt, keyb};
+  }
+
+  async goHomeCb(ctx) {
+    const {from, message} = ctx.update.callback_query;
+    const mid = message.message_id;
+    let system = '';
+    try {
+      const {txt, keyb} = await this.goHome(from);
+      this.edit(from.id, mid, null, txt, keyb);
+    } catch (e) {
+      system = `${e}${system}`;
+    }
+
+    if (system) {
+      this.botHelper.sendAdmin(system);
+    }
+  }
+
   // eslint-disable-next-line class-methods-use-this,consistent-return
-  async processLocation(ctx, isFromText = false) {
+  async processLocation(ctx, locationFromTxt = []) {
     const {update} = ctx;
     const {message} = update;
+    const {
+      from: {language_code: lang},
+    } = message;
     if (message.reply_to_message) {
-      if (message.reply_to_message.text.match(messages.check)) {
+      if (message.reply_to_message.text.match(messages.check(lang))) {
         // Send the name of your route
 
         return this.nextProcessName(ctx);
@@ -171,17 +162,24 @@ class BotHelper {
       // eslint-disable-next-line consistent-return
       return;
     }
-    const {location: msgLocation, text} = message;
+    const {location: msgLocation} = message;
     let location = [];
-    if (isFromText) {
-      location = text.split(',').map(Number);
+    if (locationFromTxt.length) {
+      location = locationFromTxt;
     } else if (msgLocation) {
       location = [msgLocation.latitude, msgLocation.longitude];
     }
     if (location[0] && location[1]) {
-      const {chat} = message;
-      const {id: userId} = chat;
-      const {routes, type} = await db.GetUser(userId);
+      const {from} = message;
+      const {id: userId} = from;
+      const {routes, type} = await db.GetUser(userId, 'routes type');
+      if (!checkLocation(location)) {
+        const txt = messages.point(routes, lang);
+        const keyb = keyboards.nextProcess(routes, lang);
+        ctx.reply(txt, keyb);
+        // eslint-disable-next-line consistent-return
+        return;
+      }
       const loc = {
         type: 'Point',
         coordinates: location,
@@ -192,54 +190,44 @@ class BotHelper {
         type,
         status: 0,
       };
-      let txt = 'Completed';
-      let keyb = keyboards.nextProcess(1);
+      let txt = messages.success(lang);
+      let keyb = keyboards.nextProcess(1, lang);
       if (!routes) {
-        txt = messages.driverNewRoute();
-        keyb = keyboards.nextProcess();
+        txt = messages.driverStartNewRoute(lang);
+        keyb = keyboards.fr();
       }
       if (routes === 1) {
-        keyb = keyboards.nextProcess(2);
-        txt = messages.driverLastPoint();
+        keyb = keyboards.nextProcess(2, lang);
+        txt = messages.point(2, lang);
         await db.addRouteA(routeData, loc);
-        keyb.parse_mode = 'Markdown';
-        keyb.disable_web_page_preview = true;
       }
       if (routes === 2) {
-        const total = await db.getActiveCnt(userId);
-        keyb = keyboards.driver(3, total);
+        keyb = keyboards.hide();
         await db.addRouteB(routeData, loc);
         await db.updateOne(userId);
       }
-      ctx.reply(txt, keyb);
-    }
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  stopAll(ctx) {
-    if (checkAdmin(ctx)) {
-      return;
-    }
-    const user = ctx.message.from;
-    db.stopAll(user.id).then(() => {
-      const keyb = keyboards.driver(3, 0);
-      ctx.reply(messages.stoppedAll(), keyb);
-    });
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  async myRoutes(id, page = 1, _id = '') {
-    const cnt = await db.routesCnt(id);
-    let r;
-    if (_id) {
-      r = await db.getRoute(id, _id);
-      if (r) {
-        r = [r];
+      await ctx.reply(txt, keyb);
+      if (routes === 2) {
+        keyb = keyboards.driver(lang);
+        this.botMessage(userId, messages.home(lang), keyb);
       }
-    } else {
-      r = await db.getRoutes(id, page, this.perPage);
-      r = r.map(i => i.toObject());
     }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  stopAll(id) {
+    return db.stopAll(id);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  getRoute(id, _id) {
+    return db.getRoute(id, _id);
+  }
+
+  async myRoutes(id, page = 1) {
+    const cnt = await db.routesCnt(id);
+    let r = await db.getRoutes(id, page, this.perPage);
+    r = r.map(i => i.toObject());
     return {cnt, routes: r};
   }
 

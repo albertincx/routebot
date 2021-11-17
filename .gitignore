@@ -2,6 +2,7 @@
 package-lock.json
 data/
 .data/
+dist/*
 .conf/
 .cache/
 images/
@@ -55,7 +56,7 @@ public/admin/
 .conf/test.txt
 yarn.lock
 count.txt
-
+docker-compose.yml
 .now
 distr/*
 src/tests/*

@@ -6,39 +6,40 @@ const TASKS_CHANNEL = process.env.TASKS_DEV || 'route1';
 const TASKS2_CHANNEL = process.env.TASKS2_DEV || 'route2';
 let rchannel = null;
 
-const starts = {
-  start: process.hrtime(),
-  start2: process.hrtime(),
-  start3: process.hrtime(),
+const RABBIT_1 = 'rabbit';
+const RABBIT_2 = 'rabbit2';
+const rabbits = {
+  rabbit: process.hrtime(),
+  rabbit2: process.hrtime(),
 };
 let availableOne = true;
 
-const getStartName = q => {
-  let startName = 'start';
+const getRabbitName = q => {
+  let s = RABBIT_1;
   switch (q) {
     case TASKS2_CHANNEL:
-      startName = 'start2';
+      s = RABBIT_2;
       break;
     default:
       break;
   }
-  return startName;
+  return s;
 };
 const elapsedSec = q => {
-  const startName = getStartName(q);
-  logger(startName);
-  return process.hrtime(starts[startName])[0];
+  const s = getRabbitName(q);
+  logger(s);
+  return process.hrtime(rabbits[s])[0];
 };
 const elapsedTime = (q = TASKS_CHANNEL) => {
-  const startName = getStartName(q);
-  let elapsed = process.hrtime(starts[startName])[1] / 1000000;
-  elapsed = `${process.hrtime(starts[startName])[0]}s, ${elapsed.toFixed(0)}`;
+  const s = getRabbitName(q);
+  let elapsed = process.hrtime(rabbits[s])[1] / 1000000;
+  elapsed = `${process.hrtime(rabbits[s])[0]}s, ${elapsed.toFixed(0)}`;
   return `${elapsed}ms ${q}`;
 };
 const resetTime = (q = TASKS_CHANNEL) => {
-  const startName = getStartName(q);
-  logger(`reset ${startName}`);
-  starts[startName] = process.hrtime();
+  const s = getRabbitName(q);
+  logger(`reset ${s}`);
+  rabbits[s] = process.hrtime();
 };
 let connection = null;
 const createChannel = async (queueName = TASKS_CHANNEL) => {

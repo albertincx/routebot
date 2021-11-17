@@ -36,10 +36,12 @@ const startOrHelp = async (ctx, botHelper) => {
   if (USERIDS.length && USERIDS.includes(`${chatId}`)) {
     return;
   }
-  let system = JSON.stringify(ctx.message.from);
+  const {from} = ctx.message;
+  const {language_code: lang} = from;
+  let system = JSON.stringify(from);
   try {
-    await ctx.reply(messages.start3(), keyboards.hide());
-    ctx.reply(messages.start(), keyboards.startFirst());
+    await ctx.reply(messages.start3(lang), keyboards.hide());
+    ctx.reply(messages.start(lang), keyboards.startFirst(messages.agree(lang)));
   } catch (e) {
     system = `${e}${system}`;
   }
@@ -59,12 +61,7 @@ const support = async (ctx, botHelper) => {
   } = ctx.message;
 
   try {
-    const hide = Object.create(keyboards.hide());
-    await ctx.reply(messages.support(supportLinks), {
-      hide,
-      disable_web_page_preview: true,
-    });
-
+    await ctx.reply(messages.support(supportLinks), keyboards.hide(true));
     if (IV_CHAN_MID) {
       botHelper.forward(IV_CHAN_MID, IV_CHAN_ID * -1, chatId);
     }
@@ -73,14 +70,15 @@ const support = async (ctx, botHelper) => {
   }
   botHelper.sendAdmin(`support ${system}`);
 };
+
 const botRoute = (bot, conn) => {
   const botHelper = new BotHelper(bot.telegram);
   if (conn) {
     conn.on('error', () => {
-      botHelper.disDb();
+      botHelper.sendAdmin('db conn error');
     });
   } else {
-    botHelper.disDb();
+    botHelper.sendAdmin('db conn error');
   }
 
   bot.command(['/start', '/help'], ctx => startOrHelp(ctx, botHelper));
@@ -104,7 +102,7 @@ const botRoute = (bot, conn) => {
     }
   });
 
-  route(bot, botHelper);
+  route(bot, botHelper, startOrHelp);
   bot.launch();
 
   if (startCnt % 10 === 0 || process.env.DEV) {

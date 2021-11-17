@@ -31,23 +31,16 @@ class BotHelper {
       .catch(e => this.sendError(e, `${chatId}${text}`));
   }
 
-  sendAdmin(textParam, chatIdParam = '', mark = false) {
+  sendAdmin(textParam, chatIdParam = '') {
     let chatId = chatIdParam;
     let text = textParam;
-    let opts = {};
-    if (mark === true) {
-      opts = {
-        parse_mode: 'Markdown',
-        disable_web_page_preview: true,
-      };
-    }
     if (!chatId) {
       chatId = TG_ADMIN;
     }
     if (`${chatId}` === `${this.tgAdmin}`) {
       text = `service: ${text}`;
     }
-    return this.bot.sendMessage(chatId, text, opts).catch(() => {});
+    return this.bot.sendMessage(chatId, text).catch(() => {});
   }
 
   parseConfig(params) {
