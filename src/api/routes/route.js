@@ -235,7 +235,6 @@ const format = (bot, botHelper) => {
         if (status === 1) {
           callbacks.push(`find_1_${_id}`);
         }
-        console.log(lang);
         const keyb = keyboards.editRoute(lang, callbacks, status);
         BH2.edit(id, mId, null, printRouteOne([route], lang), keyb);
       } catch (e) {
@@ -259,7 +258,6 @@ const format = (bot, botHelper) => {
           callbacks.push(`find_${page}_${_id}`);
         }
         const stNum = status === 'activate' ? 1 : 0;
-        console.log(lang);
         const keyb = keyboards.editRoute(lang, callbacks, stNum);
         await BH2.edit(id, mId, null, printRouteOne(routes, lang), keyb);
         const text = messages.status(stNum, lang, messages.icon(stNum));
