@@ -39,6 +39,7 @@ const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
 const routesBCol = Any.collection.conn.model(ROUTES_B, Any.schema);
 const DIR_A = 'pointA';
 const DIR_B = 'pointB';
+const MAX_POINT_A_CNT = 50;
 
 const stat = filter => routesCol.countDocuments(filter);
 
@@ -294,6 +295,12 @@ const addRouteA = async (data, loc, dir = DIR_A) => {
   if (dir === DIR_B) {
     saveRoute.pointAId = res._id;
     await addRoute({userId, name}, saveRoute, routes, routesBCol);
+    if (saveRoute.type !== 3) {
+      const {cnt, routes: r} = findRoutes(saveRoute, 1, MAX_POINT_A_CNT, 3);
+      if (cnt) {
+        console.log(r);
+      }
+    }
   }
 };
 const addRoute = async (
@@ -358,9 +365,17 @@ const getPipeline = (
   },
 ];
 
-const findRoutes = async (route, skip, limit) => {
+const findRoutes = async (route, skip, limit, type = 4) => {
   const $match = {userId: {$ne: route.userId}, status: 1};
-  const pipeline = getPipeline(route, $match, 0, 50);
+  if (type === 0 || type === 3) {
+    if (type === 3) {
+      $match.type = type;
+    } else {
+      $match.type = {$in: [1, 2]};
+    }
+  }
+  // console.log($match);
+  const pipeline = getPipeline(route, $match, 0, MAX_POINT_A_CNT);
   const aggr = await routesCol.aggregate(pipeline);
   const pointAIds = [];
   if (aggr[0]) {
@@ -375,22 +390,31 @@ const findRoutes = async (route, skip, limit) => {
     const pipelineB = getPipeline(route, pointBMatch, skip, limit, DIR_B, {
       name: 1,
       pointAId: 1,
+      type: 1,
     });
     aggrB = await routesBCol.aggregate(pipelineB);
     // console.log(JSON.stringify(pipelineB, null, 4));
     // console.log(JSON.stringify(aggrB, null, 4));
   }
-
-  return aggrB;
+  let r;
+  let cnt;
+  if (aggrB && aggrB[0]) {
+    const {data, metadata = []} = aggrB[0];
+    r = data;
+    cnt = (metadata[0] && metadata[0].total) || 0;
+  }
+  return {cnt, routes: r};
 };
-
-const getRoutes = (userId, pageP, perPage, near = false) => {
+const getRoutesNear = (userId, pageP, type, perPage = 1) => {
   const page = parseInt(pageP, 10) || 1;
   const limit = parseInt(perPage, 10) || 5;
   const startIndex = (page - 1) * limit;
-  if (near) {
-    return findRoutes(userId, startIndex, limit);
-  }
+  return findRoutes(userId, startIndex, limit, type);
+};
+const getRoutes = (userId, pageP, perPage) => {
+  const page = parseInt(pageP, 10) || 1;
+  const limit = parseInt(perPage, 10) || 5;
+  const startIndex = (page - 1) * limit;
   return routesCol.find({userId}).skip(startIndex).limit(limit);
 };
 
@@ -428,3 +452,4 @@ module.exports.getRoutes = getRoutes;
 module.exports.statusRoute = statusRoute;
 module.exports.getRoute = getRoute;
 module.exports.checkUser = checkUser;
+module.exports.getRoutesNear = getRoutesNear;

@@ -26,16 +26,19 @@ function addRoute(lang) {
 function home(lang, txt = '') {
   return [
     {
-      text: txt || messages.home(lang),
+      text: txt || messages.menu(lang),
       callback_data: actions.startHome,
     },
   ];
 }
 
 function begin(lang) {
-  const type1 = Markup.button.callback(messages.driver(lang), actions.driver);
-  const type2 = Markup.button.callback(messages.sharing(lang), actions.sharing);
-  const t = Markup.button.callback(messages.passenger(lang), actions.passenger);
+  const t1 = messages.getType(lang, 1);
+  const t2 = messages.getType(lang, 2);
+  const t3 = messages.getType(lang, 3);
+  const type1 = Markup.button.callback(t1, actions.driver);
+  const type2 = Markup.button.callback(t2, actions.sharing);
+  const t = Markup.button.callback(t3, actions.passenger);
   const back = home(lang);
   return Markup.inlineKeyboard([[type1, type2], [t], back]).resize();
 }
@@ -120,15 +123,25 @@ function editRoute(lang, callbacks, status) {
       callback_data: callbacks[1],
     },
   ];
-  let keysArray = keys;
+  const keysArray = [keys];
   if (callbacks[2]) {
     const findBtn = {
       text: messages.nearBy(lang),
       callback_data: callbacks[2],
     };
-    keysArray = [keys, [findBtn]];
+    keysArray.push([findBtn]);
   }
-  return Markup.inlineKeyboard(keysArray);
+  if (callbacks[3]) {
+    const findBtn = {
+      text: messages.nearBy(lang, true),
+      callback_data: callbacks[3],
+    };
+    keysArray.push([findBtn]);
+  }
+  const k = Markup.inlineKeyboard(keysArray);
+  k.parse_mode = 'Markdown';
+  k.disable_web_page_preview = true;
+  return k;
 }
 module.exports = {
   actions,

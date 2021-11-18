@@ -1,18 +1,17 @@
 const BUTTONS = {
   driver: {
-    label: "1. 🚘 I'm a driver (with car)",
+    label: '🚘 Driver (with car)',
+    labelRU: '🚘 Водитель (свое авто)',
     command: '/driver',
   },
   sharingDriver: {
-    label: "2. 🚖 I'm a car sharing driver",
+    label: '🚖 Car sharing driver',
+    labelRU: '🚖 Водитель (каршеринг)',
     command: '/sharing',
   },
   passenger: {
-    label: "3. 🐶 I'm a passenger",
-    command: '/passenger',
-  },
-  findRoute: {
-    label: 'Find route',
+    label: '🐶 Passenger',
+    labelRU: '🐶 Пассажир',
     command: '/passenger',
   },
 };

@@ -4,13 +4,16 @@ const keyboards = require('../../../keyboards/keyboards');
 const {checkAdmin} = require('../../utils');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
+
 function checkLoc(l) {
   const val = parseFloat(l);
   return !Number.isNaN(val) && val <= 90 && val >= -90;
 }
+
 function checkLocation(loc) {
   return checkLoc(loc[0]) && checkLoc(loc[1]);
 }
+
 class BotHelper {
   constructor(botHelper) {
     this.bot = botHelper.getBot();
@@ -92,7 +95,7 @@ class BotHelper {
     await db.updateUser(user);
     let system = '';
     try {
-      const txt = messages.home(lang);
+      const txt = messages.home(lang, type);
       const keyb = keyboards.driver(lang);
       ctx.reply(txt, keyb);
     } catch (e) {
@@ -124,8 +127,9 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async goHome(from) {
-    const {language_code: lang} = from;
-    const txt = messages.home(lang);
+    const {id, language_code: lang} = from;
+    const {type} = await db.GetUser(id, 'type');
+    const txt = messages.home(lang, type);
     const keyb = keyboards.driver(lang);
     return {txt, keyb};
   }
@@ -208,8 +212,9 @@ class BotHelper {
       }
       await ctx.reply(txt, keyb);
       if (routes === 2) {
+        txt = messages.home(lang, type);
         keyb = keyboards.driver(lang);
-        this.botMessage(userId, messages.home(lang), keyb);
+        this.botMessage(userId, txt, keyb);
       }
     }
   }
@@ -232,16 +237,15 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async findRoutes(id, page = 1, _id = '') {
+  async findRoutes(id, page, _id, type) {
     const route = await db.getRoute(id, _id);
     let cnt = 0;
     let r = [];
     if (route) {
-      const [aggr] = await db.getRoutes(route, page, 1, true);
-      if (aggr) {
-        const {data, metadata = []} = aggr;
-        r = data;
-        cnt = (metadata[0] && metadata[0].total) || 0;
+      const {cnt: cc, routes: rr} = await db.getRoutesNear(route, page, type);
+      if (cc) {
+        cnt = cc;
+        r = rr;
       }
     }
 
@@ -254,9 +258,9 @@ class BotHelper {
     await db.statusRoute(chatId, _id, {status});
     const r = await db.getRoute(chatId, _id);
     if (r) {
-      return {routes: [r]};
+      return r;
     }
-    return {routes: []};
+    return {};
   }
 
   // eslint-disable-next-line class-methods-use-this
