@@ -43,24 +43,22 @@ function begin(lang) {
   return Markup.inlineKeyboard([[type1, type2], [t], back]).resize();
 }
 
-function driver(lang) {
-  const settings1 = messages.settings(lang);
+function driver(lang, type) {
+  const l = messages.settings(lang);
   const myRoutes = messages.myRoutes(lang);
-  const st = Markup.button.callback(settings1, actions.settings);
-  const btns = [[Markup.button.callback(myRoutes, actions.page1)], [st]];
-  return Markup.inlineKeyboard(btns);
+  const s = Markup.button.callback(l, `${actions.settings}${type}`);
+  const keys = [[Markup.button.callback(myRoutes, actions.page1)], [s]];
+  return Markup.inlineKeyboard(keys);
 }
 
-function settings(lang, total, hasActive = 0) {
+function settings(lang, hasActive, type) {
   const changeType = messages.changeType(lang);
   const stop = messages.stopRoutes(lang);
-  const ct = Markup.button.callback(changeType, actions.changeType);
-  const st = Markup.button.callback(stop, actions.stopAll);
-  const btns = [[ct]];
-  if (total) {
-    if (hasActive) {
-      btns.push([st]);
-    }
+  const c = Markup.button.callback(changeType, actions.changeType);
+  const btns = [[c]];
+  if (hasActive) {
+    const s = Markup.button.callback(stop, `${actions.stopAll}${type}`);
+    btns.push([s]);
   }
   btns.push(home(lang, messages.backJust(lang)));
   return Markup.inlineKeyboard(btns);

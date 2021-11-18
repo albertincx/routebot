@@ -66,29 +66,27 @@ function printRouteOne(r, lang) {
     return messages.routesEmpty(lang);
   }
   const status = messages.status(r.status, lang, messages.icon(r.status));
-  const txt = `
+  return `
 ${messages.labelName(lang)}: ${r.name}
 ${messages.labelStatus(lang)}: ${status}
 
 📍${messages.labelA(lang)}: \`\`\`${r.pointA.coordinates}\`\`\`
 📍${messages.labelB(lang)}: \`\`\`${r.pointB.coordinates}\`\`\`
 `;
-  return txt;
 }
+
 function printRouteFound(routes, lang, type) {
   let txt = '';
   if (routes.length === 0) {
     return messages.routesEmpty(lang);
   }
   routes.forEach(r => {
-    const status = messages.status(r.status, lang, messages.icon(r.status));
     let tt = '';
     if (type === 0) {
       tt = `${messages.labelType(lang)}: ${messages.getType(lang, r.type)}`;
     }
     txt += `${tt}
 ${messages.labelName(lang)}: ${r.name}
-${messages.labelStatus(lang)}: ${status}
 `;
   });
   return txt;
@@ -136,19 +134,30 @@ const format = (bot, botHelper) => {
     const [data] = ctx.match;
     /** @alias startHome */
     if (data.match(keyboards.actions.startHome)) {
-      // eslint-disable-next-line consistent-return
-      return BH2.goHomeCb(ctx);
+      let system = '';
+      try {
+        const {txt, keyb} = await BH2.goHome(from);
+        BH2.edit(from.id, mId, null, txt, keyb);
+        ctx.answerCbQuery(cbqId, {text: ''});
+      } catch (e) {
+        system = `${e}${system}`;
+      }
+      if (system) {
+        botHelper.sendAdmin(system);
+      }
+      return;
     }
     /** @alias stopAll */
     if (data.match(keyboards.actions.stopAll)) {
       const {id, language_code: lang} = from;
+      const [, type] = data.match(/stop_all([0-9])/);
       // eslint-disable-next-line consistent-return
       await BH2.stopAll(id);
-      const {type} = await db.GetUser(id, 'type');
       ctx.answerCbQuery(cbqId, {text: messages.stoppedAll(lang)});
       ctx.reply(messages.stoppedAll(lang), keyboards.hide());
-      const txt = messages.home(lang, type);
-      const keyb = keyboards.driver(lang);
+      const {txt, keyb} = BH2.goMenu(lang, parseInt(type, 10));
+      // const txt = messages.home(lang, type);
+      // const keyb = keyboards.driver(lang);
       BH2.edit(id, mId, null, txt, keyb);
     }
     /** @alias addRoute */
@@ -176,6 +185,7 @@ const format = (bot, botHelper) => {
         const {id: userId, language_code: lang} = from;
         const txt = messages.start2(lang);
         BH2.edit(userId, mId, null, txt, keyboards.begin(lang));
+        ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         // system = `${e}${system}`;
       }
@@ -185,11 +195,14 @@ const format = (bot, botHelper) => {
     if (data.match(keyboards.actions.settings)) {
       try {
         const {id, language_code: lang} = from;
-        const {total, count} = await BH2.getCounts(id);
+        const [, type] = data.match(/menu_settings([0-9])/);
+        const {total = 0} = await BH2.getCounts(id);
         const txt = messages.settings(lang);
-        const keyb = keyboards.settings(lang, count, total);
+        const keyb = keyboards.settings(lang, total, type);
         BH2.edit(id, mId, null, txt, keyb);
+        ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
+        console.log(e);
         // system = `${e}${system}`;
       }
       return;
@@ -200,8 +213,7 @@ const format = (bot, botHelper) => {
         const [, type] = data.match(/type_([0-9])/);
         const {id, language_code: lang} = from;
         await BH2.driverTypeChange(from, type);
-        const txt = messages.home(lang, parseInt(type, 10));
-        const keyb = keyboards.driver(lang);
+        const {txt, keyb} = BH2.goMenu(lang, parseInt(type, 10));
         BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text: messages.account(lang)});
       } catch (e) {
@@ -222,6 +234,7 @@ const format = (bot, botHelper) => {
         const pagination = keyboards.inline(pagi);
         const txt = messages.routesList();
         BH2.edit(id, mId, null, txt, pagination);
+        ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
@@ -248,6 +261,7 @@ const format = (bot, botHelper) => {
         }
         const keyb = keyboards.editRoute(lang, callbacks, status);
         BH2.edit(id, mId, null, printRouteOne(route, lang), keyb);
+        ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
@@ -311,6 +325,7 @@ const format = (bot, botHelper) => {
         const pagination = keyboards.inline(pagi);
         const view = printRouteFound(routes, lang, type);
         BH2.edit(id, mId, null, view, pagination);
+        ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;

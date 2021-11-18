@@ -95,8 +95,7 @@ class BotHelper {
     await db.updateUser(user);
     let system = '';
     try {
-      const txt = messages.home(lang, type);
-      const keyb = keyboards.driver(lang);
+      const {txt, keyb} = this.goMenu(lang, type);
       ctx.reply(txt, keyb);
     } catch (e) {
       system = `${e}${system}`;
@@ -129,25 +128,14 @@ class BotHelper {
   async goHome(from) {
     const {id, language_code: lang} = from;
     const {type} = await db.GetUser(id, 'type');
-    const txt = messages.home(lang, type);
-    const keyb = keyboards.driver(lang);
-    return {txt, keyb};
+    return this.goMenu(lang, type);
   }
 
-  async goHomeCb(ctx) {
-    const {from, message} = ctx.update.callback_query;
-    const mid = message.message_id;
-    let system = '';
-    try {
-      const {txt, keyb} = await this.goHome(from);
-      this.edit(from.id, mid, null, txt, keyb);
-    } catch (e) {
-      system = `${e}${system}`;
-    }
-
-    if (system) {
-      this.botHelper.sendAdmin(system);
-    }
+  // eslint-disable-next-line class-methods-use-this
+  goMenu(lang, type) {
+    const txt = messages.home(lang, type);
+    const keyb = keyboards.driver(lang, type);
+    return {txt, keyb};
   }
 
   // eslint-disable-next-line class-methods-use-this,consistent-return
@@ -212,8 +200,9 @@ class BotHelper {
       }
       await ctx.reply(txt, keyb);
       if (routes === 2) {
-        txt = messages.home(lang, type);
-        keyb = keyboards.driver(lang);
+        const {txt: t, keyb: k} = this.goMenu(lang, type);
+        txt = t;
+        keyb = k;
         this.botMessage(userId, txt, keyb);
       }
     }
