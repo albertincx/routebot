@@ -11,7 +11,11 @@ const BotHelper2 = require('./bot/route');
 
 rabbitmq.startChannel();
 global.lastIvTime = +new Date();
-
+const NONE = 'none';
+const DEAC = 'deactivate';
+const ACTI = 'activate';
+const SUBS = 'subscribe';
+const UNSUB = 'unsubscribe';
 /**
  * @param ctx
  * @param botHelper BotHelper
@@ -61,30 +65,34 @@ function getPagination(current, total, routs, fromRoute) {
   return [...routs];
 }
 
-function printRouteOne(routes, lang) {
-  let txt = '';
-  if (routes.length === 0) {
+function printRouteOne(r, lang) {
+  if (!r) {
     return messages.routesEmpty(lang);
   }
-  routes.forEach(r => {
-    const status = messages.status(r.status, lang, messages.icon(r.status));
-    txt += `
-Route name: ${r.name}
-Status: ${status}
+  const status = messages.status(r.status, lang, messages.icon(r.status));
+  const notify = messages.status(r.notify, lang, messages.icon(r.notify));
+  return `
+${messages.labelName(lang)}: ${r.name}
+${messages.labelStatus(lang)}: ${status}
+${messages.labelSubs(lang)}: ${notify}
+
+📍${messages.labelA(lang)}: \`\`\`${r.pointA.coordinates}\`\`\`
+📍${messages.labelB(lang)}: \`\`\`${r.pointB.coordinates}\`\`\`
 `;
-  });
-  return txt;
 }
-function printRouteFound(routes, lang) {
+
+function printRouteFound(routes, lang, type) {
   let txt = '';
   if (routes.length === 0) {
     return messages.routesEmpty(lang);
   }
   routes.forEach(r => {
-    const status = messages.status(r.status, lang, messages.icon(r.status));
-    txt += `
-Route name: ${r.name}
-Status: ${status}
+    let tt = '';
+    if (type === 0) {
+      tt = `${messages.labelType(lang)}: ${messages.getType(lang, r.type)}`;
+    }
+    txt += `${tt}
+${messages.labelName(lang)}: ${r.name}
 `;
   });
   return txt;
@@ -95,7 +103,7 @@ function getTotalPages(cnt, perPage) {
 function getPagi(cnt, perPage, routes, pageNum = 1, fromRoute = '') {
   const routs1 = routes.map(r => ({
     text: `${messages.icon(r.status)} ${r.name}`,
-    callback_data: `route_${r._id}_${pageNum}`,
+    callback_data: `route_${r._id}_${pageNum}_${NONE}`,
   }));
   const routs = _.chunk(routs1, 3);
   const pages = getTotalPages(cnt, perPage);
@@ -132,18 +140,31 @@ const format = (bot, botHelper) => {
     const [data] = ctx.match;
     /** @alias startHome */
     if (data.match(keyboards.actions.startHome)) {
-      // eslint-disable-next-line consistent-return
-      return BH2.goHomeCb(ctx);
+      let system = '';
+      try {
+        const {txt, keyb} = await BH2.goHome(from);
+        BH2.edit(from.id, mId, null, txt, keyb);
+        ctx.answerCbQuery(cbqId, {text: ''});
+      } catch (e) {
+        system = `${e}${system}`;
+      }
+      if (system) {
+        botHelper.sendAdmin(system);
+      }
+      return;
     }
     /** @alias stopAll */
     if (data.match(keyboards.actions.stopAll)) {
       const {id, language_code: lang} = from;
+      const [, type] = data.match(/stop_all([0-9])/);
       // eslint-disable-next-line consistent-return
       await BH2.stopAll(id);
       ctx.answerCbQuery(cbqId, {text: messages.stoppedAll(lang)});
       ctx.reply(messages.stoppedAll(lang), keyboards.hide());
-      const keyb = keyboards.driver(lang);
-      BH2.edit(id, mId, null, messages.home(lang), keyb);
+      const {txt, keyb} = BH2.goMenu(lang, parseInt(type, 10));
+      // const txt = messages.home(lang, type);
+      // const keyb = keyboards.driver(lang);
+      BH2.edit(id, mId, null, txt, keyb);
     }
     /** @alias addRoute */
     if (data.match(keyboards.actions.addRoute)) {
@@ -170,6 +191,7 @@ const format = (bot, botHelper) => {
         const {id: userId, language_code: lang} = from;
         const txt = messages.start2(lang);
         BH2.edit(userId, mId, null, txt, keyboards.begin(lang));
+        ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         // system = `${e}${system}`;
       }
@@ -179,11 +201,14 @@ const format = (bot, botHelper) => {
     if (data.match(keyboards.actions.settings)) {
       try {
         const {id, language_code: lang} = from;
-        const {total, count} = await BH2.getCounts(id);
+        const [, type] = data.match(/menu_settings([0-9])/);
+        const {total = 0} = await BH2.getCounts(id);
         const txt = messages.settings(lang);
-        const keyb = keyboards.settings(lang, count, total);
+        const keyb = keyboards.settings(lang, total, type);
         BH2.edit(id, mId, null, txt, keyb);
+        ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
+        console.log(e);
         // system = `${e}${system}`;
       }
       return;
@@ -194,8 +219,7 @@ const format = (bot, botHelper) => {
         const [, type] = data.match(/type_([0-9])/);
         const {id, language_code: lang} = from;
         await BH2.driverTypeChange(from, type);
-        const txt = messages.home(lang);
-        const keyb = keyboards.driver(lang);
+        const {txt, keyb} = BH2.goMenu(lang, parseInt(type, 10));
         BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text: messages.account(lang)});
       } catch (e) {
@@ -216,75 +240,142 @@ const format = (bot, botHelper) => {
         const pagination = keyboards.inline(pagi);
         const txt = messages.routesList();
         BH2.edit(id, mId, null, txt, pagination);
+        ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
       }
     }
     /** @alias route */
-    if (data.match(/route_(.*?)/)) {
+    if (data.match(/^route_(.*?)/)) {
       try {
         const {id, language_code: lang} = from;
-        const [, _id, page] = data.match(/route_(.*?)_([0-9]+)$/);
-        const route = await BH2.getRoute(id, _id);
-        const {status} = route;
+        const [, _id, page, sendR] = data.match(/route_(.*?)_([0-9]+)_(.*?)$/);
+
+        if (sendR !== NONE) {
+          let text = 'error';
+          const route = await BH2.getRouteById(_id, 'name userId');
+          if (route) {
+            // const requestUserId = page;
+            const {name, userId} = route;
+            if (sendR.match(keyboards.actions.sendR)) {
+              BH2.botMessage(userId, messages.notifyUserDriver(lang, name));
+              text = messages.sentR(lang);
+            }
+            if (sendR.match(keyboards.actions.send3R)) {
+              BH2.botMessage(userId, messages.notifyUserCoop(lang, name));
+              text = messages.sent3R(lang);
+            }
+          }
+          ctx.answerCbQuery(cbqId, {text});
+          return;
+        }
+        const route = await BH2.getRoute(id, _id, 'notify status');
+        const {status, notify} = route;
         const callbacks = [
           `page_${page}`,
-          `${status === 1 ? 'deactivate' : 'activate'}_${_id}_${page}`,
+          `${status === 1 ? DEAC : ACTI}_${_id}_${page}`,
+          `${notify === 1 ? UNSUB : SUBS}_${_id}_${page}`,
         ];
         if (status === 1) {
-          callbacks.push(`find_1_${_id}`);
+          callbacks.push(`find_1_${_id}_3`);
+          callbacks.push(`find_1_${_id}_0`);
         }
-        const keyb = keyboards.editRoute(lang, callbacks, status);
-        BH2.edit(id, mId, null, printRouteOne([route], lang), keyb);
+        const keyb = keyboards.editRoute(lang, callbacks, status, notify);
+        BH2.edit(id, mId, null, printRouteOne(route, lang), keyb);
+        ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
       }
     }
     /** @alias status */
-    if (data.match(/(activate|deactivate)_(.*?)/)) {
+    if (data.match(/^(activate|deactivate|unsubscribe|subscribe)_(.*?)/)) {
       try {
         const {id, language_code: lang} = from;
         const [, status, _id, page] = data.match(
-          /(activate|deactivate)_(.*?)_([0-9]+)$/,
+          /^(activate|deactivate|unsubscribe|subscribe)_(.*?)_([0-9]+)$/,
         );
-        const {routes = []} = await BH2.setStatusRoute(id, _id, status);
-        const callbacks = [
-          `page_${page}`,
-          `${status === 'activate' ? 'deactivate' : 'activate'}_${_id}_${page}`,
-        ];
-        if (status === 'activate') {
-          callbacks.push(`find_${page}_${_id}`);
+        let field = 'status';
+        if (data.match(SUBS)) {
+          field = 'notify';
         }
-        const stNum = status === 'activate' ? 1 : 0;
-        const keyb = keyboards.editRoute(lang, callbacks, stNum);
-        await BH2.edit(id, mId, null, printRouteOne(routes, lang), keyb);
-        const text = messages.status(stNum, lang, messages.icon(stNum));
-        ctx.answerCbQuery(cbqId, {text});
+        const route = await BH2.setStatusRoute(id, _id, status, field);
+        let line1;
+        let line2;
+        if (field === 'status') {
+          line1 = `${status === ACTI ? DEAC : ACTI}_${_id}_${page}`;
+          line2 = `${route.notify === 1 ? UNSUB : SUBS}_${_id}_${page}`;
+        } else {
+          line1 = `${route.status === ACTI ? DEAC : ACTI}_${_id}_${page}`;
+          line2 = `${status === SUBS ? UNSUB : SUBS}_${_id}_${page}`;
+        }
+        const callbacks = [`page_${page}`, line1, line2];
+        if (status === ACTI || route.status === 1) {
+          callbacks.push(`find_${page}_${_id}_3`);
+          callbacks.push(`find_${page}_${_id}_0`);
+        }
+        let stNum;
+        let ntNum;
+        if (field === 'status') {
+          stNum = status === ACTI ? 1 : 0;
+          ntNum = route.notify;
+        } else {
+          stNum = route.status;
+          ntNum = status === SUBS ? 1 : 0;
+        }
+        const keyb = keyboards.editRoute(lang, callbacks, stNum, ntNum);
+        const txt = printRouteOne(route, lang);
+        await BH2.edit(id, mId, null, txt, keyb);
+        let pop = messages.status(stNum, lang, messages.icon(stNum));
+        if (field === 'notify') {
+          pop = messages.statusSubscribe(ntNum, lang, messages.icon(ntNum));
+        }
+        ctx.answerCbQuery(cbqId, {text: pop});
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
       }
     }
     /** @alias find */
-    if (data.match(/find_(.*?)/)) {
+    if (data.match(/^find_(.*?)/)) {
       try {
         const {id, language_code: lang} = from;
-        const [, page = '1', _id] = data.match(/find_([0-9]+)_(.*?)$/);
-        const {cnt, routes = []} = await BH2.findRoutes(id, page, _id);
-        const pagi = getPagi(cnt, 1, [], parseInt(page, 10), `${_id}_1`);
+        const [, pag = 1, _id, typ] = data.match(
+          /find_([0-9]+)_(.*?)_([0-9])$/,
+        );
+        const page = parseInt(pag, 10);
+        const type = parseInt(typ, 10);
+        const {cnt, routes = []} = await BH2.findRoutes(id, page, _id, type);
+        const pagi = getPagi(cnt, 1, [], page, `${_id}_${type}`);
         const home = keyboards.home(lang);
         const back = [
           {
             text: messages.backJust(lang),
-            callback_data: `route_${_id}_${page}`,
+            callback_data: `route_${_id}_${page}_${NONE}`,
           },
         ];
+        if (routes[0]) {
+          let text = messages.sendRequest(lang);
+          let act = keyboards.actions.sendR;
+          if (type === 3) {
+            text = messages.sendRequest3(lang);
+            act = keyboards.actions.send3R;
+          }
+          const sendRequest = [
+            {
+              text,
+              callback_data: `route_${routes[0].pointAId}_${id}_${act}_1`,
+            },
+          ];
+          pagi.push(sendRequest);
+        }
         pagi.push(back);
         pagi.push(home);
         const pagination = keyboards.inline(pagi);
-        BH2.edit(id, mId, null, printRouteFound(routes, lang), pagination);
+        const view = printRouteFound(routes, lang, type);
+        BH2.edit(id, mId, null, view, pagination);
+        ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         console.log(e);
         // system = `${e}${system}`;
@@ -293,6 +384,7 @@ const format = (bot, botHelper) => {
   });
 
   // eslint-disable-next-line consistent-return
+  /** @alias processMessage */
   function test(ctx) {
     if (checkAdmin(ctx)) {
       return;

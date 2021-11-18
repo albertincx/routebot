@@ -13,6 +13,8 @@ const actions = {
   sharing: 'type_2',
   passenger: 'type_3',
   settings: 'menu_settings',
+  sendR: 'sendR',
+  send3R: 'send3R',
 };
 function addRoute(lang) {
   const txt = messages.addRoute(lang);
@@ -26,38 +28,39 @@ function addRoute(lang) {
 function home(lang, txt = '') {
   return [
     {
-      text: txt || messages.home(lang),
+      text: txt || messages.menu(lang),
       callback_data: actions.startHome,
     },
   ];
 }
 
 function begin(lang) {
-  const type1 = Markup.button.callback(messages.driver(lang), actions.driver);
-  const type2 = Markup.button.callback(messages.sharing(lang), actions.sharing);
-  const t = Markup.button.callback(messages.passenger(lang), actions.passenger);
+  const t1 = messages.getType(lang, 1);
+  const t2 = messages.getType(lang, 2);
+  const t3 = messages.getType(lang, 3);
+  const type1 = Markup.button.callback(t1, actions.driver);
+  const type2 = Markup.button.callback(t2, actions.sharing);
+  const t = Markup.button.callback(t3, actions.passenger);
   const back = home(lang);
   return Markup.inlineKeyboard([[type1, type2], [t], back]).resize();
 }
 
-function driver(lang) {
-  const settings1 = messages.settings(lang);
+function driver(lang, type) {
+  const l = messages.settings(lang);
   const myRoutes = messages.myRoutes(lang);
-  const st = Markup.button.callback(settings1, actions.settings);
-  const btns = [[Markup.button.callback(myRoutes, actions.page1)], [st]];
-  return Markup.inlineKeyboard(btns);
+  const s = Markup.button.callback(l, `${actions.settings}${type}`);
+  const keys = [[Markup.button.callback(myRoutes, actions.page1)], [s]];
+  return Markup.inlineKeyboard(keys);
 }
 
-function settings(lang, total, hasActive = 0) {
+function settings(lang, hasActive, type) {
   const changeType = messages.changeType(lang);
   const stop = messages.stopRoutes(lang);
-  const ct = Markup.button.callback(changeType, actions.changeType);
-  const st = Markup.button.callback(stop, actions.stopAll);
-  const btns = [[ct]];
-  if (total) {
-    if (hasActive) {
-      btns.push([st]);
-    }
+  const c = Markup.button.callback(changeType, actions.changeType);
+  const btns = [[c]];
+  if (hasActive) {
+    const s = Markup.button.callback(stop, `${actions.stopAll}${type}`);
+    btns.push([s]);
   }
   btns.push(home(lang, messages.backJust(lang)));
   return Markup.inlineKeyboard(btns);
@@ -109,26 +112,46 @@ function fr() {
 function inline(keys) {
   return Markup.inlineKeyboard(keys);
 }
-function editRoute(lang, callbacks, status) {
+function editRoute(lang, callbacks, status, notify) {
+  const text =
+    status === 1 ? messages.deactivate(lang) : messages.activate(lang);
+  const text2 =
+    notify === 1 ? messages.unsubscribe(lang) : messages.subscribe(lang);
   const keys = [
     {
       text: messages.back(lang),
       callback_data: callbacks[0],
     },
     {
-      text: status === 1 ? messages.deactivate(lang) : messages.activate(lang),
+      text,
       callback_data: callbacks[1],
     },
   ];
-  let keysArray = keys;
-  if (callbacks[2]) {
+  const keysArray = [keys];
+  keysArray.push([
+    {
+      text: text2,
+      callback_data: callbacks[2],
+    },
+  ]);
+  if (callbacks[3]) {
     const findBtn = {
       text: messages.nearBy(lang),
-      callback_data: callbacks[2],
+      callback_data: callbacks[3],
     };
-    keysArray = [keys, [findBtn]];
+    keysArray.push([findBtn]);
   }
-  return Markup.inlineKeyboard(keysArray);
+  if (callbacks[4]) {
+    const findBtn = {
+      text: messages.nearBy(lang, true),
+      callback_data: callbacks[4],
+    };
+    keysArray.push([findBtn]);
+  }
+  const k = Markup.inlineKeyboard(keysArray);
+  k.parse_mode = 'Markdown';
+  k.disable_web_page_preview = true;
+  return k;
 }
 module.exports = {
   actions,

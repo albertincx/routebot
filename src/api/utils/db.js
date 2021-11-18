@@ -39,6 +39,7 @@ const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
 const routesBCol = Any.collection.conn.model(ROUTES_B, Any.schema);
 const DIR_A = 'pointA';
 const DIR_B = 'pointB';
+const MAX_POINT_A_CNT = 50;
 
 const stat = filter => routesCol.countDocuments(filter);
 
@@ -294,8 +295,19 @@ const addRouteA = async (data, loc, dir = DIR_A) => {
   if (dir === DIR_B) {
     saveRoute.pointAId = res._id;
     await addRoute({userId, name}, saveRoute, routes, routesBCol);
+    if (saveRoute.type !== 3) {
+      const routeA = await getRoute(userId, res._id, 'pointA');
+      const ro = {...saveRoute, ...routeA};
+      const $proj = {userId: 1};
+      const limit = MAX_POINT_A_CNT;
+      const {cnt, routes: r} = await findRoutes(ro, 0, limit, 3, $proj);
+      if (cnt) {
+        return r;
+      }
+    }
   }
 };
+
 const addRoute = async (
   filter,
   route,
@@ -320,6 +332,7 @@ const addRoute = async (
   await usersCol.updateOne({userId: filter.userId}, upd, {upsert: true});
   return res;
 };
+
 const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
 const stopAll = userId => routesCol.updateMany({userId}, {status: 0});
 const routesCnt = userId => stat({userId});
@@ -358,9 +371,21 @@ const getPipeline = (
   },
 ];
 
-const findRoutes = async (route, skip, limit) => {
+const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
   const $match = {userId: {$ne: route.userId}, status: 1};
-  const pipeline = getPipeline(route, $match, 0, 50);
+  if (type === 0 || type === 3) {
+    if (type === 3) {
+      $match.type = type;
+    } else {
+      $match.type = {$in: [1, 2]};
+    }
+  }
+  const $aMatch = {...$match};
+  if ($project && $project.userId) {
+    $aMatch.notify = 1;
+  }
+  // console.log($aMatch);
+  const pipeline = getPipeline(route, $aMatch, 0, MAX_POINT_A_CNT);
   const aggr = await routesCol.aggregate(pipeline);
   const pointAIds = [];
   if (aggr[0]) {
@@ -375,28 +400,41 @@ const findRoutes = async (route, skip, limit) => {
     const pipelineB = getPipeline(route, pointBMatch, skip, limit, DIR_B, {
       name: 1,
       pointAId: 1,
+      type: 1,
+      ...($project || {}),
     });
     aggrB = await routesBCol.aggregate(pipelineB);
     // console.log(JSON.stringify(pipelineB, null, 4));
     // console.log(JSON.stringify(aggrB, null, 4));
   }
-
-  return aggrB;
+  let r;
+  let cnt;
+  if (aggrB && aggrB[0]) {
+    const {data, metadata = []} = aggrB[0];
+    r = data;
+    cnt = (metadata[0] && metadata[0].total) || 0;
+  }
+  return {cnt, routes: r};
 };
 
-const getRoutes = (userId, pageP, perPage, near = false) => {
+const getRoutesNear = (userId, pageP, type, perPage = 1) => {
   const page = parseInt(pageP, 10) || 1;
   const limit = parseInt(perPage, 10) || 5;
   const startIndex = (page - 1) * limit;
-  if (near) {
-    return findRoutes(userId, startIndex, limit);
-  }
+  return findRoutes(userId, startIndex, limit, type);
+};
+
+const getRoutes = (userId, pageP, perPage) => {
+  const page = parseInt(pageP, 10) || 1;
+  const limit = parseInt(perPage, 10) || 5;
+  const startIndex = (page - 1) * limit;
   return routesCol.find({userId}).skip(startIndex).limit(limit);
 };
 
-const getRoute = (userId, _id) =>
-  getFromCollection({userId, _id}, routesCol, false);
-
+const getRoute = (userId, _id, project = null) =>
+  getFromCollection({userId, _id}, routesCol, false, project);
+const getRouteById = (_id, project = null) =>
+  getFromCollection({_id}, routesCol, false, project);
 const getActiveCnt = userId =>
   routesCol.countDocuments({userId, status: {$ne: 0}});
 
@@ -427,4 +465,6 @@ module.exports.routesCnt = routesCnt;
 module.exports.getRoutes = getRoutes;
 module.exports.statusRoute = statusRoute;
 module.exports.getRoute = getRoute;
+module.exports.getRouteById = getRouteById;
 module.exports.checkUser = checkUser;
+module.exports.getRoutesNear = getRoutesNear;

@@ -4,13 +4,16 @@ const keyboards = require('../../../keyboards/keyboards');
 const {checkAdmin} = require('../../utils');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
+
 function checkLoc(l) {
   const val = parseFloat(l);
   return !Number.isNaN(val) && val <= 90 && val >= -90;
 }
+
 function checkLocation(loc) {
   return checkLoc(loc[0]) && checkLoc(loc[1]);
 }
+
 class BotHelper {
   constructor(botHelper) {
     this.bot = botHelper.getBot();
@@ -92,8 +95,7 @@ class BotHelper {
     await db.updateUser(user);
     let system = '';
     try {
-      const txt = messages.home(lang);
-      const keyb = keyboards.driver(lang);
+      const {txt, keyb} = this.goMenu(lang, type);
       ctx.reply(txt, keyb);
     } catch (e) {
       system = `${e}${system}`;
@@ -124,26 +126,16 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async goHome(from) {
-    const {language_code: lang} = from;
-    const txt = messages.home(lang);
-    const keyb = keyboards.driver(lang);
-    return {txt, keyb};
+    const {id, language_code: lang} = from;
+    const {type} = await db.GetUser(id, 'type');
+    return this.goMenu(lang, type);
   }
 
-  async goHomeCb(ctx) {
-    const {from, message} = ctx.update.callback_query;
-    const mid = message.message_id;
-    let system = '';
-    try {
-      const {txt, keyb} = await this.goHome(from);
-      this.edit(from.id, mid, null, txt, keyb);
-    } catch (e) {
-      system = `${e}${system}`;
-    }
-
-    if (system) {
-      this.botHelper.sendAdmin(system);
-    }
+  // eslint-disable-next-line class-methods-use-this
+  goMenu(lang, type) {
+    const txt = messages.home(lang, type);
+    const keyb = keyboards.driver(lang, type);
+    return {txt, keyb};
   }
 
   // eslint-disable-next-line class-methods-use-this,consistent-return
@@ -203,13 +195,18 @@ class BotHelper {
       }
       if (routes === 2) {
         keyb = keyboards.hide();
-        await db.addRouteB(routeData, loc);
+        const notifyRoutes = await db.addRouteB(routeData, loc);
+        if (Array.isArray(notifyRoutes) && notifyRoutes.length) {
+          this.notifyUsers(notifyRoutes, lang);
+        }
         await db.updateOne(userId);
       }
       await ctx.reply(txt, keyb);
       if (routes === 2) {
-        keyb = keyboards.driver(lang);
-        this.botMessage(userId, messages.home(lang), keyb);
+        const {txt: t, keyb: k} = this.goMenu(lang, type);
+        txt = t;
+        keyb = k;
+        this.botMessage(userId, txt, keyb);
       }
     }
   }
@@ -224,6 +221,11 @@ class BotHelper {
     return db.getRoute(id, _id);
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  getRouteById(_id, project) {
+    return db.getRouteById(_id, project);
+  }
+
   async myRoutes(id, page = 1) {
     const cnt = await db.routesCnt(id);
     let r = await db.getRoutes(id, page, this.perPage);
@@ -232,16 +234,15 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async findRoutes(id, page = 1, _id = '') {
+  async findRoutes(id, page, _id, type) {
     const route = await db.getRoute(id, _id);
     let cnt = 0;
     let r = [];
     if (route) {
-      const [aggr] = await db.getRoutes(route, page, 1, true);
-      if (aggr) {
-        const {data, metadata = []} = aggr;
-        r = data;
-        cnt = (metadata[0] && metadata[0].total) || 0;
+      const {cnt: cc, routes: rr} = await db.getRoutesNear(route, page, type);
+      if (cc) {
+        cnt = cc;
+        r = rr;
       }
     }
 
@@ -249,19 +250,36 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async setStatusRoute(chatId, _id, st) {
+  async setStatusRoute(chatId, _id, st, field) {
     const status = st === 'activate' ? 1 : 0;
-    await db.statusRoute(chatId, _id, {status});
+    let upd = {status};
+    if (field === 'notify') {
+      const notify = st === 'subscribe' ? 1 : 0;
+      upd = {notify};
+    }
+    await db.statusRoute(chatId, _id, upd);
     const r = await db.getRoute(chatId, _id);
     if (r) {
-      return {routes: [r]};
+      return r;
     }
-    return {routes: []};
+    return {};
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  checkUser(id) {
-    return db.checkUser(id);
+  async notifyUsers(routes) {
+    try {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const r of routes) {
+        const {name, userId: id} = r;
+        // eslint-disable-next-line no-await-in-loop
+        const user = await db.GetUser(id, 'language_code');
+        const {language_code: lang} = user;
+        const notifyUserTxt = messages.notifyUser(lang, name);
+        this.botMessage(id, notifyUserTxt);
+      }
+    } catch (e) {
+      console.log(e);
+      //
+    }
   }
 }
 
