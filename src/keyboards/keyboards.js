@@ -13,6 +13,8 @@ const actions = {
   sharing: 'type_2',
   passenger: 'type_3',
   settings: 'menu_settings',
+  sendR: 'sendR',
+  send3R: 'send3R',
 };
 function addRoute(lang) {
   const txt = messages.addRoute(lang);
@@ -110,29 +112,39 @@ function fr() {
 function inline(keys) {
   return Markup.inlineKeyboard(keys);
 }
-function editRoute(lang, callbacks, status) {
+function editRoute(lang, callbacks, status, notify) {
+  const text =
+    status === 1 ? messages.deactivate(lang) : messages.activate(lang);
+  const text2 =
+    notify === 1 ? messages.unsubscribe(lang) : messages.subscribe(lang);
   const keys = [
     {
       text: messages.back(lang),
       callback_data: callbacks[0],
     },
     {
-      text: status === 1 ? messages.deactivate(lang) : messages.activate(lang),
+      text,
       callback_data: callbacks[1],
     },
   ];
   const keysArray = [keys];
-  if (callbacks[2]) {
+  keysArray.push([
+    {
+      text: text2,
+      callback_data: callbacks[2],
+    },
+  ]);
+  if (callbacks[3]) {
     const findBtn = {
       text: messages.nearBy(lang),
-      callback_data: callbacks[2],
+      callback_data: callbacks[3],
     };
     keysArray.push([findBtn]);
   }
-  if (callbacks[3]) {
+  if (callbacks[4]) {
     const findBtn = {
       text: messages.nearBy(lang, true),
-      callback_data: callbacks[3],
+      callback_data: callbacks[4],
     };
     keysArray.push([findBtn]);
   }

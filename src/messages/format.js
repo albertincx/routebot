@@ -26,6 +26,8 @@ ${TGPH_LINK}
 const MENU_RU = 'Меню';
 const MENU_EN = 'Menu';
 const SEND_R_RU = 'Отправить заявку на совместную поездку';
+const SEND_R3_RU = 'Предложить объединиться на совместные поездки';
+const SEND_R3_EN = 'Offer to unite for joint trips';
 const SEND_R_EN = 'Send request to drive';
 const ROUTE_LIST_RU = 'Выберите маршрут из списка ниже:';
 const ROUTE_LIST_EN = 'Choose a route from the list below:';
@@ -34,8 +36,14 @@ const ROUTE_ADDED_EN = 'Route added successfully';
 
 const STATUS_ON_RU = 'Включен';
 const STATUS_OFF_RU = 'Выключен';
-const STATUS_ON_EN = 'Enabled';
-const STATUS_OFF_EN = 'Disabled';
+const STATUS_ON_EN = 'On';
+const STATUS_OFF_EN = 'Off';
+
+const STATUS_SUB_ON_RU = 'Вы подписались на уведомления';
+const STATUS_SUB_OFF_RU = 'Вы отписались от уведомлений';
+const STATUS_SUB_ON_EN = 'Subscribed';
+const STATUS_SUB_OFF_EN = 'Unsubscribed';
+
 const CHANGED_RU = 'Тип изменен';
 const CHANGED_EN = 'Account type changed';
 const RU = 'ru';
@@ -83,6 +91,14 @@ const getStatus = (status, lang, icon) => {
   }
   return `${status === 0 ? STATUS_OFF_EN : STATUS_ON_EN} ${icon}`;
 };
+
+const getStatusSubscribe = (s, lang, icon) => {
+  if (lang === RU) {
+    return `${s === 0 || !s ? STATUS_SUB_OFF_RU : STATUS_SUB_ON_RU} ${icon}`;
+  }
+  return `${s === 0 || !s ? STATUS_SUB_OFF_EN : STATUS_SUB_ON_EN} ${icon}`;
+};
+
 const getType1 = lang => (lang === RU ? TYPE_1_RU : TYPE_1_EN);
 const getType2 = lang => (lang === RU ? TYPE_2_RU : TYPE_2_EN);
 const getType3 = lang => (lang === RU ? TYPE_3_RU : TYPE_3_EN);
@@ -103,10 +119,34 @@ const getNearLabel = (l, t) => {
   return `👀 ${n}`;
 };
 const typeLabel = lang => (lang === RU ? 'Тип аккаунта' : 'Account type');
-
+const notifyUser = (lang, name) => {
+  if (lang === RU) {
+    return `
+По вашему маршруту "${name}" добавлен похожий маршрут
+`;
+  }
+  return `
+A similar route has been added to your route "${name}"
+`;
+};
+const notifyUserDriver = (lang, name) => {
+  if (lang === RU) {
+    return `С вами хочет кататься пользователь по маршруту "${name}"`;
+  }
+  return `The user wants to ride with you along the route "${name}"`;
+};
+const notifyUserCoop = (lang, name) => {
+  if (lang === RU) {
+    return `По вашему маршруту "${name}" появилось предложение по совместным поездкам`;
+  }
+  return `There is an offer for joint trips on your route "${name}"`;
+};
 module.exports = {
+  sentR: l => (l === RU ? 'Запрос отправлен' : 'Request sent'),
+  sent3R: l => (l === RU ? 'Предложение отправлено' : 'Offer sent'),
   labelName: lang => (lang === RU ? 'Наименование' : 'Route name'),
   labelStatus: lang => (lang === RU ? 'Статус' : 'Status'),
+  labelSubs: l => (l === RU ? 'Подписка на уведомления' : 'Subscription'),
   labelType: typeLabel,
   labelA: lang => (lang === RU ? 'Точка А' : 'departure point'),
   labelB: lang => (lang === RU ? 'Точка Б' : 'destination point'),
@@ -142,15 +182,20 @@ ${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
     return s;
   },
   stoppedAll: lang => (lang === RU ? ROUTE_STOP_RU : ROUTE_STOP_EN),
-  icon: status => `${status === 0 ? '🔴' : '🟢'}`,
-  status: getStatus,
+  icon: s => `${s === 0 || !s ? '🔴' : '🟢'}`,
   routesList: lang => (lang === RU ? ROUTE_LIST_RU : ROUTE_LIST_EN),
   routesEmpty: lang => (lang === RU ? ROUTE_SAME_RU : ROUTE_SAME_EN),
-
-  // menus
   getType: getType,
+  notifyUser: notifyUser,
+  notifyUserDriver: notifyUserDriver,
+  notifyUserCoop: notifyUserCoop,
+  status: getStatus,
+  statusSubscribe: getStatusSubscribe,
+  // menus
   activate: lang => (lang === RU ? 'Активировать' : 'Enable'),
   deactivate: lang => (lang === RU ? 'Выключить' : 'Disable'),
+  subscribe: lang => (lang === RU ? 'Подписаться на уведомления' : 'Subscribe'),
+  unsubscribe: l => (l === RU ? 'Отписаться от уведомлений' : 'Unsubscribe'),
   back: lang => `${ARR_L} ${lang === RU ? 'Список Маршрутов' : 'Routes List'}`,
   backJust: lang => `${ARR_L} ${lang === RU ? 'Назад' : 'Back'}`,
   addRoute: lang => (lang === RU ? 'Добавить маршрут' : 'Add route'),
@@ -162,4 +207,5 @@ ${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
   nearBy: getNearLabel,
   menu: lang => (lang === RU ? MENU_RU : MENU_EN),
   sendRequest: lang => (lang === RU ? SEND_R_RU : SEND_R_EN),
+  sendRequest3: lang => (lang === RU ? SEND_R3_RU : SEND_R3_EN),
 };

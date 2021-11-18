@@ -195,7 +195,10 @@ class BotHelper {
       }
       if (routes === 2) {
         keyb = keyboards.hide();
-        await db.addRouteB(routeData, loc);
+        const notifyRoutes = await db.addRouteB(routeData, loc);
+        if (Array.isArray(notifyRoutes) && notifyRoutes.length) {
+          this.notifyUsers(notifyRoutes, lang);
+        }
         await db.updateOne(userId);
       }
       await ctx.reply(txt, keyb);
@@ -216,6 +219,11 @@ class BotHelper {
   // eslint-disable-next-line class-methods-use-this
   getRoute(id, _id) {
     return db.getRoute(id, _id);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  getRouteById(_id, project) {
+    return db.getRouteById(_id, project);
   }
 
   async myRoutes(id, page = 1) {
@@ -242,9 +250,14 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async setStatusRoute(chatId, _id, st) {
+  async setStatusRoute(chatId, _id, st, field) {
     const status = st === 'activate' ? 1 : 0;
-    await db.statusRoute(chatId, _id, {status});
+    let upd = {status};
+    if (field === 'notify') {
+      const notify = st === 'subscribe' ? 1 : 0;
+      upd = {notify};
+    }
+    await db.statusRoute(chatId, _id, upd);
     const r = await db.getRoute(chatId, _id);
     if (r) {
       return r;
@@ -252,9 +265,21 @@ class BotHelper {
     return {};
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  checkUser(id) {
-    return db.checkUser(id);
+  async notifyUsers(routes) {
+    try {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const r of routes) {
+        const {name, userId: id} = r;
+        // eslint-disable-next-line no-await-in-loop
+        const user = await db.GetUser(id, 'language_code');
+        const {language_code: lang} = user;
+        const notifyUserTxt = messages.notifyUser(lang, name);
+        this.botMessage(id, notifyUserTxt);
+      }
+    } catch (e) {
+      console.log(e);
+      //
+    }
   }
 }
 
