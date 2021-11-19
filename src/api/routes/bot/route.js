@@ -1,7 +1,7 @@
 const db = require('../../utils/db');
 const messages = require('../../../messages/format');
 const keyboards = require('../../../keyboards/keyboards');
-const {checkAdmin} = require('../../utils');
+const {checkAdmin, showError} = require('../../utils');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 
@@ -27,9 +27,7 @@ class BotHelper {
   }
 
   botMessage(chatId, text, opts) {
-    return this.bot
-      .sendMessage(chatId, text, opts)
-      .catch(e => this.sendError(e, `${chatId}${text}`));
+    return this.bot.sendMessage(chatId, text, opts);
   }
 
   sendError(error, text = '') {
@@ -66,15 +64,23 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async nextProcessName(ctx) {
-    if (checkAdmin(ctx)) {
-      return;
-    }
     const {from} = ctx.message;
     const {id: userId, language_code: lang} = from;
-    const keyb = keyboards.nextProcess(1, lang);
-    const txt = messages.point(1, lang);
     const name = ctx.update.message.text;
-    await db.addRoute({userId}, {name});
+
+    const exists = await db.getRoute({userId, name});
+    let txt;
+    let keyb;
+    if (!exists) {
+      keyb = keyboards.nextProcess(1, lang);
+      txt = messages.point(1, lang);
+      await db.addRoute({userId}, {name});
+    } else {
+      const txt1 = messages.routeExists(lang);
+      await ctx.reply(txt1);
+      txt = messages.driverStartNewRoute(lang);
+      keyb = keyboards.fr();
+    }
     try {
       ctx.reply(txt, keyb);
     } catch (e) {
@@ -139,16 +145,14 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this,consistent-return
-  async processLocation(ctx, locationFromTxt = []) {
+  async processLocation(ctx, coordinatesTxtArr = []) {
     const {update} = ctx;
     const {message} = update;
-    const {
-      from: {language_code: lang},
-    } = message;
-    if (message.reply_to_message) {
-      if (message.reply_to_message.text.match(messages.check(lang))) {
+    const {from, reply_to_message: rpl} = message;
+    const {language_code: lang} = from;
+    if (rpl) {
+      if (rpl.text.match(messages.check(lang))) {
         // Send the name of your route
-
         return this.nextProcessName(ctx);
       }
       // eslint-disable-next-line consistent-return
@@ -156,13 +160,12 @@ class BotHelper {
     }
     const {location: msgLocation} = message;
     let location = [];
-    if (locationFromTxt.length) {
-      location = locationFromTxt;
+    if (coordinatesTxtArr.length) {
+      location = coordinatesTxtArr;
     } else if (msgLocation) {
       location = [msgLocation.latitude, msgLocation.longitude];
     }
     if (location[0] && location[1]) {
-      const {from} = message;
       const {id: userId} = from;
       const {routes, type} = await db.GetUser(userId, 'routes type');
       if (!checkLocation(location)) {
@@ -218,12 +221,17 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   getRoute(id, _id) {
-    return db.getRoute(id, _id);
+    return db.getRoute({userId: id, _id});
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  getRequest(reqData) {
+    return db.getRequest(reqData);
   }
 
   // eslint-disable-next-line class-methods-use-this
   getRouteById(_id, project) {
-    return db.getRouteById(_id, project);
+    return db.getRoute({_id}, project);
   }
 
   async myRoutes(id, page = 1) {
@@ -235,7 +243,7 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async findRoutes(id, page, _id, type) {
-    const route = await db.getRoute(id, _id);
+    const route = await db.getRoute({userId: id, _id});
     let cnt = 0;
     let r = [];
     if (route) {
@@ -258,7 +266,7 @@ class BotHelper {
       upd = {notify};
     }
     await db.statusRoute(chatId, _id, upd);
-    const r = await db.getRoute(chatId, _id);
+    const r = await db.getRoute({userId: chatId, _id});
     if (r) {
       return r;
     }
@@ -266,19 +274,19 @@ class BotHelper {
   }
 
   async notifyUsers(routes) {
-    try {
-      // eslint-disable-next-line no-restricted-syntax
-      for (const r of routes) {
-        const {name, userId: id} = r;
+    // eslint-disable-next-line no-restricted-syntax
+    for (const r of routes) {
+      const {name, userId: id} = r;
+      try {
         // eslint-disable-next-line no-await-in-loop
         const user = await db.GetUser(id, 'language_code');
         const {language_code: lang} = user;
         const notifyUserTxt = messages.notifyUser(lang, name);
         this.botMessage(id, notifyUserTxt);
+      } catch (e) {
+        this.sendError(e, `${id} notifyUsers`);
+        showError(e);
       }
-    } catch (e) {
-      console.log(e);
-      //
     }
   }
 }

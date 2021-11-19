@@ -28,6 +28,8 @@ const MENU_EN = 'Menu';
 const SEND_R_RU = 'Отправить заявку на совместную поездку';
 const SEND_R3_RU = 'Предложить объединиться на совместные поездки';
 const SEND_R3_EN = 'Offer to unite for joint trips';
+const ROUTE_EX_RU = 'Маршрут с таким именем уже существует';
+const ROUTE_EX_EN = 'A route with the same name already exists';
 const SEND_R_EN = 'Send request to drive';
 const ROUTE_LIST_RU = 'Выберите маршрут из списка ниже:';
 const ROUTE_LIST_EN = 'Choose a route from the list below:';
@@ -85,13 +87,12 @@ const TYPE_1_EN = BUTTONS.driver.label;
 const TYPE_2_EN = BUTTONS.sharingDriver.label;
 const TYPE_3_EN = BUTTONS.passenger.label;
 
-const getStatus = (status, lang, icon) => {
+const getStatus = (status, lang, icon, a = '') => {
   if (lang === RU) {
-    return `${status === 0 ? STATUS_OFF_RU : STATUS_ON_RU} ${icon}`;
+    return `${status === 0 ? STATUS_OFF_RU : STATUS_ON_RU}${a} ${icon}`;
   }
   return `${status === 0 ? STATUS_OFF_EN : STATUS_ON_EN} ${icon}`;
 };
-
 const getStatusSubscribe = (s, lang, icon) => {
   if (lang === RU) {
     return `${s === 0 || !s ? STATUS_SUB_OFF_RU : STATUS_SUB_ON_RU} ${icon}`;
@@ -102,7 +103,7 @@ const getStatusSubscribe = (s, lang, icon) => {
 const getType1 = lang => (lang === RU ? TYPE_1_RU : TYPE_1_EN);
 const getType2 = lang => (lang === RU ? TYPE_2_RU : TYPE_2_EN);
 const getType3 = lang => (lang === RU ? TYPE_3_RU : TYPE_3_EN);
-const getType = (l, t) => {
+const getTypeShow = (l, t) => {
   if (t === 1) {
     return getType1(l);
   }
@@ -119,7 +120,13 @@ const getNearLabel = (l, t) => {
   return `👀 ${n}`;
 };
 const typeLabel = lang => (lang === RU ? 'Тип аккаунта' : 'Account type');
-const notifyUser = (lang, name) => {
+const sentAlreadyPop = lang => {
+  if (lang === RU) {
+    return 'Вы уже отправляли запрос по этому маршруту';
+  }
+  return 'You have already sent a request on this route';
+};
+const showNotifyUser = (lang, name) => {
   if (lang === RU) {
     return `
 По вашему маршруту "${name}" добавлен похожий маршрут
@@ -129,18 +136,31 @@ const notifyUser = (lang, name) => {
 A similar route has been added to your route "${name}"
 `;
 };
-const notifyUserDriver = (lang, name) => {
+const showNotifyUserDriver = (lang, name) => {
   if (lang === RU) {
     return `С вами хочет кататься пользователь по маршруту "${name}"`;
   }
   return `The user wants to ride with you along the route "${name}"`;
 };
-const notifyUserCoop = (lang, name) => {
+const showNotifyUserCoop = (lang, name) => {
   if (lang === RU) {
     return `По вашему маршруту "${name}" появилось предложение по совместным поездкам`;
   }
   return `There is an offer for joint trips on your route "${name}"`;
 };
+
+const showPoint = (routeType, lang) => {
+  if (routeType === 1) {
+    return `${lang === RU ? POINT_1_RU : POINT_1_EN}
+${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
+  }
+  if (routeType === 2) {
+    return `${lang === RU ? POINT_2_RU : POINT_2_EN}
+${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
+  }
+  return 'error';
+};
+
 module.exports = {
   sentR: l => (l === RU ? 'Запрос отправлен' : 'Request sent'),
   sent3R: l => (l === RU ? 'Предложение отправлено' : 'Offer sent'),
@@ -155,7 +175,7 @@ module.exports = {
   success: lang => (lang === RU ? ROUTE_ADDED_RU : ROUTE_ADDED_EN),
   home: (lang, type) =>
     `${lang === RU ? MENU_RU : MENU_EN}
-${typeLabel(lang)}: ${getType(lang, type)}`,
+${typeLabel(lang)}: ${getTypeShow(lang, type)}`,
   start: lang => (lang === RU ? START_RU : START_EN),
   agree: lang => (lang === RU ? AGREE_RU : AGREE_EN),
   start2: lang => (lang === RU ? HELLO_RU : HELLO_EN),
@@ -163,17 +183,7 @@ ${typeLabel(lang)}: ${getType(lang, type)}`,
   driverStartNewRoute: lang =>
     `${lang === RU ? CREATE_RU : CREATE_EN}
 ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
-  point: (routeType, lang) => {
-    if (routeType === 1) {
-      return `${lang === RU ? POINT_1_RU : POINT_1_EN}
-${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
-    }
-    if (routeType === 2) {
-      return `${lang === RU ? POINT_2_RU : POINT_2_EN}
-${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
-    }
-    return 'error';
-  },
+  point: showPoint,
   asDept: () => 'Send my current location as departure',
   asDest: () => 'Send my current location as destination',
   support: links => {
@@ -185,12 +195,13 @@ ${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
   icon: s => `${s === 0 || !s ? '🔴' : '🟢'}`,
   routesList: lang => (lang === RU ? ROUTE_LIST_RU : ROUTE_LIST_EN),
   routesEmpty: lang => (lang === RU ? ROUTE_SAME_RU : ROUTE_SAME_EN),
-  getType: getType,
-  notifyUser: notifyUser,
-  notifyUserDriver: notifyUserDriver,
-  notifyUserCoop: notifyUserCoop,
-  status: getStatus,
+  getType: getTypeShow,
+  notifyUser: showNotifyUser,
+  notifyUserDriver: showNotifyUserDriver,
+  notifyUserCoop: showNotifyUserCoop,
+  showStatus: getStatus,
   statusSubscribe: getStatusSubscribe,
+  sentAlready: sentAlreadyPop,
   // menus
   activate: lang => (lang === RU ? 'Активировать' : 'Enable'),
   deactivate: lang => (lang === RU ? 'Выключить' : 'Disable'),
@@ -208,4 +219,5 @@ ${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
   menu: lang => (lang === RU ? MENU_RU : MENU_EN),
   sendRequest: lang => (lang === RU ? SEND_R_RU : SEND_R_EN),
   sendRequest3: lang => (lang === RU ? SEND_R3_RU : SEND_R3_EN),
+  routeExists: lang => (lang === RU ? ROUTE_EX_RU : ROUTE_EX_EN),
 };

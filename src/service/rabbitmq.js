@@ -1,5 +1,7 @@
 const amqp = require('amqplib');
+
 const logger = require('../api/utils/logger');
+const {showError} = require('../api/utils');
 
 const TASKS_CHANNEL = process.env.TASKS_DEV || 'route1';
 
@@ -51,7 +53,7 @@ const createChannel = async (queueName = TASKS_CHANNEL) => {
     channel = await connection.createChannel();
     await channel.assertQueue(queueName, {durable: true});
   } catch (e) {
-    console.log(e);
+    showError(e);
     logger(e);
   }
   rchannel = channel;

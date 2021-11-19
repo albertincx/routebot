@@ -16,6 +16,7 @@ const actions = {
   sendR: 'sendR',
   send3R: 'send3R',
 };
+
 function addRoute(lang) {
   const txt = messages.addRoute(lang);
   return [
@@ -25,13 +26,17 @@ function addRoute(lang) {
     },
   ];
 }
-function home(lang, txt = '') {
-  return [
-    {
-      text: txt || messages.menu(lang),
-      callback_data: actions.startHome,
-    },
-  ];
+
+function inline(keys, lang, toHome = false, back = false) {
+  if (toHome) {
+    keys.push([
+      {
+        text: (back && messages.backJust(lang)) || messages.menu(lang),
+        callback_data: actions.startHome,
+      },
+    ]);
+  }
+  return Markup.inlineKeyboard(keys);
 }
 
 function begin(lang) {
@@ -41,8 +46,8 @@ function begin(lang) {
   const type1 = Markup.button.callback(t1, actions.driver);
   const type2 = Markup.button.callback(t2, actions.sharing);
   const t = Markup.button.callback(t3, actions.passenger);
-  const back = home(lang);
-  return Markup.inlineKeyboard([[type1, type2], [t], back]).resize();
+  const keys = [[type1, type2], [t]];
+  return inline(keys, lang, true);
 }
 
 function driver(lang, type) {
@@ -62,9 +67,9 @@ function settings(lang, hasActive, type) {
     const s = Markup.button.callback(stop, `${actions.stopAll}${type}`);
     btns.push([s]);
   }
-  btns.push(home(lang, messages.backJust(lang)));
-  return Markup.inlineKeyboard(btns);
+  return inline(btns, lang, true, true);
 }
+
 function startFirst(txt) {
   return Markup.inlineKeyboard([
     Markup.button.callback(txt, actions.startAgree),
@@ -79,12 +84,15 @@ function hide(mark = false) {
   }
   return k;
 }
+
 function locationBtn(txt) {
   return Markup.button.locationRequest(txt);
 }
+
 function loc1(txt) {
   return Markup.keyboard([locationBtn(txt)]);
 }
+
 function loc2(txt) {
   return Markup.keyboard([locationBtn(txt)]);
 }
@@ -102,6 +110,7 @@ function nextProcess(routeType, lang) {
   k.disable_web_page_preview = true;
   return k;
 }
+
 function fr() {
   const k = Markup.forceReply();
   k.parse_mode = 'Markdown';
@@ -109,9 +118,6 @@ function fr() {
   return k;
 }
 
-function inline(keys) {
-  return Markup.inlineKeyboard(keys);
-}
 function editRoute(lang, callbacks, status, notify) {
   const text =
     status === 1 ? messages.deactivate(lang) : messages.activate(lang);
@@ -148,11 +154,12 @@ function editRoute(lang, callbacks, status, notify) {
     };
     keysArray.push([findBtn]);
   }
-  const k = Markup.inlineKeyboard(keysArray);
+  const k = inline(keysArray, lang, true);
   k.parse_mode = 'Markdown';
   k.disable_web_page_preview = true;
   return k;
 }
+
 module.exports = {
   actions,
 };
@@ -163,7 +170,6 @@ module.exports.hide = hide;
 module.exports.nextProcess = nextProcess;
 module.exports.fr = fr;
 module.exports.inline = inline;
-module.exports.home = home;
 module.exports.settings = settings;
 module.exports.editRoute = editRoute;
 module.exports.addRoute = addRoute;

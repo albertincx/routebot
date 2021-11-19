@@ -5,6 +5,7 @@ const messages = require('../../messages/format');
 const BUTTONS = require('../../config/buttons');
 const db = require('../utils/db');
 const {checkAdmin} = require('../utils');
+const {showError} = require('../utils');
 
 const rabbitmq = require('../../service/rabbitmq');
 const BotHelper2 = require('./bot/route');
@@ -69,15 +70,16 @@ function printRouteOne(r, lang) {
   if (!r) {
     return messages.routesEmpty(lang);
   }
-  const status = messages.status(r.status, lang, messages.icon(r.status));
-  const notify = messages.status(r.notify, lang, messages.icon(r.notify));
+  const {name, status, notify, pointA, pointB} = r;
+  const statu = messages.showStatus(status, lang, messages.icon(status));
+  const notif = messages.showStatus(notify, lang, messages.icon(notify), 'а');
   return `
-${messages.labelName(lang)}: ${r.name}
-${messages.labelStatus(lang)}: ${status}
-${messages.labelSubs(lang)}: ${notify}
+${messages.labelName(lang)}: ${name}
+${messages.labelStatus(lang)}: ${statu}
+${messages.labelSubs(lang)}: ${notif}
 
-📍${messages.labelA(lang)}: \`\`\`${r.pointA.coordinates}\`\`\`
-📍${messages.labelB(lang)}: \`\`\`${r.pointB.coordinates}\`\`\`
+📍${messages.labelA(lang)}: \`\`\`${pointA.coordinates}\`\`\`
+📍${messages.labelB(lang)}: \`\`\`${pointB.coordinates}\`\`\`
 `;
 }
 
@@ -119,7 +121,13 @@ const format = (bot, botHelper) => {
     if (checkAdmin(ctx)) {
       return;
     }
-    BH2.processLocation(ctx, [ctx.match[1], ctx.match[2]].map(Number));
+    try {
+      const coords = [ctx.match[1], ctx.match[2]].map(Number);
+      // eslint-disable-next-line consistent-return
+      return BH2.processLocation(ctx, coords);
+    } catch (e) {
+      showError(e);
+    }
   });
   bot.command(BUTTONS.driver.command, ctx => BH2.driverType(ctx, 1));
   bot.command(BUTTONS.sharingDriver.command, ctx => BH2.driverType(ctx, 2));
@@ -208,7 +216,7 @@ const format = (bot, botHelper) => {
         BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
-        console.log(e);
+        showError(e);
         // system = `${e}${system}`;
       }
       return;
@@ -223,7 +231,7 @@ const format = (bot, botHelper) => {
         BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text: messages.account(lang)});
       } catch (e) {
-        console.log(e);
+        showError(e);
         // system = `${e}${system}`;
       }
     }
@@ -234,15 +242,13 @@ const format = (bot, botHelper) => {
         const [, page] = data.match(/page_([0-9]+)/);
         const {cnt, routes = []} = await BH2.myRoutes(id, parseInt(page, 10));
         const pagi = getPagi(cnt, BH2.perPage, routes, parseInt(page, 10));
-        const home = keyboards.home(lang);
         pagi.push(keyboards.addRoute(lang));
-        pagi.push(home);
-        const pagination = keyboards.inline(pagi);
+        const pagination = keyboards.inline(pagi, lang, true);
         const txt = messages.routesList();
         BH2.edit(id, mId, null, txt, pagination);
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
-        console.log(e);
+        showError(e);
         // system = `${e}${system}`;
       }
     }
@@ -256,15 +262,26 @@ const format = (bot, botHelper) => {
           let text = 'error';
           const route = await BH2.getRouteById(_id, 'name userId');
           if (route) {
-            // const requestUserId = page;
+            const requestUserId = page;
             const {name, userId} = route;
+            const reqData = {from: requestUserId, to: userId, routeId: _id};
+            const req = await BH2.getRequest(reqData);
+            if (req) {
+              text = messages.sentAlready(lang);
+              ctx.answerCbQuery(cbqId, {text});
+              return;
+            }
+            let txt;
             if (sendR.match(keyboards.actions.sendR)) {
-              BH2.botMessage(userId, messages.notifyUserDriver(lang, name));
+              txt = messages.notifyUserDriver(lang, name);
               text = messages.sentR(lang);
             }
             if (sendR.match(keyboards.actions.send3R)) {
-              BH2.botMessage(userId, messages.notifyUserCoop(lang, name));
+              txt = messages.notifyUserCoop(lang, name);
               text = messages.sent3R(lang);
+            }
+            if (txt) {
+              BH2.botMessage(userId, txt);
             }
           }
           ctx.answerCbQuery(cbqId, {text});
@@ -285,7 +302,7 @@ const format = (bot, botHelper) => {
         BH2.edit(id, mId, null, printRouteOne(route, lang), keyb);
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
-        console.log(e);
+        showError(e);
         // system = `${e}${system}`;
       }
     }
@@ -327,13 +344,13 @@ const format = (bot, botHelper) => {
         const keyb = keyboards.editRoute(lang, callbacks, stNum, ntNum);
         const txt = printRouteOne(route, lang);
         await BH2.edit(id, mId, null, txt, keyb);
-        let pop = messages.status(stNum, lang, messages.icon(stNum));
+        let pop = messages.showStatus(stNum, lang, messages.icon(stNum));
         if (field === 'notify') {
           pop = messages.statusSubscribe(ntNum, lang, messages.icon(ntNum));
         }
         ctx.answerCbQuery(cbqId, {text: pop});
       } catch (e) {
-        console.log(e);
+        showError(e);
         // system = `${e}${system}`;
       }
     }
@@ -348,7 +365,6 @@ const format = (bot, botHelper) => {
         const type = parseInt(typ, 10);
         const {cnt, routes = []} = await BH2.findRoutes(id, page, _id, type);
         const pagi = getPagi(cnt, 1, [], page, `${_id}_${type}`);
-        const home = keyboards.home(lang);
         const back = [
           {
             text: messages.backJust(lang),
@@ -371,13 +387,12 @@ const format = (bot, botHelper) => {
           pagi.push(sendRequest);
         }
         pagi.push(back);
-        pagi.push(home);
-        const pagination = keyboards.inline(pagi);
+        const pagination = keyboards.inline(pagi, lang, true);
         const view = printRouteFound(routes, lang, type);
         BH2.edit(id, mId, null, view, pagination);
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
-        console.log(e);
+        showError(e);
         // system = `${e}${system}`;
       }
     }
@@ -390,19 +405,22 @@ const format = (bot, botHelper) => {
       return;
     }
     if (ctx.update && ctx.update.message) {
-      if (ctx.update.message.location) {
-        // eslint-disable-next-line consistent-return
-        return BH2.processLocation(ctx);
+      const {location, reply_to_message: rplMess} = ctx.update.message;
+      if (location) {
+        try {
+          // eslint-disable-next-line consistent-return
+          return BH2.processLocation(ctx);
+        } catch (e) {
+          showError(e);
+        }
       }
-      const {
-        from: {language_code: lang},
-      } = ctx.update.message;
-      if (
-        ctx.update.message.reply_to_message &&
-        ctx.update.message.reply_to_message.text.match(messages.check(lang))
-      ) {
-        // Send the name of your route
-        BH2.nextProcessName(ctx);
+      if (rplMess) {
+        const {from} = ctx.update.message;
+        const {language_code: lang} = from;
+        if (rplMess.text.match(messages.check(lang))) {
+          // Send the name of your route
+          BH2.nextProcessName(ctx);
+        }
       }
     }
   }

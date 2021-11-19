@@ -1,6 +1,8 @@
 const co = require('co');
 const mongoose = require('mongoose');
 
+const {showError} = require('./index');
+
 const anySchema = new mongoose.Schema(
   {},
   {
@@ -18,6 +20,7 @@ const Any = mongoose.model('Any', anySchema);
 
 const USERS = process.env.MONGO_COLL_LINKS || 'users';
 const ROUTES = process.env.MONGO_COLL_LINKS || 'routes';
+const REQUESTS = process.env.MONGO_COLL_LINKS || 'requests';
 const ROUTES_B = process.env.MONGO_COLL_ROUTES_B || 'routes_bs';
 
 const connectDb = () =>
@@ -36,10 +39,14 @@ const connectDb2 = () =>
   });
 const usersCol = Any.collection.conn.model(USERS, Any.schema);
 const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
+const reqCol = Any.collection.conn.model(REQUESTS, Any.schema);
 const routesBCol = Any.collection.conn.model(ROUTES_B, Any.schema);
 const DIR_A = 'pointA';
 const DIR_B = 'pointB';
-const MAX_POINT_A_CNT = 50;
+const constants = {
+  MAX_POINT_A_CNT: 50,
+  TYPE_PASS: 3,
+};
 
 const stat = filter => routesCol.countDocuments(filter);
 
@@ -56,8 +63,7 @@ const processRows = async (cc, limit, timeout, cb) => {
         try {
           yield cb(items);
         } catch (e) {
-          // eslint-disable-next-line no-console
-          console.log(e);
+          showError(e);
         }
         items = [];
         if (timeout) {
@@ -72,8 +78,7 @@ const processRows = async (cc, limit, timeout, cb) => {
     try {
       await cb(items);
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.log(e);
+      showError(e);
     }
   }
 };
@@ -284,6 +289,12 @@ const updateUser = async (u, collection = usersCol) => {
   return (await getFromCollection({userId: id}, collection, false)) || {};
 };
 
+const setRequest = async (reqData, collection = reqCol) => {
+  // eslint-disable-next-line no-param-reassign
+  await collection.updateOne(reqData, reqData, {upsert: true});
+};
+
+// eslint-disable-next-line consistent-return
 const addRouteA = async (data, loc, dir = DIR_A) => {
   const saveRoute = {...data};
   saveRoute[dir] = loc;
@@ -295,12 +306,13 @@ const addRouteA = async (data, loc, dir = DIR_A) => {
   if (dir === DIR_B) {
     saveRoute.pointAId = res._id;
     await addRoute({userId, name}, saveRoute, routes, routesBCol);
-    if (saveRoute.type !== 3) {
-      const routeA = await getRoute(userId, res._id, 'pointA');
+    const {TYPE_PASS: t3} = constants;
+    if (saveRoute.type !== t3) {
+      const routeA = await getRoute({userId, _id: res._id}, 'pointA');
       const ro = {...saveRoute, ...routeA};
       const $proj = {userId: 1};
-      const limit = MAX_POINT_A_CNT;
-      const {cnt, routes: r} = await findRoutes(ro, 0, limit, 3, $proj);
+      const {MAX_POINT_A_CNT: l} = constants;
+      const {cnt, routes: r} = await findRoutes(ro, 0, l, t3, $proj);
       if (cnt) {
         return r;
       }
@@ -373,8 +385,9 @@ const getPipeline = (
 
 const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
   const $match = {userId: {$ne: route.userId}, status: 1};
-  if (type === 0 || type === 3) {
-    if (type === 3) {
+  const {TYPE_PASS: t3} = constants;
+  if (type === 0 || type === t3) {
+    if (type === t3) {
       $match.type = type;
     } else {
       $match.type = {$in: [1, 2]};
@@ -385,7 +398,8 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
     $aMatch.notify = 1;
   }
   // console.log($aMatch);
-  const pipeline = getPipeline(route, $aMatch, 0, MAX_POINT_A_CNT);
+  const {MAX_POINT_A_CNT: l} = constants;
+  const pipeline = getPipeline(route, $aMatch, 0, l);
   const aggr = await routesCol.aggregate(pipeline);
   const pointAIds = [];
   if (aggr[0]) {
@@ -431,10 +445,17 @@ const getRoutes = (userId, pageP, perPage) => {
   return routesCol.find({userId}).skip(startIndex).limit(limit);
 };
 
-const getRoute = (userId, _id, project = null) =>
-  getFromCollection({userId, _id}, routesCol, false, project);
-const getRouteById = (_id, project = null) =>
-  getFromCollection({_id}, routesCol, false, project);
+const getRoute = (filter, project = null) =>
+  getFromCollection(filter, routesCol, false, project);
+
+const getRequest = async (reqData, project = '_id') => {
+  const r = await getFromCollection(reqData, reqCol, false, project);
+  if (!r) {
+    await setRequest(reqData);
+  }
+  return r;
+};
+
 const getActiveCnt = userId =>
   routesCol.countDocuments({userId, status: {$ne: 0}});
 
@@ -465,6 +486,6 @@ module.exports.routesCnt = routesCnt;
 module.exports.getRoutes = getRoutes;
 module.exports.statusRoute = statusRoute;
 module.exports.getRoute = getRoute;
-module.exports.getRouteById = getRouteById;
 module.exports.checkUser = checkUser;
 module.exports.getRoutesNear = getRoutesNear;
+module.exports.getRequest = getRequest;
