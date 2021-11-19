@@ -66,21 +66,28 @@ function getPagination(current, total, routs, fromRoute) {
   return [...routs];
 }
 
-function printRouteOne(r, lang) {
+function printRouteOne(r, lang, showPoints = true) {
   if (!r) {
     return messages.routesEmpty(lang);
   }
-  const {name, status, notify, pointA, pointB} = r;
+  const {name, status, notify, pointA, pointB, hourA, hourB} = r;
   const statu = messages.showStatus(status, lang, messages.icon(status));
   const notif = messages.showStatus(notify, lang, messages.icon(notify), 'а');
-  return `
+  let txt = `
 ${messages.labelName(lang)}: ${name}
 ${messages.labelStatus(lang)}: ${statu}
 ${messages.labelSubs(lang)}: ${notif}
 
-📍${messages.labelA(lang)}: \`\`\`${pointA.coordinates}\`\`\`
-📍${messages.labelB(lang)}: \`\`\`${pointB.coordinates}\`\`\`
 `;
+  if (showPoints) {
+    txt += `📍${messages.labelA(lang)}: \`\`\`${pointA.coordinates}\`\`\`
+📍${messages.labelB(lang)}: \`\`\`${pointB.coordinates}\`\`\``;
+  }
+  if (hourA) {
+    txt += `${messages.labelTimeA(lang)}: \`\`\`${hourA}\`\`\`
+${messages.labelTimeB(lang)}: \`\`\`${hourB}\`\`\``;
+  }
+  return txt;
 }
 
 function printRouteFound(routes, lang, type) {
@@ -111,7 +118,13 @@ function getPagi(cnt, perPage, routes, pageNum = 1, fromRoute = '') {
   const pages = getTotalPages(cnt, perPage);
   return getPagination(pageNum, pages, routs, fromRoute);
 }
-
+const getRouteCb = (_id, page, status, notify) => [
+  `route_${_id}_${page}_${NONE}`,
+  `${status === 1 ? DEAC : ACTI}_${_id}_${page}`,
+  `${notify === 1 ? UNSUB : SUBS}_${_id}_${page}`,
+  `t_fromA_${_id}_${page}_start`,
+  `delete_route_${_id}_${page}`,
+];
 const format = (bot, botHelper) => {
   const BH2 = new BotHelper2(botHelper);
   bot.command(['/createBroadcast', '/startBroadcast'], ctx =>
@@ -170,8 +183,6 @@ const format = (bot, botHelper) => {
       ctx.answerCbQuery(cbqId, {text: messages.stoppedAll(lang)});
       ctx.reply(messages.stoppedAll(lang), keyboards.hide());
       const {txt, keyb} = BH2.goMenu(lang, parseInt(type, 10));
-      // const txt = messages.home(lang, type);
-      // const keyb = keyboards.driver(lang);
       BH2.edit(id, mId, null, txt, keyb);
     }
     /** @alias addRoute */
@@ -252,55 +263,112 @@ const format = (bot, botHelper) => {
         // system = `${e}${system}`;
       }
     }
+    /** @alias request */
+    if (data.match(/^req_(.*?)/)) {
+      try {
+        const {language_code: lang} = from;
+        const [, _id, page, sendR] = data.match(/req_(.*?)_([0-9]+)_(.*?)$/);
+        let text = 'error';
+        const route = await BH2.getRouteById(_id, 'name userId');
+        if (route) {
+          const requestUserId = page;
+          const {name, userId} = route;
+          const reqData = {from: requestUserId, to: userId, routeId: _id};
+          const req = await BH2.getRequest(reqData);
+          if (req) {
+            text = messages.sentAlready(lang);
+            ctx.answerCbQuery(cbqId, {text});
+            return;
+          }
+          let txt;
+          if (sendR.match(keyboards.actions.sendR)) {
+            txt = messages.notifyUserDriver(lang, name);
+            text = messages.sentR(lang);
+          }
+          if (sendR.match(keyboards.actions.send3R)) {
+            txt = messages.notifyUserCoop(lang, name);
+            text = messages.sent3R(lang);
+          }
+          if (txt) {
+            BH2.botMessage(userId, txt);
+          }
+        }
+        ctx.answerCbQuery(cbqId, {text});
+      } catch (e) {
+        showError(e);
+      }
+    }
     /** @alias route */
     if (data.match(/^route_(.*?)/)) {
       try {
         const {id, language_code: lang} = from;
         const [, _id, page, sendR] = data.match(/route_(.*?)_([0-9]+)_(.*?)$/);
-
-        if (sendR !== NONE) {
-          let text = 'error';
-          const route = await BH2.getRouteById(_id, 'name userId');
-          if (route) {
-            const requestUserId = page;
-            const {name, userId} = route;
-            const reqData = {from: requestUserId, to: userId, routeId: _id};
-            const req = await BH2.getRequest(reqData);
-            if (req) {
-              text = messages.sentAlready(lang);
-              ctx.answerCbQuery(cbqId, {text});
-              return;
-            }
-            let txt;
-            if (sendR.match(keyboards.actions.sendR)) {
-              txt = messages.notifyUserDriver(lang, name);
-              text = messages.sentR(lang);
-            }
-            if (sendR.match(keyboards.actions.send3R)) {
-              txt = messages.notifyUserCoop(lang, name);
-              text = messages.sent3R(lang);
-            }
-            if (txt) {
-              BH2.botMessage(userId, txt);
-            }
-          }
-          ctx.answerCbQuery(cbqId, {text});
-          return;
+        let text = '';
+        if (sendR && sendR.match(/time_/)) {
+          // save B time and
+          const hour = parseInt(sendR.replace('time_', ''), 10);
+          await BH2.setStatusRoute(id, _id, hour, 'hourB');
+          text = messages.editTimeOk(lang, true);
         }
         const route = await BH2.getRoute(id, _id, 'notify status');
         const {status, notify} = route;
-        const callbacks = [
-          `page_${page}`,
-          `${status === 1 ? DEAC : ACTI}_${_id}_${page}`,
-          `${notify === 1 ? UNSUB : SUBS}_${_id}_${page}`,
-        ];
+        const editBtn = `edit_${_id}_${page}`;
+        const callbacks = [`page_${page}`, editBtn];
         if (status === 1) {
           callbacks.push(`find_1_${_id}_3`);
           callbacks.push(`find_1_${_id}_0`);
         }
-        const keyb = keyboards.editRoute(lang, callbacks, status, notify);
+        const keyb = keyboards.detailRoute(lang, callbacks, status, notify);
         BH2.edit(id, mId, null, printRouteOne(route, lang), keyb);
+        ctx.answerCbQuery(cbqId, {text});
+      } catch (e) {
+        showError(e);
+        // system = `${e}${system}`;
+      }
+    }
+    /** @alias edit */
+    if (data.match(/^edit_(.*?)/)) {
+      try {
+        const {id, language_code: lang} = from;
+        const [, _id, page] = data.match(/edit_(.*?)_([0-9]+)$/);
+        const route = await BH2.getRoute(id, _id, 'notify status');
+        const {status, notify} = route;
+        const callbacks = getRouteCb(_id, page, status, notify);
+        const keyb = keyboards.editRoute(lang, callbacks, status, notify);
+        BH2.edit(id, mId, null, printRouteOne(route, lang, false), keyb);
         ctx.answerCbQuery(cbqId, {text: ''});
+      } catch (e) {
+        showError(e);
+        // system = `${e}${system}`;
+      }
+    }
+    /** @alias edit */
+    if (data.match(/^(t_fromA|t_fromB)_(.*?)/)) {
+      try {
+        const {id, language_code: lang} = from;
+        const [, fromPoint, _id, page, when] = data.match(
+          /(t_fromA|t_fromB)_(.*?)_([0-9]+)_(.*?)$/,
+        );
+        let cbPath = `t_fromB_${_id}_${page}`;
+        const isFrB = fromPoint === 't_fromB';
+        const backCb = isFrB
+          ? `t_fromA_${_id}_${page}_start`
+          : `edit_${_id}_${page}`;
+        if (isFrB) {
+          cbPath = `route_${_id}_${page}`;
+        }
+        const text = messages.editTimeSuccess(lang, isFrB);
+        const back = [{text: messages.backJust(lang), callback_data: backCb}];
+        const txt = messages.editTime(lang, isFrB);
+        if (Number.isFinite(parseInt(when, 10))) {
+          // await save [fromPoint]
+          const hour = parseInt(when, 10);
+          await BH2.setStatusRoute(id, _id, hour, 'hourA');
+        }
+        const keys = keyboards.editTime(lang, when, isFrB, cbPath, true);
+        const keyb = keyboards.withHome(lang, [back, ...keys]);
+        BH2.edit(id, mId, null, txt, keyb);
+        ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
         // system = `${e}${system}`;
@@ -313,22 +381,11 @@ const format = (bot, botHelper) => {
         const [, status, _id, page] = data.match(
           /^(activate|deactivate|unsubscribe|subscribe)_(.*?)_([0-9]+)$/,
         );
-        let field = 'status';
-        if (data.match(SUBS)) {
-          field = 'notify';
-        }
+        const field = data.match(SUBS) ? 'notify' : 'status';
         const route = await BH2.setStatusRoute(id, _id, status, field);
-        let line1;
-        let line2;
-        if (field === 'status') {
-          line1 = `${status === ACTI ? DEAC : ACTI}_${_id}_${page}`;
-          line2 = `${route.notify === 1 ? UNSUB : SUBS}_${_id}_${page}`;
-        } else {
-          line1 = `${route.status === ACTI ? DEAC : ACTI}_${_id}_${page}`;
-          line2 = `${status === SUBS ? UNSUB : SUBS}_${_id}_${page}`;
-        }
-        const callbacks = [`page_${page}`, line1, line2];
-        if (status === ACTI || route.status === 1) {
+        const editBtn = `edit_${_id}_${page}`;
+        const callbacks = [`page_${page}`, editBtn];
+        if (route.status === 1) {
           callbacks.push(`find_${page}_${_id}_3`);
           callbacks.push(`find_${page}_${_id}_0`);
         }
@@ -341,7 +398,7 @@ const format = (bot, botHelper) => {
           stNum = route.status;
           ntNum = status === SUBS ? 1 : 0;
         }
-        const keyb = keyboards.editRoute(lang, callbacks, stNum, ntNum);
+        const keyb = keyboards.detailRoute(lang, callbacks, stNum, ntNum);
         const txt = printRouteOne(route, lang);
         await BH2.edit(id, mId, null, txt, keyb);
         let pop = messages.showStatus(stNum, lang, messages.icon(stNum));
@@ -381,7 +438,7 @@ const format = (bot, botHelper) => {
           const sendRequest = [
             {
               text,
-              callback_data: `route_${routes[0].pointAId}_${id}_${act}_1`,
+              callback_data: `req_${routes[0].pointAId}_${id}_${act}_1`,
             },
           ];
           pagi.push(sendRequest);

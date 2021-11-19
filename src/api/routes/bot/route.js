@@ -265,6 +265,9 @@ class BotHelper {
       const notify = st === 'subscribe' ? 1 : 0;
       upd = {notify};
     }
+    if (field === 'hourA' || field === 'hourB') {
+      upd = {hour: st};
+    }
     await db.statusRoute(chatId, _id, upd);
     const r = await db.getRoute({userId: chatId, _id});
     if (r) {

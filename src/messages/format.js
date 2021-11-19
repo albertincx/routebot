@@ -160,7 +160,43 @@ ${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
   }
   return 'error';
 };
+const editTime = (lang, isFromB) => {
+  if (lang === RU) {
+    if (isFromB) {
+      return 'Выберите время отправления из точки Б';
+    }
+    return 'Выберите время отправления из точки А';
+  }
+  if (isFromB) {
+    return 'Select depa from B point time';
+  }
+  return 'Set depa from A point  time';
+};
 
+const editTimeSuccess = (lang, isFromB) => {
+  if (lang === RU) {
+    if (isFromB) {
+      return 'Выберите время отправления из точки Б';
+    }
+    return 'Выберите время отправления из точки А';
+  }
+  if (isFromB) {
+    return 'Select depa from B point time';
+  }
+  return 'Set depa from A point  time';
+};
+const editTimeOk = (lang, isFromB) => {
+  if (lang === RU) {
+    if (isFromB) {
+      return 'Время сохранено';
+    }
+    return 'Время сохранено';
+  }
+  if (isFromB) {
+    return 'Times saved';
+  }
+  return 'Times saved';
+};
 module.exports = {
   sentR: l => (l === RU ? 'Запрос отправлен' : 'Request sent'),
   sent3R: l => (l === RU ? 'Предложение отправлено' : 'Offer sent'),
@@ -168,6 +204,8 @@ module.exports = {
   labelStatus: lang => (lang === RU ? 'Статус' : 'Status'),
   labelSubs: l => (l === RU ? 'Подписка на уведомления' : 'Subscription'),
   labelType: typeLabel,
+  labelTimeA: l => (l === RU ? 'Время отправления из точки А' : 'departure point'),
+  labelTimeB: l => (l === RU ? 'Время отправления из точки Б' : 'departure point'),
   labelA: lang => (lang === RU ? 'Точка А' : 'departure point'),
   labelB: lang => (lang === RU ? 'Точка Б' : 'destination point'),
   check: lang => (lang === RU ? CREATE_P_RU : CREATE_P_EN),
@@ -202,12 +240,17 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   showStatus: getStatus,
   statusSubscribe: getStatusSubscribe,
   sentAlready: sentAlreadyPop,
+  editTime: editTime,
+  editTimeSuccess: editTimeSuccess,
+  editTimeOk: editTimeOk,
   // menus
-  activate: lang => (lang === RU ? 'Активировать' : 'Enable'),
+  editR: lang => (lang === RU ? 'Редактировать' : 'Edit'),
+  activate: lang => (lang === RU ? 'Включить' : 'Enable'),
   deactivate: lang => (lang === RU ? 'Выключить' : 'Disable'),
   subscribe: lang => (lang === RU ? 'Подписаться на уведомления' : 'Subscribe'),
   unsubscribe: l => (l === RU ? 'Отписаться от уведомлений' : 'Unsubscribe'),
   back: lang => `${ARR_L} ${lang === RU ? 'Список Маршрутов' : 'Routes List'}`,
+  backRoute: l => `${ARR_L} ${l === RU ? 'к маршруту' : 'to Route'}`,
   backJust: lang => `${ARR_L} ${lang === RU ? 'Назад' : 'Back'}`,
   addRoute: lang => (lang === RU ? 'Добавить маршрут' : 'Add route'),
   addName: lang => (lang === RU ? 'Придумайте имя' : 'Send name of the route'),
@@ -215,6 +258,8 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   settings: l => (l === RU ? 'Настройки' : 'Settings'),
   changeType: lang => (lang === RU ? 'Изменить тип' : 'Change account type'),
   myRoutes: lang => (lang === RU ? 'Мои маршруты' : 'My Routes'),
+  changeHours: l => (l === RU ? 'Изменить время маршрута' : 'Change time'),
+  deleteRoute: lang => (lang === RU ? 'Удалить маршрут' : 'Delete route'),
   nearBy: getNearLabel,
   menu: lang => (lang === RU ? MENU_RU : MENU_EN),
   sendRequest: lang => (lang === RU ? SEND_R_RU : SEND_R_EN),
