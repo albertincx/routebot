@@ -289,8 +289,10 @@ const addRouteA = async (data, loc, dir = DIR_A) => {
   const {name} = u;
   const routes = dir === DIR_B ? 3 : 2;
   const res = await addRoute({userId, name}, saveRoute, routes);
+  let lastUpdatedId = '';
   if (dir === DIR_B) {
     saveRoute.pointAId = res._id;
+    lastUpdatedId = res._id;
     await addRoute({userId, name}, saveRoute, routes, routesBCol);
     const {TYPE_PASS: t3} = constants;
     if (saveRoute.type !== t3) {
@@ -300,9 +302,10 @@ const addRouteA = async (data, loc, dir = DIR_A) => {
       const {MAX_POINT_A_CNT: l} = constants;
       const {cnt, routes: r} = await findRoutes(ro, 0, l, t3, $proj);
       if (cnt) {
-        return r;
+        return {routes: r, lastUpdatedId};
       }
     }
+    return {lastUpdatedId};
   }
 };
 
@@ -380,6 +383,7 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
     }
   }
   const $aMatch = {...$match};
+  $aMatch.hourA = {$gte: route.hourA};
   if ($project && $project.userId) {
     $aMatch.notify = 1;
   }
@@ -397,10 +401,13 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
   let aggrB = [];
   if (pointAIds.length) {
     const pointBMatch = {...$match, pointAId: {$in: pointAIds}};
+    pointBMatch.hourB = {$gte: route.hourB};
     const pipelineB = getPipeline(route, pointBMatch, skip, limit, DIR_B, {
       name: 1,
       pointAId: 1,
       type: 1,
+      hourA: 1,
+      hourB: 1,
       ...($project || {}),
     });
     aggrB = await routesBCol.aggregate(pipelineB);
@@ -417,11 +424,11 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
   return {cnt, routes: r};
 };
 
-const getRoutesNear = (userId, pageP, type, perPage = 1) => {
+const getRoutesNear = (route, pageP, type, perPage = 1) => {
   const page = parseInt(pageP, 10) || 1;
   const limit = parseInt(perPage, 10) || 5;
   const startIndex = (page - 1) * limit;
-  return findRoutes(userId, startIndex, limit, type);
+  return findRoutes(route, startIndex, limit, type);
 };
 
 const getRoutes = (userId, pageP, perPage) => {

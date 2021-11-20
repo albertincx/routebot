@@ -198,9 +198,14 @@ class BotHelper {
         txt = messages.point(2, lang);
         await db.addRouteA(routeData, loc);
       }
+      let lastUpdatedId = '';
       if (routes === 2) {
         keyb = keyboards.hide();
-        const notifyRoutes = await db.addRouteB(routeData, loc);
+        const {routes: notifyRoutes, lastUpdatedId: lId} = await db.addRouteB(
+          routeData,
+          loc,
+        );
+        lastUpdatedId = lId;
         if (Array.isArray(notifyRoutes) && notifyRoutes.length) {
           this.notifyUsers(notifyRoutes, lang);
         }
@@ -208,9 +213,10 @@ class BotHelper {
       }
       await ctx.reply(txt, keyb);
       if (routes === 2) {
-        const {txt: t, keyb: k} = this.goMenu(lang, type);
-        txt = t;
-        keyb = k;
+        txt = messages.editTime(lang);
+        const cbPath = `t_fromB_${lastUpdatedId}_1`;
+        const keys = keyboards.editTime(lang, false, cbPath, true);
+        keyb = keyboards.withHome(lang, [...keys]);
         this.botMessage(userId, txt, keyb);
       }
     }
@@ -245,7 +251,10 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async findRoutes(id, page, _id, type) {
-    const route = await db.getRoute({userId: id, _id});
+    const route = await db.getRoute(
+      {userId: id, _id},
+      'userId pointA pointB hourA hourB',
+    );
     let cnt = 0;
     let r = [];
     if (route) {
@@ -271,22 +280,24 @@ class BotHelper {
   // eslint-disable-next-line class-methods-use-this,consistent-return
   async setStatusRoute(userId, _id, st) {
     let set = true;
-    let error = '';
+    const error = {};
     const r = await db.getRoute({userId, _id});
-    if (!r.hourA) {
-      error = 'set Hour A';
+    if (Number.isNaN(r.hourA)) {
+      error.error = 'set Hour A';
+      error.field = 'hourA';
       set = false;
     }
     if (!r.hourB) {
-      error = 'set Hour B';
+      error.error = 'set Hour B';
+      error.field = 'hourB';
       set = false;
     }
     if (set) {
       await this.setFieldRoute(userId, _id, st, 'status');
       r.status = st;
     }
-    if (error) {
-      return {error};
+    if (error.error) {
+      return error;
     }
     if (r) {
       return r;

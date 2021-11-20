@@ -36,8 +36,8 @@ const ROUTE_LIST_EN = 'Choose a route from the list below:';
 const ROUTE_ADDED_RU = 'Маршрут успешно добавлен';
 const ROUTE_ADDED_EN = 'Route added successfully';
 
-const STATUS_ON_RU = 'Включен';
-const STATUS_OFF_RU = 'Выключен';
+const STATUS_ON_RU = 'Вкл.';
+const STATUS_OFF_RU = 'Выкл.';
 const STATUS_ON_EN = 'On';
 const STATUS_OFF_EN = 'Off';
 
@@ -87,9 +87,9 @@ const TYPE_1_EN = BUTTONS.driver.label;
 const TYPE_2_EN = BUTTONS.sharingDriver.label;
 const TYPE_3_EN = BUTTONS.passenger.label;
 
-const getStatus = (status, lang, icon, a = '') => {
+const getStatus = (status, lang, icon) => {
   if (lang === RU) {
-    return `${status === 0 ? STATUS_OFF_RU : STATUS_ON_RU}${a} ${icon}`;
+    return `${status === 0 ? STATUS_OFF_RU : STATUS_ON_RU} ${icon}`;
   }
   return `${status === 0 ? STATUS_OFF_EN : STATUS_ON_EN} ${icon}`;
 };
@@ -119,7 +119,8 @@ const getNearLabel = (l, t) => {
   }
   return `👀 ${n}`;
 };
-const typeLabel = lang => (lang === RU ? 'Тип аккаунта' : 'Account type');
+const typeLabel = (l, fromRoute) =>
+  (l === RU ? `Тип ${fromRoute ? 'маршрута' : 'аккаунта'}` : 'Account type');
 const sentAlreadyPop = lang => {
   if (lang === RU) {
     return 'Вы уже отправляли запрос по этому маршруту';
@@ -201,7 +202,19 @@ const editTimeOk = (lang, isFromB) => {
   }
   return 'Times saved';
 };
-
+const iconWarn = () => '⚠ ';
+const timeError = (lang, field) => {
+  if (lang === RU) {
+    // if (field) {
+    //   return 'Время маршрута не установлено';
+    // }
+    return `${iconWarn()}Время маршрута не установлено`;
+  }
+  // if (field) {
+  //   return 'Time is not defined';
+  // }
+  return `${iconWarn()}Route time is not defined`;
+};
 function showHour(lang, hour) {
   const m = `${hour}`.match(/\.3/);
   let h = parseInt(hour, 10);
@@ -262,6 +275,7 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   },
   stoppedAll: lang => (lang === RU ? ROUTE_STOP_RU : ROUTE_STOP_EN),
   icon: s => `${s === 0 || !s ? '🔴' : '🟢'}`,
+  iconWarn,
   routesList: lang => (lang === RU ? ROUTE_LIST_RU : ROUTE_LIST_EN),
   routesEmpty: lang => (lang === RU ? ROUTE_SAME_RU : ROUTE_SAME_EN),
   getType: getTypeShow,
@@ -271,16 +285,18 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   showStatus: getStatus,
   statusSubscribe: getStatusSubscribe,
   sentAlready: sentAlreadyPop,
-  editTime: editTime,
-  editTimeSuccess: editTimeSuccess,
-  editTimeOk: editTimeOk,
-  showHour: showHour,
+  editTime,
+  editTimeSuccess,
+  editTimeOk,
+  showHour,
+  timeError,
   // menus
   editR: lang => (lang === RU ? 'Редактировать' : 'Edit'),
   activate: lang => (lang === RU ? 'Включить' : 'Enable'),
   deactivate: lang => (lang === RU ? 'Выключить' : 'Disable'),
-  subscribe: lang => (lang === RU ? 'Подписаться на уведомления' : 'Subscribe'),
-  unsubscribe: l => (l === RU ? 'Отписаться от уведомлений' : 'Unsubscribe'),
+  subscribe: l => `🔔 ${l === RU ? 'Подписаться на уведомления' : 'Subscribe'}`,
+  unsubscribe: l =>
+    `🔕 ${l === RU ? 'Отписаться от уведомлений' : 'Unsubscribe'}`,
   back: lang => `${ARR_L} ${lang === RU ? 'Список Маршрутов' : 'Routes List'}`,
   backRoute: l => `${ARR_L} ${l === RU ? 'к маршруту' : 'to Route'}`,
   backJust: lang => `${ARR_L} ${lang === RU ? 'Назад' : 'Back'}`,
@@ -291,7 +307,7 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   changeType: lang => (lang === RU ? 'Изменить тип' : 'Change account type'),
   myRoutes: lang => (lang === RU ? 'Мои маршруты' : 'My Routes'),
   changeHours: l => (l === RU ? 'Изменить время маршрута' : 'Change time'),
-  deleteRoute: lang => (lang === RU ? 'Удалить маршрут' : 'Delete route'),
+  deleteRoute: l => `❌ ${l === RU ? 'Удалить маршрут' : 'Delete route'}`,
   nearBy: getNearLabel,
   menu: lang => (lang === RU ? MENU_RU : MENU_EN),
   sendRequest: lang => (lang === RU ? SEND_R_RU : SEND_R_EN),

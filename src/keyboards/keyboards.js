@@ -17,7 +17,7 @@ const actions = {
   send3R: 'send3R',
 };
 
-function inline(keys, lang, toHome = false, back = false) {
+function inline(lang, keys, toHome = false, back = false) {
   if (toHome) {
     keys.push([
       {
@@ -29,8 +29,8 @@ function inline(keys, lang, toHome = false, back = false) {
   return Markup.inlineKeyboard(keys);
 }
 
-function withHome(lang, keysArray) {
-  const k = inline(keysArray, lang, true);
+function withHome(lang, keysArray, toHome = true) {
+  const k = inline(lang, keysArray, toHome);
   k.parse_mode = 'Markdown';
   k.disable_web_page_preview = true;
   return k;
@@ -54,7 +54,7 @@ function begin(lang) {
   const type2 = Markup.button.callback(t2, actions.sharing);
   const t = Markup.button.callback(t3, actions.passenger);
   const keys = [[type1, type2], [t]];
-  return inline(keys, lang, true);
+  return inline(lang, keys, true);
 }
 
 function driver(lang, type) {
@@ -69,12 +69,12 @@ function settings(lang, hasActive, type) {
   const changeType = messages.changeType(lang);
   const stop = messages.stopRoutes(lang);
   const c = Markup.button.callback(changeType, actions.changeType);
-  const btns = [[c]];
+  const keys = [[c]];
   if (hasActive) {
     const s = Markup.button.callback(stop, `${actions.stopAll}${type}`);
-    btns.push([s]);
+    keys.push([s]);
   }
-  return inline(btns, lang, true, true);
+  return inline(lang, keys, true, true);
 }
 
 function startFirst(txt) {
@@ -125,7 +125,7 @@ function fr() {
   return k;
 }
 
-function detailRoute(lang, callbacks) {
+function detailRoute(lang, callbacks, noTime = false) {
   const keys = [
     {
       text: messages.back(lang),
@@ -137,12 +137,21 @@ function detailRoute(lang, callbacks) {
     },
   ];
   const keysArray = [keys];
+
   if (callbacks[2]) {
-    const findBtn = {
-      text: messages.nearBy(lang),
-      callback_data: callbacks[2],
-    };
-    keysArray.push([findBtn]);
+    if (noTime) {
+      const findBtn = {
+        text: `${messages.iconWarn()}${messages.changeHours(lang)}`,
+        callback_data: callbacks[2],
+      };
+      keysArray.push([findBtn]);
+    } else {
+      const findBtn = {
+        text: messages.nearBy(lang),
+        callback_data: callbacks[2],
+      };
+      keysArray.push([findBtn]);
+    }
   }
   if (callbacks[3]) {
     const findBtn = {
@@ -154,7 +163,8 @@ function detailRoute(lang, callbacks) {
   return withHome(lang, keysArray);
 }
 
-function editRoute(lang, callbacks, status, notify) {
+function editRoute(lang, callbacks, route) {
+  const {status, notify, hourA, hourB} = route;
   const text =
     status === 1 ? messages.deactivate(lang) : messages.activate(lang);
   const text2 =
@@ -178,7 +188,9 @@ function editRoute(lang, callbacks, status, notify) {
   ]);
   keysArray.push([
     {
-      text: messages.changeHours(lang),
+      text: `${
+        Number.isNaN(hourA) || !hourB ? messages.iconWarn() : ''
+      }${messages.changeHours(lang)}`,
       callback_data: callbacks[3],
     },
   ]);
@@ -191,7 +203,7 @@ function editRoute(lang, callbacks, status, notify) {
   return withHome(lang, keysArray);
 }
 
-function editTimeKeys(lang, when, isB, cbPath) {
+function editTimeKeys(lang, isB, cbPath) {
   const m = [
     [0, 6, 12, 18],
     [0.3, 6.3, 12.3, 18.3],
@@ -218,8 +230,8 @@ function editTimeKeys(lang, when, isB, cbPath) {
   );
 }
 
-function editTime(lang, when, isFromB, cbPath, keys = false) {
-  const keysArray = editTimeKeys(lang, when, isFromB, cbPath);
+function editTime(lang, isFromB, cbPath, keys = false) {
+  const keysArray = editTimeKeys(lang, isFromB, cbPath);
   if (keys) {
     return keysArray;
   }
@@ -235,7 +247,6 @@ module.exports.startFirst = startFirst;
 module.exports.hide = hide;
 module.exports.nextProcess = nextProcess;
 module.exports.fr = fr;
-module.exports.inline = inline;
 module.exports.settings = settings;
 module.exports.addRoute = addRoute;
 module.exports.detailRoute = detailRoute;
