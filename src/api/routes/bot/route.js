@@ -283,6 +283,7 @@ class BotHelper {
     }
     if (set) {
       await this.setFieldRoute(userId, _id, st, 'status');
+      r.status = st;
     }
     if (error) {
       return {error};
