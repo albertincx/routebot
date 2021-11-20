@@ -408,6 +408,8 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
       type: 1,
       hourA: 1,
       hourB: 1,
+      notify: 1,
+      userId: 1,
       ...($project || {}),
     });
     aggrB = await routesBCol.aggregate(pipelineB);

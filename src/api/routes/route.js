@@ -236,19 +236,20 @@ const format = (bot, botHelper) => {
     if (data.match(/^req_(.*?)/)) {
       try {
         const {language_code: lang} = from;
-        const [, _id, page, sendR] = data.match(/req_(.*?)_([0-9]+)_(.*?)$/);
+        const [, _id, requestUserId, sendR, userId] = data.match(
+          /req_(.*?)_([0-9]+)_(.*?)_([0-9]+)$/,
+        );
         let text = 'error';
-        const route = await BH2.getRouteById(_id, 'name userId');
+        const reqData = {from: +requestUserId, to: +userId, routeId: _id};
+        const req = await BH2.getRequest(reqData);
+        if (req) {
+          text = messages.sentAlready(lang);
+          ctx.answerCbQuery(cbqId, {text});
+          return;
+        }
+        const route = await BH2.getRouteById(_id, 'name');
         if (route) {
-          const requestUserId = page;
-          const {name, userId} = route;
-          const reqData = {from: requestUserId, to: userId, routeId: _id};
-          const req = await BH2.getRequest(reqData);
-          if (req) {
-            text = messages.sentAlready(lang);
-            ctx.answerCbQuery(cbqId, {text});
-            return;
-          }
+          const {name} = route;
           let txt;
           if (sendR.match(keyboards.actions.sendR)) {
             txt = messages.notifyUserDriver(lang, name);
@@ -409,16 +410,31 @@ const format = (bot, botHelper) => {
           let text = messages.sendRequest(lang);
           let act = keyboards.actions.sendR;
           if (type === 3) {
+            // offer for same passenger
             text = messages.sendRequest3(lang);
             act = keyboards.actions.send3R;
           }
-          const sendRequest = [
-            {
-              text,
-              callback_data: `req_${routes[0].pointAId}_${id}_${act}_1`,
-            },
-          ];
-          preKeys.push(sendRequest);
+          const {pointAId, userId, notify} = routes[0];
+          let sendRequest;
+          if (!notify) {
+            // act = keyboards.actions.send3R;
+            sendRequest = [
+              {
+                text,
+                callback_data: `req_${pointAId}_${id}_${act}_${userId}`,
+              },
+            ];
+          } else {
+            sendRequest = [
+              {
+                text,
+                callback_data: `req_${pointAId}_${id}_${act}_${userId}`,
+              },
+            ];
+          }
+          if (sendRequest) {
+            preKeys.push(sendRequest);
+          }
         }
         const keys = [...preKeys, ...pagi];
         const pagination = keyboards.withHome(lang, keys, false);
