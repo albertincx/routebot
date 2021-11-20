@@ -119,8 +119,13 @@ const getNearLabel = (l, t) => {
   }
   return `👀 ${n}`;
 };
-const typeLabel = (l, fromRoute) =>
-  (l === RU ? `Тип ${fromRoute ? 'маршрута' : 'аккаунта'}` : 'Account type');
+const typeLabel = (l, fromRoute) => {
+  if (l === RU) {
+    return `Тип ${fromRoute ? 'маршрута' : 'аккаунта'}`;
+  }
+  return 'Account type';
+};
+
 const sentAlreadyPop = lang => {
   if (lang === RU) {
     return 'Вы уже отправляли запрос по этому маршруту';
@@ -203,7 +208,7 @@ const editTimeOk = (lang, isFromB) => {
   return 'Times saved';
 };
 const iconWarn = () => '⚠ ';
-const timeError = (lang, field) => {
+const timeError = lang => {
   if (lang === RU) {
     // if (field) {
     //   return 'Время маршрута не установлено';
@@ -215,7 +220,7 @@ const timeError = (lang, field) => {
   // }
   return `${iconWarn()}Route time is not defined`;
 };
-function showHour(lang, hour) {
+function showHourTxt(lang, hour, view = false) {
   const m = `${hour}`.match(/\.3/);
   let h = parseInt(hour, 10);
   if (lang === 'en' && h > 12) {
@@ -237,7 +242,11 @@ function showHour(lang, hour) {
       llang = 'am';
     }
   }
-  return `${time}${llang}`;
+  let afternoon = '';
+  if (hour === 12.3 && !view) {
+    afternoon = lang === RU ? ' полдень' : ' afternoon';
+  }
+  return `${time}${llang}${afternoon}`;
 }
 
 module.exports = {
@@ -248,8 +257,8 @@ module.exports = {
   labelSubs: l => (l === RU ? 'Подписка на уведомления' : 'Subscription'),
   labelType: typeLabel,
   labelTime: l => (l === RU ? 'Время' : 'Time'),
-  labelTimeA: l => (l === RU ? 'Туда' : 'there'),
-  labelTimeB: l => (l === RU ? 'Обратно' : 'back'),
+  labelTimeA: l => (l === RU ? 'Туда в' : 'Start drive time'),
+  labelTimeB: l => (l === RU ? 'Обратно в' : 'Return time'),
   labelA: lang => (lang === RU ? 'Точка А' : 'departure point'),
   labelB: lang => (lang === RU ? 'Точка Б' : 'destination point'),
   check: lang => (lang === RU ? CREATE_P_RU : CREATE_P_EN),
@@ -288,7 +297,7 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   editTime,
   editTimeSuccess,
   editTimeOk,
-  showHour,
+  showHour: showHourTxt,
   timeError,
   // menus
   editR: lang => (lang === RU ? 'Редактировать' : 'Edit'),
@@ -307,6 +316,8 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   changeType: lang => (lang === RU ? 'Изменить тип' : 'Change account type'),
   myRoutes: lang => (lang === RU ? 'Мои маршруты' : 'My Routes'),
   changeHours: l => (l === RU ? 'Изменить время маршрута' : 'Change time'),
+  changeHA: l => (l === RU ? 'Изменить время начала' : 'Change start time'),
+  changeHB: l => (l === RU ? 'Изменить время обратно' : 'Change return time'),
   deleteRoute: l => `❌ ${l === RU ? 'Удалить маршрут' : 'Delete route'}`,
   nearBy: getNearLabel,
   menu: lang => (lang === RU ? MENU_RU : MENU_EN),

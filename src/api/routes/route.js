@@ -288,7 +288,7 @@ const format = (bot, botHelper) => {
         }
         const route = await BH2.getRoute(id, _id, 'notify status hourA hourB');
         const {status, hourA, hourB} = route;
-        const editBtn = `edit_${_id}_${page}`;
+        const editBtn = `edit_${_id}_${page}_1`;
         const callbacks = [`page_${page}`, editBtn];
         const noTime = Number.isNaN(hourA) || !hourB;
         if (status === 1) {
@@ -309,13 +309,25 @@ const format = (bot, botHelper) => {
     if (data.match(/^edit_(.*?)/)) {
       try {
         const {id, language_code: lang} = from;
-        const [, _id, page] = data.match(/edit_(.*?)_([0-9]+)$/);
+        const [, _id, page, frOneT] = data.match(/edit_(.*?)_([0-9]+)_(.*?)$/);
+        let text = '';
+        if (frOneT && frOneT.match(newReg(`${hoursReg}$`))) {
+          const [, ff, fff] = frOneT.match(newReg(`${hoursReg}$`));
+          const v = parseFloat(fff.replace('time_', ''));
+          const field = ff === 't_fromA' ? 'hourA' : 'hourB';
+          await BH2.setFieldRoute(id, _id, v, field);
+          text = messages.editTimeOk(lang, true);
+        }
         const route = await BH2.getRoute(id, _id, 'notify status hourA hourB');
-        const {status, notify} = route;
+        const {status, notify, hourA, hourB} = route;
         const callbacks = getRouteCb(_id, page, status, notify);
+        if (hourA && hourB) {
+          callbacks.push(`t_fromA_${_id}_${page}_one`);
+          callbacks.push(`t_fromB_${_id}_${page}_one`);
+        }
         const keyb = keyboards.editRoute(lang, callbacks, route);
         BH2.edit(id, mId, null, printRouteOne(route, lang, false), keyb);
-        ctx.answerCbQuery(cbqId, {text: ''});
+        ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
         // system = `${e}${system}`;
@@ -332,20 +344,27 @@ const format = (bot, botHelper) => {
         );
         let cbPath = `t_fromB_${_id}_${page}`;
         const isFrB = frP === 't_fromB';
-        const backCb = isFrB
-          ? `t_fromA_${_id}_${page}_start`
-          : `edit_${_id}_${page}`;
         if (isFrB) {
           cbPath = `route_${_id}_${page}`;
+        }
+        let backCb;
+        if (_H === 'one') {
+          cbPath = `edit_${_id}_${page}_${frP}`;
+          backCb = `edit_${_id}_${page}_1`;
+        } else {
+          backCb = isFrB
+            ? `t_fromA_${_id}_${page}_start`
+            : `edit_${_id}_${page}_1`;
         }
         const text = messages.editTimeSuccess(lang, isFrB);
         const back = [{text: messages.backJust(lang), callback_data: backCb}];
         const txt = messages.editTime(lang, isFrB);
+        let v;
         if (Number.isFinite(parseInt(_H, 10))) {
-          const v = parseFloat(_H);
+          v = parseFloat(_H);
           await BH2.setFieldRoute(id, _id, v, 'hourA');
         }
-        const keys = keyboards.editTime(lang, isFrB, cbPath, true);
+        const keys = keyboards.editTime(lang, isFrB, cbPath, v);
         const keyb = keyboards.withHome(lang, [back, ...keys]);
         BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text});
@@ -361,7 +380,7 @@ const format = (bot, botHelper) => {
         const [, status, _id, page] = data.match(newReg(`${stReg}_([0-9]+)$`));
         const v = status === ACTI ? 1 : 0;
         const route = await BH2.setStatusRoute(id, _id, v);
-        const editBtn = `edit_${_id}_${page}`;
+        const editBtn = `edit_${_id}_${page}_1`;
         const callbacks = [`page_${page}`, editBtn];
         if (route.error) {
           const t = messages.timeError(lang, route.field);

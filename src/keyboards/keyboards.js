@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const {Markup} = require('telegraf');
 
 const messages = require('../messages/format');
@@ -186,14 +187,37 @@ function editRoute(lang, callbacks, route) {
       callback_data: callbacks[2],
     },
   ]);
-  keysArray.push([
-    {
-      text: `${
-        Number.isNaN(hourA) || !hourB ? messages.iconWarn() : ''
-      }${messages.changeHours(lang)}`,
-      callback_data: callbacks[3],
-    },
-  ]);
+  let text3;
+  const callB3 = callbacks[3];
+  let callB2;
+  let callB4;
+  if (Number.isNaN(hourA) || !hourB) {
+    text3 = `${messages.iconWarn()}${messages.changeHours(lang)}`;
+    callB2 = [
+      {
+        text: text3,
+        callback_data: callB3,
+      },
+    ];
+  } else {
+    text3 = `${!hourA ? messages.iconWarn() : ''}${messages.changeHA(lang)}`;
+    const t4 = `${!hourB ? messages.iconWarn() : ''}${messages.changeHB(lang)}`;
+    callB4 = [
+      {
+        text: text3,
+        callback_data: callbacks[5],
+      },
+      {
+        text: t4,
+        callback_data: callbacks[6],
+      },
+    ];
+  }
+  if (callB4) {
+    keysArray.push(callB4);
+  } else {
+    keysArray.push(callB2);
+  }
   keysArray.push([
     {
       text: messages.deleteRoute(lang),
@@ -203,22 +227,21 @@ function editRoute(lang, callbacks, route) {
   return withHome(lang, keysArray);
 }
 
-function editTimeKeys(lang, isB, cbPath) {
-  const m = [
-    [0, 6, 12, 18],
-    [0.3, 6.3, 12.3, 18.3],
-    [1, 7, 13, 19],
-    [1.3, 7.3, 13.3, 19.3],
-    [2, 8, 14, 20],
-    [2.3, 8.3, 14.3, 20.3],
-    [3, 9, 15, 21],
-    [3.3, 9.3, 15.3, 21.3],
-    [4, 10, 16, 22],
-    [4.3, 10.3, 16.3, 22.3],
-    [5, 11, 17, 23],
-    [5.3, 11.3, 17.3, 23.3],
-  ];
-  return m.map(a =>
+function editTimeKeys(lang, isB, cbPath, fromAVal) {
+  let arr = [];
+  for (let i = 0; i < 24; i += 1) {
+    if (!fromAVal || fromAVal < i) {
+      arr.push(i);
+      if (i !== 12 || fromAVal) {
+        arr.push(i + 0.3);
+      }
+    }
+  }
+  arr = _.chunk(arr, 5);
+  if (!fromAVal) {
+    arr.splice(5, 0, [12.3]);
+  }
+  return arr.map(a =>
     a.map(i => {
       const h = parseInt(i, 10);
       const min = `${i}`.match(/\.3/);
@@ -230,12 +253,8 @@ function editTimeKeys(lang, isB, cbPath) {
   );
 }
 
-function editTime(lang, isFromB, cbPath, keys = false) {
-  const keysArray = editTimeKeys(lang, isFromB, cbPath);
-  if (keys) {
-    return keysArray;
-  }
-  return withHome(lang, keysArray);
+function editTime(lang, isFromB, cbPath, fromAVal) {
+  return editTimeKeys(lang, isFromB, cbPath, fromAVal);
 }
 
 module.exports = {

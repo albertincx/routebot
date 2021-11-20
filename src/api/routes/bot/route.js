@@ -215,7 +215,7 @@ class BotHelper {
       if (routes === 2) {
         txt = messages.editTime(lang);
         const cbPath = `t_fromB_${lastUpdatedId}_1`;
-        const keys = keyboards.editTime(lang, false, cbPath, true);
+        const keys = keyboards.editTime(lang, false, cbPath);
         keyb = keyboards.withHome(lang, [...keys]);
         this.botMessage(userId, txt, keyb);
       }

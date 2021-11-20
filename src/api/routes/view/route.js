@@ -21,8 +21,8 @@ ${messages.labelType(lang, true)}: ${messages.getType(lang, type)}
   if (hourA) {
     txt += `
 ${messages.labelTime(lang)}
-${messages.labelTimeA(lang)}: ${messages.showHour(lang, hourA)}
-${messages.labelTimeB(lang)}: ${messages.showHour(lang, hourB)}`;
+${messages.labelTimeA(lang)}: ${messages.showHour(lang, hourA, true)}
+${messages.labelTimeB(lang)}: ${messages.showHour(lang, hourB, true)}`;
   }
   return txt;
 }
