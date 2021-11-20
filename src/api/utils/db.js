@@ -37,12 +37,15 @@ const connectDb2 = () =>
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
+
 const usersCol = Any.collection.conn.model(USERS, Any.schema);
 const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
 const reqCol = Any.collection.conn.model(REQUESTS, Any.schema);
 const routesBCol = Any.collection.conn.model(ROUTES_B, Any.schema);
+
 const DIR_A = 'pointA';
 const DIR_B = 'pointB';
+
 const constants = {
   MAX_POINT_A_CNT: 50,
   TYPE_PASS: 3,
@@ -81,23 +84,6 @@ const processRows = async (cc, limit, timeout, cb) => {
       showError(e);
     }
   }
-};
-
-const cBroad = '/createBroadcast';
-const sBroad = '/startBroadcast';
-
-const processBroadcast = async (txtParam, ctx, botHelper) => {
-  let txt = txtParam;
-  if (txt.match(cBroad)) {
-    ctx.reply('broad new started');
-    return createBroadcast(ctx, txt);
-  }
-  if (txt.match(sBroad)) {
-    txt = txt.replace(sBroad, '');
-    ctx.reply('broad send started');
-    return startBroadcast(ctx, txt, botHelper);
-  }
-  return Promise.resolve();
 };
 
 const getCids = txt => {
@@ -474,7 +460,6 @@ module.exports.updateOne = updateOne;
 module.exports.GetUser = GetUser;
 module.exports.createBroadcast = createBroadcast;
 module.exports.startBroadcast = startBroadcast;
-module.exports.processBroadcast = processBroadcast;
 module.exports.updateUser = updateUser;
 module.exports.addRoute = addRoute;
 module.exports.addRouteA = addRouteA;

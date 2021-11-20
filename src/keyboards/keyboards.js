@@ -191,32 +191,28 @@ function editRoute(lang, callbacks, status, notify) {
   return withHome(lang, keysArray);
 }
 
-function getHour(ho, m = '00') {
-  const h = `${ho < 10 ? '0' : ''}${ho}`;
-  return `${h}:${m}`;
-}
-
-function editTimeKeys(lang, when, isFromB, cbPath) {
+function editTimeKeys(lang, when, isB, cbPath) {
   const m = [
     [0, 6, 12, 18],
-    [0.1, 6.1, 12.1, 18.1],
+    [0.3, 6.3, 12.3, 18.3],
     [1, 7, 13, 19],
-    [1.1, 7.1, 13.1, 19.1],
+    [1.3, 7.3, 13.3, 19.3],
     [2, 8, 14, 20],
-    [2.1, 8.1, 14.1, 20.1],
+    [2.3, 8.3, 14.3, 20.3],
     [3, 9, 15, 21],
-    [3.1, 9.1, 15.1, 21.1],
+    [3.3, 9.3, 15.3, 21.3],
     [4, 10, 16, 22],
-    [4.1, 10.1, 16.1, 22.1],
+    [4.3, 10.3, 16.3, 22.3],
     [5, 11, 17, 23],
-    [5.1, 11.1, 17.1, 23.1],
+    [5.3, 11.3, 17.3, 23.3],
   ];
   return m.map(a =>
     a.map(i => {
       const h = parseInt(i, 10);
+      const min = `${i}`.match(/\.3/);
       return {
-        text: getHour(h, `${i}`.match('.1') ? 30 : '00'),
-        callback_data: `${cbPath}_${isFromB ? `time_${h}` : h}`,
+        text: messages.showHour(lang, i),
+        callback_data: `${cbPath}_${isB ? 'time_' : ''}${h}${min ? '.3' : ''}`,
       };
     }),
   );

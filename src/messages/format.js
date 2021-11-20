@@ -93,7 +93,7 @@ const getStatus = (status, lang, icon, a = '') => {
   }
   return `${status === 0 ? STATUS_OFF_EN : STATUS_ON_EN} ${icon}`;
 };
-const getStatusSubscribe = (s, lang, icon) => {
+const getStatusSubscribe = (lang, s, icon) => {
   if (lang === RU) {
     return `${s === 0 || !s ? STATUS_SUB_OFF_RU : STATUS_SUB_ON_RU} ${icon}`;
   }
@@ -163,9 +163,13 @@ ${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
 const editTime = (lang, isFromB) => {
   if (lang === RU) {
     if (isFromB) {
-      return 'Выберите время отправления из точки Б';
+      return `Выберите время отправления из точки Б
+🕝
+во сколько выезжаете ОТТУДА ⬅️`;
     }
-    return 'Выберите время отправления из точки А';
+    return `Выберите время отправления из точки А
+🕝
+во сколько выезжаете ТУДА ➡️`;
   }
   if (isFromB) {
     return 'Select depa from B point time';
@@ -197,6 +201,32 @@ const editTimeOk = (lang, isFromB) => {
   }
   return 'Times saved';
 };
+
+function showHour(lang, hour) {
+  const m = `${hour}`.match(/\.3/);
+  let h = parseInt(hour, 10);
+  if (lang === 'en' && h > 12) {
+    h -= 12;
+  }
+  let txtHour = `${h}`;
+  if (h < 10 && lang === RU) {
+    txtHour = `0${h}`;
+  }
+  let min = '00';
+  if (m) {
+    min = '30';
+  }
+  const time = `${txtHour}:${min}`;
+  let llang = '';
+  if (lang === 'en') {
+    llang = 'pm';
+    if (hour < 13) {
+      llang = 'am';
+    }
+  }
+  return `${time}${llang}`;
+}
+
 module.exports = {
   sentR: l => (l === RU ? 'Запрос отправлен' : 'Request sent'),
   sent3R: l => (l === RU ? 'Предложение отправлено' : 'Offer sent'),
@@ -204,8 +234,9 @@ module.exports = {
   labelStatus: lang => (lang === RU ? 'Статус' : 'Status'),
   labelSubs: l => (l === RU ? 'Подписка на уведомления' : 'Subscription'),
   labelType: typeLabel,
-  labelTimeA: l => (l === RU ? 'Время отправления из точки А' : 'departure point'),
-  labelTimeB: l => (l === RU ? 'Время отправления из точки Б' : 'departure point'),
+  labelTime: l => (l === RU ? 'Время' : 'Time'),
+  labelTimeA: l => (l === RU ? 'Туда' : 'there'),
+  labelTimeB: l => (l === RU ? 'Обратно' : 'back'),
   labelA: lang => (lang === RU ? 'Точка А' : 'departure point'),
   labelB: lang => (lang === RU ? 'Точка Б' : 'destination point'),
   check: lang => (lang === RU ? CREATE_P_RU : CREATE_P_EN),
@@ -243,6 +274,7 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   editTime: editTime,
   editTimeSuccess: editTimeSuccess,
   editTimeOk: editTimeOk,
+  showHour: showHour,
   // menus
   editR: lang => (lang === RU ? 'Редактировать' : 'Edit'),
   activate: lang => (lang === RU ? 'Включить' : 'Enable'),

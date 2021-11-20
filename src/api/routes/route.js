@@ -3,9 +3,9 @@ const _ = require('lodash');
 const keyboards = require('../../keyboards/keyboards');
 const messages = require('../../messages/format');
 const BUTTONS = require('../../config/buttons');
-const db = require('../utils/db');
 const {checkAdmin} = require('../utils');
 const {showError} = require('../utils');
+const {printRouteOne, printRouteFound} = require('./view/route');
 
 const rabbitmq = require('../../service/rabbitmq');
 const BotHelper2 = require('./bot/route');
@@ -13,25 +13,10 @@ const BotHelper2 = require('./bot/route');
 rabbitmq.startChannel();
 global.lastIvTime = +new Date();
 const NONE = 'none';
-const DEAC = 'deactivate';
-const ACTI = 'activate';
-const SUBS = 'subscribe';
-const UNSUB = 'unsubscribe';
-/**
- * @param ctx
- * @param botHelper BotHelper
- */
-const broadcast = (ctx, botHelper) => {
-  const {
-    from: {id},
-    text,
-  } = ctx.message;
-  if (!botHelper.isAdmin(id) || !text) {
-    return;
-  }
-
-  db.processBroadcast(text, ctx, botHelper);
-};
+const DEAC = 'st_dea';
+const ACTI = 'st_act';
+const SUBS = 'st_sub';
+const UNSUB = 'st_uns';
 
 function getPage(i, fromRoute = '') {
   if (fromRoute) {
@@ -66,49 +51,17 @@ function getPagination(current, total, routs, fromRoute) {
   return [...routs];
 }
 
-function printRouteOne(r, lang, showPoints = true) {
-  if (!r) {
-    return messages.routesEmpty(lang);
-  }
-  const {name, status, notify, pointA, pointB, hourA, hourB} = r;
-  const statu = messages.showStatus(status, lang, messages.icon(status));
-  const notif = messages.showStatus(notify, lang, messages.icon(notify), 'а');
-  let txt = `
-${messages.labelName(lang)}: ${name}
-${messages.labelStatus(lang)}: ${statu}
-${messages.labelSubs(lang)}: ${notif}
+const stReg = `^(${ACTI}|${DEAC})_(.*?)`;
+const hoReg = '^(t_fromA|t_fromB)_(.*?)';
 
-`;
-  if (showPoints) {
-    txt += `📍${messages.labelA(lang)}: \`\`\`${pointA.coordinates}\`\`\`
-📍${messages.labelB(lang)}: \`\`\`${pointB.coordinates}\`\`\``;
-  }
-  if (hourA) {
-    txt += `${messages.labelTimeA(lang)}: \`\`\`${hourA}\`\`\`
-${messages.labelTimeB(lang)}: \`\`\`${hourB}\`\`\``;
-  }
-  return txt;
+function newReg(str) {
+  return new RegExp(str);
 }
 
-function printRouteFound(routes, lang, type) {
-  let txt = '';
-  if (routes.length === 0) {
-    return messages.routesEmpty(lang);
-  }
-  routes.forEach(r => {
-    let tt = '';
-    if (type === 0) {
-      tt = `${messages.labelType(lang)}: ${messages.getType(lang, r.type)}`;
-    }
-    txt += `${tt}
-${messages.labelName(lang)}: ${r.name}
-`;
-  });
-  return txt;
-}
 function getTotalPages(cnt, perPage) {
   return cnt <= perPage ? 1 : Math.ceil(cnt / perPage);
 }
+
 function getPagi(cnt, perPage, routes, pageNum = 1, fromRoute = '') {
   const routs1 = routes.map(r => ({
     text: `${messages.icon(r.status)} ${r.name}`,
@@ -118,17 +71,18 @@ function getPagi(cnt, perPage, routes, pageNum = 1, fromRoute = '') {
   const pages = getTotalPages(cnt, perPage);
   return getPagination(pageNum, pages, routs, fromRoute);
 }
+
 const getRouteCb = (_id, page, status, notify) => [
   `route_${_id}_${page}_${NONE}`,
   `${status === 1 ? DEAC : ACTI}_${_id}_${page}`,
-  `${notify === 1 ? UNSUB : SUBS}_${_id}_${page}`,
+  `route_${_id}_${page}_${notify === 1 ? UNSUB : SUBS}`,
   `t_fromA_${_id}_${page}_start`,
   `delete_route_${_id}_${page}`,
 ];
 const format = (bot, botHelper) => {
   const BH2 = new BotHelper2(botHelper);
   bot.command(['/createBroadcast', '/startBroadcast'], ctx =>
-    broadcast(ctx, botHelper),
+    BH2.broadcast(ctx, botHelper),
   );
   bot.hears(/([0-9.]+),[\s+]?([0-9.]+)/, ctx => {
     if (checkAdmin(ctx)) {
@@ -304,11 +258,17 @@ const format = (bot, botHelper) => {
         const {id, language_code: lang} = from;
         const [, _id, page, sendR] = data.match(/route_(.*?)_([0-9]+)_(.*?)$/);
         let text = '';
-        if (sendR && sendR.match(/time_/)) {
-          // save B time and
-          const hour = parseInt(sendR.replace('time_', ''), 10);
-          await BH2.setStatusRoute(id, _id, hour, 'hourB');
-          text = messages.editTimeOk(lang, true);
+        if (sendR) {
+          if (sendR.match(/time_/)) {
+            const v = parseFloat(sendR.replace('time_', ''));
+            await BH2.setFieldRoute(id, _id, v, 'hourB');
+            text = messages.editTimeOk(lang, true);
+          }
+          if (sendR.match(/st_(sub|uns)/)) {
+            const v = sendR === SUBS ? 1 : 0;
+            await BH2.setFieldRoute(id, _id, v, 'notify');
+            text = messages.statusSubscribe(lang, v, messages.icon(v));
+          }
         }
         const route = await BH2.getRoute(id, _id, 'notify status');
         const {status, notify} = route;
@@ -343,14 +303,14 @@ const format = (bot, botHelper) => {
       }
     }
     /** @alias edit */
-    if (data.match(/^(t_fromA|t_fromB)_(.*?)/)) {
+    if (data.match(newReg(hoReg))) {
       try {
         const {id, language_code: lang} = from;
-        const [, fromPoint, _id, page, when] = data.match(
-          /(t_fromA|t_fromB)_(.*?)_([0-9]+)_(.*?)$/,
+        const [, frP, _id, page, _H] = data.match(
+          newReg(`${hoReg}_([0-9]+)_(.*?)$`),
         );
         let cbPath = `t_fromB_${_id}_${page}`;
-        const isFrB = fromPoint === 't_fromB';
+        const isFrB = frP === 't_fromB';
         const backCb = isFrB
           ? `t_fromA_${_id}_${page}_start`
           : `edit_${_id}_${page}`;
@@ -360,12 +320,11 @@ const format = (bot, botHelper) => {
         const text = messages.editTimeSuccess(lang, isFrB);
         const back = [{text: messages.backJust(lang), callback_data: backCb}];
         const txt = messages.editTime(lang, isFrB);
-        if (Number.isFinite(parseInt(when, 10))) {
-          // await save [fromPoint]
-          const hour = parseInt(when, 10);
-          await BH2.setStatusRoute(id, _id, hour, 'hourA');
+        if (Number.isFinite(parseInt(_H, 10))) {
+          const v = parseFloat(_H);
+          await BH2.setFieldRoute(id, _id, v, 'hourA');
         }
-        const keys = keyboards.editTime(lang, when, isFrB, cbPath, true);
+        const keys = keyboards.editTime(lang, _H, isFrB, cbPath, true);
         const keyb = keyboards.withHome(lang, [back, ...keys]);
         BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text});
@@ -375,36 +334,24 @@ const format = (bot, botHelper) => {
       }
     }
     /** @alias status */
-    if (data.match(/^(activate|deactivate|unsubscribe|subscribe)_(.*?)/)) {
+    if (data.match(newReg(stReg))) {
       try {
         const {id, language_code: lang} = from;
-        const [, status, _id, page] = data.match(
-          /^(activate|deactivate|unsubscribe|subscribe)_(.*?)_([0-9]+)$/,
-        );
-        const field = data.match(SUBS) ? 'notify' : 'status';
-        const route = await BH2.setStatusRoute(id, _id, status, field);
+        const [, status, _id, page] = data.match(newReg(`${stReg}_([0-9]+)$`));
+        const v = status === ACTI ? 1 : 0;
+        const route = await BH2.setStatusRoute(id, _id, v);
         const editBtn = `edit_${_id}_${page}`;
         const callbacks = [`page_${page}`, editBtn];
         if (route.status === 1) {
           callbacks.push(`find_${page}_${_id}_3`);
           callbacks.push(`find_${page}_${_id}_0`);
         }
-        let stNum;
-        let ntNum;
-        if (field === 'status') {
-          stNum = status === ACTI ? 1 : 0;
-          ntNum = route.notify;
-        } else {
-          stNum = route.status;
-          ntNum = status === SUBS ? 1 : 0;
-        }
+        const stNum = status === ACTI ? 1 : 0;
+        const ntNum = route.notify;
         const keyb = keyboards.detailRoute(lang, callbacks, stNum, ntNum);
         const txt = printRouteOne(route, lang);
         await BH2.edit(id, mId, null, txt, keyb);
-        let pop = messages.showStatus(stNum, lang, messages.icon(stNum));
-        if (field === 'notify') {
-          pop = messages.statusSubscribe(ntNum, lang, messages.icon(ntNum));
-        }
+        const pop = messages.showStatus(stNum, lang, messages.icon(stNum));
         ctx.answerCbQuery(cbqId, {text: pop});
       } catch (e) {
         showError(e);

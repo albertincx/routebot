@@ -4,6 +4,8 @@ const keyboards = require('../../../keyboards/keyboards');
 const {checkAdmin, showError} = require('../../utils');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
+const cBroad = '/createBroadcast';
+const sBroad = '/startBroadcast';
 
 function checkLoc(l) {
   const val = parseFloat(l);
@@ -258,22 +260,36 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async setStatusRoute(chatId, _id, st, field) {
-    const status = st === 'activate' ? 1 : 0;
-    let upd = {status};
-    if (field === 'notify') {
-      const notify = st === 'subscribe' ? 1 : 0;
-      upd = {notify};
-    }
+  async setFieldRoute(userId, _id, st, field) {
+    let upd = {[field]: st};
     if (field === 'hourA' || field === 'hourB') {
-      upd = {hour: st};
+      upd = {[field]: st};
     }
-    await db.statusRoute(chatId, _id, upd);
-    const r = await db.getRoute({userId: chatId, _id});
+    await db.statusRoute(userId, _id, upd);
+  }
+
+  // eslint-disable-next-line class-methods-use-this,consistent-return
+  async setStatusRoute(userId, _id, st) {
+    let set = true;
+    let error = '';
+    const r = await db.getRoute({userId, _id});
+    if (!r.hourA) {
+      error = 'set Hour A';
+      set = false;
+    }
+    if (!r.hourB) {
+      error = 'set Hour B';
+      set = false;
+    }
+    if (set) {
+      await this.setFieldRoute(userId, _id, st, 'status');
+    }
+    if (error) {
+      return {error};
+    }
     if (r) {
       return r;
     }
-    return {};
   }
 
   async notifyUsers(routes) {
@@ -291,6 +307,28 @@ class BotHelper {
         showError(e);
       }
     }
+  }
+
+  broadcast(ctx) {
+    const {
+      from: {id},
+      text,
+    } = ctx.message;
+    if (!this.botHelper.isAdmin(id) || !text) {
+      //
+    } else {
+      let txt = text;
+      if (txt.match(cBroad)) {
+        ctx.reply('broad new started');
+        return db.createBroadcast(ctx, txt);
+      }
+      if (txt.match(sBroad)) {
+        txt = txt.replace(sBroad, '');
+        ctx.reply('broad send started');
+        return db.startBroadcast(ctx, txt, this.botHelper);
+      }
+    }
+    return Promise.resolve();
   }
 }
 
