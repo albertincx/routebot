@@ -1,9 +1,11 @@
 const db = require('../../utils/db');
 const messages = require('../../../messages/format');
 const keyboards = require('../../../keyboards/keyboards');
-const {checkAdmin} = require('../../utils');
+const {checkAdmin, showError} = require('../../utils');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
+const cBroad = '/createBroadcast';
+const sBroad = '/startBroadcast';
 
 function checkLoc(l) {
   const val = parseFloat(l);
@@ -27,9 +29,7 @@ class BotHelper {
   }
 
   botMessage(chatId, text, opts) {
-    return this.bot
-      .sendMessage(chatId, text, opts)
-      .catch(e => this.sendError(e, `${chatId}${text}`));
+    return this.bot.sendMessage(chatId, text, opts);
   }
 
   sendError(error, text = '') {
@@ -66,15 +66,23 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async nextProcessName(ctx) {
-    if (checkAdmin(ctx)) {
-      return;
-    }
     const {from} = ctx.message;
     const {id: userId, language_code: lang} = from;
-    const keyb = keyboards.nextProcess(1, lang);
-    const txt = messages.point(1, lang);
     const name = ctx.update.message.text;
-    await db.addRoute({userId}, {name});
+
+    const exists = await db.getRoute({userId, name});
+    let txt;
+    let keyb;
+    if (!exists) {
+      keyb = keyboards.nextProcess(1, lang);
+      txt = messages.point(1, lang);
+      await db.addRoute({userId}, {name});
+    } else {
+      const txt1 = messages.routeExists(lang);
+      await ctx.reply(txt1);
+      txt = messages.driverStartNewRoute(lang);
+      keyb = keyboards.fr();
+    }
     try {
       ctx.reply(txt, keyb);
     } catch (e) {
@@ -139,16 +147,14 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this,consistent-return
-  async processLocation(ctx, locationFromTxt = []) {
+  async processLocation(ctx, coordinatesTxtArr = []) {
     const {update} = ctx;
     const {message} = update;
-    const {
-      from: {language_code: lang},
-    } = message;
-    if (message.reply_to_message) {
-      if (message.reply_to_message.text.match(messages.check(lang))) {
+    const {from, reply_to_message: rpl} = message;
+    const {language_code: lang} = from;
+    if (rpl) {
+      if (rpl.text.match(messages.check(lang))) {
         // Send the name of your route
-
         return this.nextProcessName(ctx);
       }
       // eslint-disable-next-line consistent-return
@@ -156,13 +162,12 @@ class BotHelper {
     }
     const {location: msgLocation} = message;
     let location = [];
-    if (locationFromTxt.length) {
-      location = locationFromTxt;
+    if (coordinatesTxtArr.length) {
+      location = coordinatesTxtArr;
     } else if (msgLocation) {
       location = [msgLocation.latitude, msgLocation.longitude];
     }
     if (location[0] && location[1]) {
-      const {from} = message;
       const {id: userId} = from;
       const {routes, type} = await db.GetUser(userId, 'routes type');
       if (!checkLocation(location)) {
@@ -193,9 +198,14 @@ class BotHelper {
         txt = messages.point(2, lang);
         await db.addRouteA(routeData, loc);
       }
+      let lastUpdatedId = '';
       if (routes === 2) {
         keyb = keyboards.hide();
-        const notifyRoutes = await db.addRouteB(routeData, loc);
+        const {routes: notifyRoutes, lastUpdatedId: lId} = await db.addRouteB(
+          routeData,
+          loc,
+        );
+        lastUpdatedId = lId;
         if (Array.isArray(notifyRoutes) && notifyRoutes.length) {
           this.notifyUsers(notifyRoutes, lang);
         }
@@ -203,9 +213,10 @@ class BotHelper {
       }
       await ctx.reply(txt, keyb);
       if (routes === 2) {
-        const {txt: t, keyb: k} = this.goMenu(lang, type);
-        txt = t;
-        keyb = k;
+        txt = messages.editTime(lang);
+        const cbPath = `t_fromB_${lastUpdatedId}_1`;
+        const keys = keyboards.editTime(lang, false, cbPath);
+        keyb = keyboards.withHome(lang, [...keys]);
         this.botMessage(userId, txt, keyb);
       }
     }
@@ -218,12 +229,17 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   getRoute(id, _id) {
-    return db.getRoute(id, _id);
+    return db.getRoute({userId: id, _id});
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  getRequest(reqData) {
+    return db.getRequest(reqData);
   }
 
   // eslint-disable-next-line class-methods-use-this
   getRouteById(_id, project) {
-    return db.getRouteById(_id, project);
+    return db.getRoute({_id}, project);
   }
 
   async myRoutes(id, page = 1) {
@@ -235,7 +251,10 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async findRoutes(id, page, _id, type) {
-    const route = await db.getRoute(id, _id);
+    const route = await db.getRoute(
+      {userId: id, _id},
+      'userId pointA pointB hourA hourB',
+    );
     let cnt = 0;
     let r = [];
     if (route) {
@@ -250,36 +269,78 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async setStatusRoute(chatId, _id, st, field) {
-    const status = st === 'activate' ? 1 : 0;
-    let upd = {status};
-    if (field === 'notify') {
-      const notify = st === 'subscribe' ? 1 : 0;
-      upd = {notify};
+  async setFieldRoute(userId, _id, st, field) {
+    let upd = {[field]: st};
+    if (field === 'hourA' || field === 'hourB') {
+      upd = {[field]: st};
     }
-    await db.statusRoute(chatId, _id, upd);
-    const r = await db.getRoute(chatId, _id);
+    await db.statusRoute(userId, _id, upd);
+  }
+
+  // eslint-disable-next-line class-methods-use-this,consistent-return
+  async setStatusRoute(userId, _id, st) {
+    let set = true;
+    const error = {};
+    const r = await db.getRoute({userId, _id});
+    if (Number.isNaN(r.hourA)) {
+      error.error = 'set Hour A';
+      error.field = 'hourA';
+      set = false;
+    }
+    if (!r.hourB) {
+      error.error = 'set Hour B';
+      error.field = 'hourB';
+      set = false;
+    }
+    if (set) {
+      await this.setFieldRoute(userId, _id, st, 'status');
+      r.status = st;
+    }
+    if (error.error) {
+      return error;
+    }
     if (r) {
       return r;
     }
-    return {};
   }
 
   async notifyUsers(routes) {
-    try {
-      // eslint-disable-next-line no-restricted-syntax
-      for (const r of routes) {
-        const {name, userId: id} = r;
+    // eslint-disable-next-line no-restricted-syntax
+    for (const r of routes) {
+      const {name, userId: id} = r;
+      try {
         // eslint-disable-next-line no-await-in-loop
         const user = await db.GetUser(id, 'language_code');
         const {language_code: lang} = user;
         const notifyUserTxt = messages.notifyUser(lang, name);
         this.botMessage(id, notifyUserTxt);
+      } catch (e) {
+        this.sendError(e, `${id} notifyUsers`);
+        showError(e);
       }
-    } catch (e) {
-      console.log(e);
-      //
     }
+  }
+
+  broadcast(ctx) {
+    const {
+      from: {id},
+      text,
+    } = ctx.message;
+    if (!this.botHelper.isAdmin(id) || !text) {
+      //
+    } else {
+      let txt = text;
+      if (txt.match(cBroad)) {
+        ctx.reply('broad new started');
+        return db.createBroadcast(ctx, txt);
+      }
+      if (txt.match(sBroad)) {
+        txt = txt.replace(sBroad, '');
+        ctx.reply('broad send started');
+        return db.startBroadcast(ctx, txt, this.botHelper);
+      }
+    }
+    return Promise.resolve();
   }
 }
 

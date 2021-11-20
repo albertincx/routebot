@@ -1,5 +1,7 @@
 const fetch = require('node-fetch');
 
+const {showError} = require('../../api/utils');
+
 async function run(params, botHelper) {
   try {
     const url = process.env.TEST_API;
@@ -7,7 +9,7 @@ async function run(params, botHelper) {
     await fetch(url);
     await botHelper.sendAdmin('cron test check url', process.env.TGGROUPLOGS);
   } catch (e) {
-    console.log(e);
+    showError(e);
   }
 }
 

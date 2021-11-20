@@ -1,17 +1,19 @@
 const fs = require('fs');
 const {CronJob} = require('cron');
 
+const {showError} = require('./api/utils');
+
 const CRON_SEP = ':';
 const JOB_SEP = ',';
 
 function cron(crontime, tasks, botHelper) {
   // eslint-disable-next-line no-console
-  console.log(`init cron ${crontime} ${tasks}`);
+  showError(`init cron ${crontime} ${tasks}`);
   const job = new CronJob(`${crontime}`, async () => {
     if (process.env.DEV) {
       const d = new Date();
       // eslint-disable-next-line no-console
-      console.log(`created task ${crontime} `, d);
+      showError(`created task ${crontime} `, d);
     }
     for (let i = 0; i < tasks.length; i += 1) {
       const taskName = tasks[i];
@@ -23,9 +25,9 @@ function cron(crontime, tasks, botHelper) {
       } catch (e) {
         if (process.env.DEV) {
           // eslint-disable-next-line no-console
-          console.log(`task error ${taskName}`);
+          showError(`task error ${taskName}`);
           // eslint-disable-next-line no-console
-          console.log(e);
+          showError(e);
         }
       }
     }
@@ -63,20 +65,20 @@ function init(botHelper) {
             }
           } else {
             // eslint-disable-next-line no-console
-            console.log(`no jobs ${crontime}`);
+            showError(`no jobs ${crontime}`);
           }
         } else {
           // eslint-disable-next-line no-console
-          console.log(`empty ${crontime}`);
+          showError(`empty ${crontime}`);
         }
       }
     } else {
       // eslint-disable-next-line no-console
-      console.log('no crons');
+      showError('no crons');
     }
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.log(e);
+    showError(e);
   }
 }
 

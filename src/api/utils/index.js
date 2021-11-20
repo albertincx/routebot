@@ -39,8 +39,10 @@ function checkAdmin(ctx) {
   }
   return !(ADMINS.length && ADMINS.includes(`${chatId}`));
 }
+const showError = e => console.log(e);
 
 module.exports.checkAdmin = checkAdmin;
 module.exports.check = check;
 module.exports.timeout = timeout;
 module.exports.checkData = checkData;
+module.exports.showError = showError;
