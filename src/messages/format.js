@@ -25,12 +25,17 @@ ${TGPH_LINK}
 
 const MENU_RU = 'Меню';
 const MENU_EN = 'Menu';
+
 const SEND_R_RU = 'Отправить заявку на совместную поездку';
+const SEND_R_EN = 'Send request to drive';
+
 const SEND_R3_RU = 'Предложить объединиться на совместные поездки';
 const SEND_R3_EN = 'Offer to unite for joint trips';
+const SEND_RNOTIFY_RU = 'Подписаться на обновления';
+const SEND_RNOTIFY_EN = 'Subscribe to updates';
+
 const ROUTE_EX_RU = 'Маршрут с таким именем уже существует';
 const ROUTE_EX_EN = 'A route with the same name already exists';
-const SEND_R_EN = 'Send request to drive';
 const ROUTE_LIST_RU = 'Выберите маршрут из списка ниже:';
 const ROUTE_LIST_EN = 'Choose a route from the list below:';
 const ROUTE_ADDED_RU = 'Маршрут успешно добавлен';
@@ -45,7 +50,8 @@ const STATUS_SUB_ON_RU = 'Уведомления вкл.';
 const STATUS_SUB_OFF_RU = 'Уведомления выкл.';
 const STATUS_SUB_ON_EN = 'Notifications enabled';
 const STATUS_SUB_OFF_EN = 'Notifications disabled';
-
+const NOTIFY_ON_RU = 'Включить уведомления';
+const NOTIFY_ON_EN = 'Enable notifications';
 const CHANGED_RU = 'Тип изменен';
 const CHANGED_EN = 'Account type changed';
 const RU = 'ru';
@@ -320,9 +326,7 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   editR: lang => (lang === RU ? 'Редактировать' : 'Edit'),
   activate: lang => (lang === RU ? 'Включить' : 'Enable'),
   deactivate: lang => (lang === RU ? 'Выключить' : 'Disable'),
-  subscribe: l => `${l === RU
-    ? 'Включить уведомления'
-    : 'Enable notifications'}`,
+  subscribe: l => (l === RU ? NOTIFY_ON_RU : NOTIFY_ON_EN),
   unsubscribe: l =>
     `🔕 ${l === RU ? 'Выключить уведомления' : 'Disable notifications'}`,
   back: lang => `${ARR_L} ${lang === RU ? 'Список Маршрутов' : 'Routes List'}`,
@@ -342,5 +346,6 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   menu: lang => (lang === RU ? MENU_RU : MENU_EN),
   sendRequest: lang => (lang === RU ? SEND_R_RU : SEND_R_EN),
   sendRequest3: lang => (lang === RU ? SEND_R3_RU : SEND_R3_EN),
+  sendRequestNotify: lang => (lang === RU ? SEND_RNOTIFY_RU : SEND_RNOTIFY_EN),
   routeExists: lang => (lang === RU ? ROUTE_EX_RU : ROUTE_EX_EN),
 };

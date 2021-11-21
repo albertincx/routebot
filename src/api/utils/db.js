@@ -20,6 +20,7 @@ const Any = mongoose.model('Any', anySchema);
 
 const USERS = process.env.MONGO_COLL_LINKS || 'users';
 const ROUTES = process.env.MONGO_COLL_LINKS || 'routes';
+const SUBS = process.env.MONGO_COLL_SUBS || 'subscriptions';
 const REQUESTS = process.env.MONGO_COLL_LINKS || 'requests';
 const ROUTES_B = process.env.MONGO_COLL_ROUTES_B || 'routes_bs';
 
@@ -42,6 +43,7 @@ const usersCol = Any.collection.conn.model(USERS, Any.schema);
 const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
 const reqCol = Any.collection.conn.model(REQUESTS, Any.schema);
 const routesBCol = Any.collection.conn.model(ROUTES_B, Any.schema);
+const subsCol = Any.collection.conn.model(SUBS, Any.schema);
 
 const DIR_A = 'pointA';
 const DIR_B = 'pointB';
@@ -439,7 +441,11 @@ const getRoutes = (userId, pageP, perPage) => {
   const startIndex = (page - 1) * limit;
   return routesCol.find({userId}).skip(startIndex).limit(limit);
 };
-
+const subscribers = async (_id, cb) => {
+  const filter = {routeId: _id};
+  const cursor = subsCol.find(filter).cursor();
+  await processRows(cursor, 500, 10, cb);
+};
 const getRoute = (filter, project = null) =>
   getFromCollection(filter, routesCol, false, project);
 
@@ -487,3 +493,4 @@ module.exports.checkUser = checkUser;
 module.exports.getRoutesNear = getRoutesNear;
 module.exports.getRequest = getRequest;
 module.exports.deleteRoute = deleteRoute;
+module.exports.subscribers = subscribers;

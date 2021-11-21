@@ -2,6 +2,7 @@ const db = require('../../utils/db');
 const messages = require('../../../messages/format');
 const keyboards = require('../../../keyboards/keyboards');
 const {checkAdmin, showError} = require('../../utils');
+const rabbitmq = require('../../../service/rabbitmq');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 const cBroad = '/createBroadcast';
@@ -355,6 +356,22 @@ class BotHelper {
   // eslint-disable-next-line class-methods-use-this
   deleteRoute(id) {
     return db.deleteRoute(id);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  notifyUsersDelCb(items) {
+    items.forEach(u => {
+      rabbitmq.addToQueue({...u, delete: 1});
+    });
+  }
+
+  notifyUsersDel(_id) {
+    return db.subscribers(_id, this.notifyUsersDelCb);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async jobMessage(task) {
+    console.log('from rab', task);
   }
 }
 

@@ -9,6 +9,7 @@ const {printRouteOne, printRouteFound} = require('./view/route');
 
 const rabbitmq = require('../../service/rabbitmq');
 const BotHelper2 = require('./bot/route');
+const {processSendR} = require('./bot/request');
 
 rabbitmq.startChannel();
 global.lastIvTime = +new Date();
@@ -237,34 +238,7 @@ const format = (bot, botHelper) => {
     /** @alias request */
     if (data.match(/^req_(.*?)/)) {
       try {
-        const {language_code: lang} = from;
-        const [, _id, requestUserId, sendR, userId] = data.match(
-          /req_(.*?)_([0-9]+)_(.*?)_([0-9]+)$/,
-        );
-        let text = 'error';
-        const reqData = {from: +requestUserId, to: +userId, routeId: _id};
-        const req = await BH2.getRequest(reqData);
-        if (req) {
-          text = messages.sentAlready(lang);
-          ctx.answerCbQuery(cbqId, {text});
-          return;
-        }
-        const route = await BH2.getRouteById(_id, 'name');
-        if (route) {
-          const {name} = route;
-          let txt;
-          if (sendR.match(keyboards.actions.sendR)) {
-            txt = messages.notifyUserDriver(lang, name);
-            text = messages.sentR(lang);
-          }
-          if (sendR.match(keyboards.actions.send3R)) {
-            txt = messages.notifyUserCoop(lang, name);
-            text = messages.sent3R(lang);
-          }
-          if (txt) {
-            BH2.botMessage(userId, txt);
-          }
-        }
+        const text = await processSendR(ctx, from, BH2);
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
@@ -437,16 +411,17 @@ const format = (bot, botHelper) => {
         const preKeys = [];
         if (routes[0]) {
           let text = messages.sendRequest(lang);
-          let act = keyboards.actions.sendR;
+          let act = keyboards.actions.sendDriverReq;
           if (type === 3) {
             // offer for same passenger
             text = messages.sendRequest3(lang);
-            act = keyboards.actions.send3R;
+            act = keyboards.actions.sendPassReq;
           }
           const {pointAId, userId, notify} = routes[0];
 
           if (!notify) {
-            act = keyboards.actions.send4R;
+            text = messages.sendRequestNotify(lang);
+            act = keyboards.actions.sendNotify;
           }
           const sendRequest = [
             {
@@ -477,8 +452,8 @@ const format = (bot, botHelper) => {
           /del_route_(.*?)_([0-9]+)_(.*?)$/,
         );
         if (typ === 'y') {
-          await BH2.deleteRoute(_id);
-          await BH2.notifyUsers(_id);
+          // await BH2.deleteRoute(_id);
+          await BH2.notifyUsersDel(_id);
           const view = `You are about to delete your bot CorsaSlaveBot . Is that correct? ?${typ}`;
           BH2.edit(id, mId, null, view);
           await BH2.goHomeAction(ctx, from, cbqId);
@@ -547,6 +522,14 @@ const format = (bot, botHelper) => {
   }
 
   bot.on('message', ctx => test(ctx));
+  try {
+    setTimeout(() => {
+      rabbitmq.run(BH2.jobMessage);
+      rabbitmq.runSecond(BH2.jobMessage);
+    }, 5000);
+  } catch (e) {
+    botHelper.sendError(e);
+  }
 };
 
 module.exports = format;

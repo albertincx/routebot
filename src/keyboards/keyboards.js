@@ -14,9 +14,9 @@ const actions = {
   sharing: 'type_2',
   passenger: 'type_3',
   settings: 'menu_settings',
-  sendR: 'sendR',
-  send3R: 'send3R',
-  send4R: 'send4R',
+  sendDriverReq: 'sendR',
+  sendPassReq: 'send3R',
+  sendNotify: 'send4R',
 };
 
 function inline(lang, keys, toHome = false, back = false) {

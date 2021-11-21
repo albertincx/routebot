@@ -3,9 +3,9 @@ const amqp = require('amqplib');
 const logger = require('../api/utils/logger');
 const {showError} = require('../api/utils');
 
-const TASKS_CHANNEL = process.env.TASKS_DEV || 'route1';
+const TASKS_CHANNEL = process.env.TASKS_DEV || 'routes_tasks';
 
-const TASKS2_CHANNEL = process.env.TASKS2_DEV || 'route2';
+const TASKS2_CHANNEL = process.env.TASKS2_DEV || 'routes2_tasks';
 let rchannel = null;
 
 const RABBIT_1 = 'rabbit';
