@@ -12,6 +12,7 @@ const BotHelper2 = require('./bot/route');
 
 rabbitmq.startChannel();
 global.lastIvTime = +new Date();
+
 const NONE = 'none';
 const DEAC = 'st_dea';
 const ACTI = 'st_act';
@@ -59,18 +60,14 @@ function getTotalPages(cnt, perPage) {
   return cnt <= perPage ? 1 : Math.ceil(cnt / perPage);
 }
 
-function getPagiRoutes(routes, cnt, perPage, pageNum = 1) {
-  const routs1 = routes.map(r => ({
-    text: `${messages.icon(r.status)} ${r.name}`,
-    callback_data: `route_${r._id}_${pageNum}_${NONE}`,
-  }));
-  const routs = _.chunk(routs1, 3);
-  const pages = getTotalPages(cnt, perPage);
-  const keys = getPagination(pageNum, pages);
-  if (keys.length) {
-    return [...routs, keys];
-  }
-  return [];
+function getPagiRoutes(routes, pageNum = 1) {
+  return _.chunk(
+    routes.map(r => ({
+      text: `${messages.icon(r.status)} ${r.name}`,
+      callback_data: `route_${r._id}_${pageNum}_${NONE}`,
+    })),
+    3,
+  );
 }
 
 function getPagi(cnt, perPage, pageNum = 1, fromRoute = '') {
@@ -87,7 +84,7 @@ const getRouteCb = (_id, page, status, notify) => [
   `${status === 1 ? DEAC : ACTI}_${_id}_${page}`,
   `route_${_id}_${page}_${notify === 1 ? UNSUB : SUBS}`,
   `t_fromA_${_id}_${page}_start`,
-  `delete_route_${_id}_${page}`,
+  `del_route_${_id}_${page}`,
 ];
 const format = (bot, botHelper) => {
   const BH2 = new BotHelper2(botHelper);
@@ -214,14 +211,12 @@ const format = (bot, botHelper) => {
     if (data.match(/page_([0-9]+)/)) {
       try {
         const {id, language_code: lang} = from;
-        const [, page] = data.match(/page_([0-9]+)/);
-        const {cnt, routes = []} = await BH2.myRoutes(id, parseInt(page, 10));
-        const pagi = getPagiRoutes(
-          routes,
-          cnt,
-          BH2.perPage,
-          parseInt(page, 10),
-        );
+        const [, pageStr] = data.match(/page_([0-9]+)/);
+        const page = parseInt(pageStr, 10);
+        const {cnt, routes = []} = await BH2.myRoutes(id, page);
+        const names = getPagiRoutes(routes, page);
+        const pages = getPagi(cnt, BH2.perPage, page);
+        const pagi = [...names, ...pages];
         pagi.push(keyboards.addRoute(lang));
         const pagination = keyboards.withHome(lang, pagi);
         const txt = messages.routesList();
@@ -287,6 +282,12 @@ const format = (bot, botHelper) => {
           }
         }
         const route = await BH2.getRoute(id, _id, 'notify status hourA hourB');
+        if (!route) {
+          const {txt, keyb} = await BH2.goHome(from);
+          ctx.reply(txt, keyb);
+          ctx.answerCbQuery(cbqId, {text: ''});
+          return;
+        }
         const {status, hourA, hourB} = route;
         const editBtn = `edit_${_id}_${page}_1`;
         const callbacks = [`page_${page}`, editBtn];
