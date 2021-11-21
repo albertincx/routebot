@@ -1,9 +1,6 @@
 const messages = require('../../../messages/format');
 
 function printRouteOne(r, lang, showPoints = true) {
-  if (!r) {
-    return messages.routesEmpty(lang);
-  }
   const {name, status, notify, pointA, pointB, hourA, hourB, type} = r;
   const statu = messages.showStatus(status, lang, messages.icon(status));
   const notif = messages.showStatus(notify, lang, messages.icon(notify));
@@ -30,7 +27,7 @@ ${messages.labelTimeB(lang)}: ${messages.showHour(lang, hourB, true)}`;
 function printRouteFound(routes, lang, type) {
   let txt = '';
   if (routes.length === 0) {
-    return messages.routesEmpty(lang);
+    return messages.routesEmpty(lang, type === 0);
   }
   routes.forEach(r => {
     let tt = '';

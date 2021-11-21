@@ -18,6 +18,13 @@ const DEAC = 'st_dea';
 const ACTI = 'st_act';
 const SUBS = 'st_sub';
 const UNSUB = 'st_uns';
+const getRouteCb = (_id, page, status, notify) => [
+  `route_${_id}_${page}_${NONE}`,
+  `${status === 1 ? DEAC : ACTI}_${_id}_${page}`,
+  `route_${_id}_${page}_${notify === 1 ? UNSUB : SUBS}`,
+  `t_fromA_${_id}_${page}_start`,
+  `del_route_${_id}_${page}_s`,
+];
 
 function getPage(i, fromRoute = '') {
   if (fromRoute) {
@@ -79,13 +86,6 @@ function getPagi(cnt, perPage, pageNum = 1, fromRoute = '') {
   return [];
 }
 
-const getRouteCb = (_id, page, status, notify) => [
-  `route_${_id}_${page}_${NONE}`,
-  `${status === 1 ? DEAC : ACTI}_${_id}_${page}`,
-  `route_${_id}_${page}_${notify === 1 ? UNSUB : SUBS}`,
-  `t_fromA_${_id}_${page}_start`,
-  `del_route_${_id}_${page}`,
-];
 const format = (bot, botHelper) => {
   const BH2 = new BotHelper2(botHelper);
   bot.command(['/createBroadcast', '/startBroadcast'], ctx =>
@@ -218,7 +218,14 @@ const format = (bot, botHelper) => {
         const pages = getPagi(cnt, BH2.perPage, page);
         const pagi = [...names, ...pages];
         pagi.push(keyboards.addRoute(lang));
-        const pagination = keyboards.withHome(lang, pagi);
+        const back = [
+          {
+            text: messages.backJust(lang),
+            callback_data: keyboards.actions.startHome,
+          },
+        ];
+        pagi.push(back);
+        const pagination = keyboards.withHome(lang, pagi, false);
         const txt = messages.routesList();
         BH2.edit(id, mId, null, txt, pagination);
         ctx.answerCbQuery(cbqId, {text: ''});
@@ -283,9 +290,7 @@ const format = (bot, botHelper) => {
         }
         const route = await BH2.getRoute(id, _id, 'notify status hourA hourB');
         if (!route) {
-          const {txt, keyb} = await BH2.goHome(from);
-          ctx.reply(txt, keyb);
-          ctx.answerCbQuery(cbqId, {text: ''});
+          await BH2.goHomeAction(ctx, from, cbqId);
           return;
         }
         const {status, hourA, hourB} = route;
@@ -320,6 +325,10 @@ const format = (bot, botHelper) => {
           text = messages.editTimeOk(lang, true);
         }
         const route = await BH2.getRoute(id, _id, 'notify status hourA hourB');
+        if (!route) {
+          await BH2.goHomeAction(ctx, from, cbqId);
+          return;
+        }
         const {status, notify, hourA, hourB} = route;
         const callbacks = getRouteCb(_id, page, status, notify);
         if (hourA && hourB) {
@@ -435,23 +444,16 @@ const format = (bot, botHelper) => {
             act = keyboards.actions.send3R;
           }
           const {pointAId, userId, notify} = routes[0];
-          let sendRequest;
+
           if (!notify) {
-            // act = keyboards.actions.send3R;
-            sendRequest = [
-              {
-                text,
-                callback_data: `req_${pointAId}_${id}_${act}_${userId}`,
-              },
-            ];
-          } else {
-            sendRequest = [
-              {
-                text,
-                callback_data: `req_${pointAId}_${id}_${act}_${userId}`,
-              },
-            ];
+            act = keyboards.actions.send4R;
           }
+          const sendRequest = [
+            {
+              text,
+              callback_data: `req_${pointAId}_${id}_${act}_${userId}`,
+            },
+          ];
           if (sendRequest) {
             preKeys.push(sendRequest);
           }
@@ -459,6 +461,55 @@ const format = (bot, botHelper) => {
         const keys = [...preKeys, ...pagi];
         const pagination = keyboards.withHome(lang, keys, false);
         const view = printRouteFound(routes, lang, type);
+        BH2.edit(id, mId, null, view, pagination);
+        ctx.answerCbQuery(cbqId, {text: ''});
+      } catch (e) {
+        showError(e);
+        // system = `${e}${system}`;
+      }
+    }
+
+    /** @alias delete */
+    if (data.match(/^del_route_(.*?)/)) {
+      try {
+        const {id, language_code: lang} = from;
+        const [, _id, pag = 1, typ] = data.match(
+          /del_route_(.*?)_([0-9]+)_(.*?)$/,
+        );
+        if (typ === 'y') {
+          await BH2.deleteRoute(_id);
+          await BH2.notifyUsers(_id);
+          const view = `You are about to delete your bot CorsaSlaveBot . Is that correct? ?${typ}`;
+          BH2.edit(id, mId, null, view);
+          await BH2.goHomeAction(ctx, from, cbqId);
+          return;
+        }
+        const page = parseInt(pag, 10);
+        const pagi = [];
+        const back = [
+          {
+            text: messages.backJust(lang),
+            callback_data: `edit_${_id}_${page}_1`,
+          },
+        ];
+        const yes = [
+          {
+            text: 'Yes delete this route',
+            callback_data: `del_route_${_id}_${page}_y`,
+          },
+        ];
+        const no = [
+          {
+            text: 'No',
+            callback_data: `edit_${_id}_${page}_1`,
+          },
+        ];
+        pagi.push(no);
+        pagi.push(yes);
+        pagi.push(back);
+        const keys = [...pagi];
+        const pagination = keyboards.withHome(lang, keys, false);
+        const view = `You are about to delete your bot CorsaSlaveBot . Is that correct? ?${typ}`;
         BH2.edit(id, mId, null, view, pagination);
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {

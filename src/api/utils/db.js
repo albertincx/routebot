@@ -454,15 +454,18 @@ const getRequest = async (reqData, project = '_id') => {
 const getActiveCnt = userId =>
   routesCol.countDocuments({userId, status: {$ne: 0}});
 
-const statusRoute = (userId, _id, update) =>
-  routesCol
-    .updateOne({userId, _id}, update)
-    .then(() =>
-      routesBCol.updateOne(
-        {userId, pointAId: mongoose.Types.ObjectId(_id)},
-        update,
-      ),
-    );
+const statusRoute = async (userId, _id, update) => {
+  await routesCol.updateOne({userId, _id}, update);
+  return routesBCol.updateOne(
+    {userId, pointAId: mongoose.Types.ObjectId(_id)},
+    update,
+  );
+};
+
+async function deleteRoute(_id) {
+  await routesCol.deleteOne({_id});
+  return routesBCol.deleteOne({pointAId: mongoose.Types.ObjectId(_id)});
+}
 
 module.exports.stat = stat;
 module.exports.updateOne = updateOne;
@@ -483,3 +486,4 @@ module.exports.getRoute = getRoute;
 module.exports.checkUser = checkUser;
 module.exports.getRoutesNear = getRoutesNear;
 module.exports.getRequest = getRequest;
+module.exports.deleteRoute = deleteRoute;

@@ -140,6 +140,15 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
+  async goHomeAction(ctx, from, cbqId) {
+    const {id, language_code: lang} = from;
+    const {type} = await db.GetUser(id, 'type');
+    const {txt, keyb} = this.goMenu(lang, type);
+    ctx.reply(txt, keyb);
+    ctx.answerCbQuery(cbqId, {text: ''});
+  }
+
+  // eslint-disable-next-line class-methods-use-this
   goMenu(lang, type) {
     const txt = messages.home(lang, type);
     const keyb = keyboards.driver(lang, type);
@@ -341,6 +350,11 @@ class BotHelper {
       }
     }
     return Promise.resolve();
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  deleteRoute(id) {
+    return db.deleteRoute(id);
   }
 }
 

@@ -41,10 +41,10 @@ const STATUS_OFF_RU = 'Выкл.';
 const STATUS_ON_EN = 'On';
 const STATUS_OFF_EN = 'Off';
 
-const STATUS_SUB_ON_RU = 'Вы подписались на уведомления';
-const STATUS_SUB_OFF_RU = 'Вы отписались от уведомлений';
-const STATUS_SUB_ON_EN = 'Subscribed';
-const STATUS_SUB_OFF_EN = 'Unsubscribed';
+const STATUS_SUB_ON_RU = 'Уведомления вкл.';
+const STATUS_SUB_OFF_RU = 'Уведомления выкл.';
+const STATUS_SUB_ON_EN = 'Notifications enabled';
+const STATUS_SUB_OFF_EN = 'Notifications disabled';
 
 const CHANGED_RU = 'Тип изменен';
 const CHANGED_EN = 'Account type changed';
@@ -58,7 +58,9 @@ const SEARCH_P_EN = 'Find drivers with similar nearby routes';
 const HELLO_RU = 'Отлично! Пожалуйста Выберите тип аккаунта!';
 const HELLO_EN = 'Hello! Please select type of your account!';
 const ROUTE_SAME_RU = 'Похожие маршруты рядом не найдены';
-const ROUTE_SAME_EN = 'Nearby same routes not found';
+const ROUTE_SAME_EN = 'Same routes nearby not found';
+const ROUTE_SAME_D_RU = 'Похожие маршруты (с водителями) рядом не найдены';
+const ROUTE_SAME_D_EN = 'Same routes (with drivers) nearby not found';
 const ROUTE_STOP_RU = 'Все маршруты отключены';
 
 const ROUTE_STOP_EN = 'Active routes stopped';
@@ -207,6 +209,20 @@ const editTimeOk = (lang, isFromB) => {
   }
   return 'Times saved';
 };
+
+const showRoutesEmpty = (lang, t) => {
+  if (lang === RU) {
+    if (t) {
+      return ROUTE_SAME_D_RU;
+    }
+    return ROUTE_SAME_RU;
+  }
+  if (t) {
+    return ROUTE_SAME_D_EN;
+  }
+  return ROUTE_SAME_EN;
+};
+
 const iconWarn = () => '⚠ ';
 const timeError = lang => {
   if (lang === RU) {
@@ -220,6 +236,7 @@ const timeError = lang => {
   // }
   return `${iconWarn()}Route time is not defined`;
 };
+
 function showHourTxt(lang, hour, view = false) {
   const m = `${hour}`.match(/\.3/);
   let h = parseInt(hour, 10);
@@ -254,7 +271,7 @@ module.exports = {
   sent3R: l => (l === RU ? 'Предложение отправлено' : 'Offer sent'),
   labelName: lang => (lang === RU ? 'Наименование' : 'Route name'),
   labelStatus: lang => (lang === RU ? 'Статус' : 'Status'),
-  labelSubs: l => (l === RU ? 'Подписка на уведомления' : 'Subscription'),
+  labelSubs: l => (l === RU ? 'Уведомления' : 'Notifications'),
   labelType: typeLabel,
   labelTime: l => (l === RU ? 'Время' : 'Time'),
   labelTimeA: l => (l === RU ? 'Туда в' : 'Start drive time'),
@@ -286,7 +303,7 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   icon: s => `${s === 0 || !s ? '🔴' : '🟢'}`,
   iconWarn,
   routesList: lang => (lang === RU ? ROUTE_LIST_RU : ROUTE_LIST_EN),
-  routesEmpty: lang => (lang === RU ? ROUTE_SAME_RU : ROUTE_SAME_EN),
+  routesEmpty: showRoutesEmpty,
   getType: getTypeShow,
   notifyUser: showNotifyUser,
   notifyUserDriver: showNotifyUserDriver,
@@ -303,9 +320,11 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   editR: lang => (lang === RU ? 'Редактировать' : 'Edit'),
   activate: lang => (lang === RU ? 'Включить' : 'Enable'),
   deactivate: lang => (lang === RU ? 'Выключить' : 'Disable'),
-  subscribe: l => `🔔 ${l === RU ? 'Подписаться на уведомления' : 'Subscribe'}`,
+  subscribe: l => `${l === RU
+    ? 'Включить уведомления'
+    : 'Enable notifications'}`,
   unsubscribe: l =>
-    `🔕 ${l === RU ? 'Отписаться от уведомлений' : 'Unsubscribe'}`,
+    `🔕 ${l === RU ? 'Выключить уведомления' : 'Disable notifications'}`,
   back: lang => `${ARR_L} ${lang === RU ? 'Список Маршрутов' : 'Routes List'}`,
   backRoute: l => `${ARR_L} ${l === RU ? 'к маршруту' : 'to Route'}`,
   backJust: lang => `${ARR_L} ${lang === RU ? 'Назад' : 'Back'}`,
@@ -318,7 +337,7 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   changeHours: l => (l === RU ? 'Изменить время маршрута' : 'Change time'),
   changeHA: l => (l === RU ? 'Изменить время начала' : 'Change start time'),
   changeHB: l => (l === RU ? 'Изменить время обратно' : 'Change return time'),
-  deleteRoute: l => `❌ ${l === RU ? 'Удалить маршрут' : 'Delete route'}`,
+  deleteRoute: l => `${l === RU ? 'Удалить маршрут' : 'Delete route'}`,
   nearBy: getNearLabel,
   menu: lang => (lang === RU ? MENU_RU : MENU_EN),
   sendRequest: lang => (lang === RU ? SEND_R_RU : SEND_R_EN),

@@ -16,6 +16,7 @@ const actions = {
   settings: 'menu_settings',
   sendR: 'sendR',
   send3R: 'send3R',
+  send4R: 'send4R',
 };
 
 function inline(lang, keys, toHome = false, back = false) {
@@ -154,12 +155,14 @@ function detailRoute(lang, callbacks, noTime = false) {
       keysArray.push([findBtn]);
     }
   }
-  if (callbacks[3]) {
-    const findBtn = {
-      text: messages.nearBy(lang, true),
-      callback_data: callbacks[3],
-    };
-    keysArray.push([findBtn]);
+  if (callbacks.length === 4) {
+    if (callbacks[3]) {
+      const findBtn = {
+        text: messages.nearBy(lang, true),
+        callback_data: callbacks[3],
+      };
+      keysArray.push([findBtn]);
+    }
   }
   return withHome(lang, keysArray);
 }
