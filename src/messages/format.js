@@ -134,7 +134,13 @@ const typeLabel = (l, fromRoute) => {
   return 'Account type';
 };
 
-const sentAlreadyPop = lang => {
+const sentAlreadyPop = (lang, not = false) => {
+  if (not) {
+    if (lang === RU) {
+      return 'Вы уже подписаны на обновления';
+    }
+    return 'You have already subscribed to route updates';
+  }
   if (lang === RU) {
     return 'Вы уже отправляли запрос по этому маршруту';
   }
@@ -274,6 +280,7 @@ function showHourTxt(lang, hour, view = false) {
 
 module.exports = {
   sentR: l => (l === RU ? 'Запрос отправлен' : 'Request sent'),
+  sentNotify: l => (l === RU ? 'Подписка оформлена' : 'Subscription created'),
   sent3R: l => (l === RU ? 'Предложение отправлено' : 'Offer sent'),
   labelName: lang => (lang === RU ? 'Наименование' : 'Route name'),
   labelStatus: lang => (lang === RU ? 'Статус' : 'Status'),

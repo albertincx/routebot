@@ -335,6 +335,14 @@ const addRoute = async (
   await usersCol.updateOne({userId: filter.userId}, upd, {upsert: true});
   return res;
 };
+const addSubscription = async (d, collection = subsCol) => {
+  const filter = {from: d.from, routeId: d.routeId};
+  const res = await collection.findOneAndUpdate(filter, d, {
+    upsert: true,
+    new: true,
+  });
+  return res;
+};
 
 const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
 const stopAll = userId => routesCol.updateMany({userId}, {status: 0});
@@ -449,8 +457,9 @@ const subscribers = async (_id, cb) => {
 const getRoute = (filter, project = null) =>
   getFromCollection(filter, routesCol, false, project);
 
-const getRequest = async (reqData, project = '_id') => {
-  const r = await getFromCollection(reqData, reqCol, false, project);
+const getRequest = async (reqData, n, project = '_id') => {
+  const coll = !n ? reqCol : subsCol;
+  const r = await getFromCollection(reqData, coll, false, project);
   if (!r) {
     await setRequest(reqData);
   }
@@ -494,3 +503,4 @@ module.exports.getRoutesNear = getRoutesNear;
 module.exports.getRequest = getRequest;
 module.exports.deleteRoute = deleteRoute;
 module.exports.subscribers = subscribers;
+module.exports.addSubscription = addSubscription;

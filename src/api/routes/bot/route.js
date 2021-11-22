@@ -64,7 +64,10 @@ class BotHelper {
   async addRoute(id) {
     await db.clearRoutes(id);
   }
-
+// eslint-disable-next-line class-methods-use-this
+  async addSubscription(d) {
+    await db.addSubscription(d);
+  }
   // eslint-disable-next-line class-methods-use-this
   async nextProcessName(ctx) {
     const {from} = ctx.message;
@@ -243,8 +246,8 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  getRequest(reqData) {
-    return db.getRequest(reqData);
+  getRequest(reqData, n) {
+    return db.getRequest(reqData, n);
   }
 
   // eslint-disable-next-line class-methods-use-this

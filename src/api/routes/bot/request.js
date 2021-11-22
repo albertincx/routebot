@@ -9,20 +9,20 @@ async function processSendR(ctx, from, BH2) {
   );
   let text = 'error';
   const reqData = {from: +requestUserId, to: +userId, routeId: _id};
-
+  const isNotify = sendR === keyboards.actions.sendNotify;
   if (
     sendR === keyboards.actions.sendDriverReq ||
-    sendR === keyboards.actions.sendPassReq
+    sendR === keyboards.actions.sendPassReq ||
+    isNotify
   ) {
-    const req = await BH2.getRequest(reqData);
-    console.log(sendR, req);
+    const req = await BH2.getRequest(reqData, isNotify);
     if (req) {
-      return messages.sentAlready(lang);
+      return messages.sentAlready(lang, isNotify);
     }
   }
-  if (sendR === keyboards.actions.sendNotify) {
-    //
-    text = 'subs';
+  if (isNotify) {
+    await BH2.addSubscription(reqData);
+    text = messages.sentNotify(lang);
   } else {
     const route = await BH2.getRouteById(_id, 'name');
     if (route) {
