@@ -17,6 +17,8 @@ const actions = {
   sendDriverReq: 'sendR',
   sendPassReq: 'send3R',
   sendNotify: 'send4R',
+  allowReq1: 'allowReq1',
+  allowReq2: 'allowReq2',
 };
 
 function inline(lang, keys, toHome = false, back = false) {

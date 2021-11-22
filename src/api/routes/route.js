@@ -227,7 +227,7 @@ const format = (bot, botHelper) => {
         ];
         pagi.push(back);
         const pagination = keyboards.withHome(lang, pagi, false);
-        const txt = messages.routesList();
+        const txt = messages.routesList(lang);
         BH2.edit(id, mId, null, txt, pagination);
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
@@ -365,6 +365,7 @@ const format = (bot, botHelper) => {
         const v = status === ACTI ? 1 : 0;
         const route = await BH2.setStatusRoute(id, _id, v);
         const editBtn = `edit_${_id}_${page}_1`;
+        route.notify = v;
         const callbacks = [`page_${page}`, editBtn];
         if (route.error) {
           const t = messages.timeError(lang, route.field);
@@ -379,7 +380,12 @@ const format = (bot, botHelper) => {
         const keyb = keyboards.detailRoute(lang, callbacks);
         const txt = printRouteOne(route, lang);
         await BH2.edit(id, mId, null, txt, keyb);
-        const pop = messages.showStatus(stNum, lang, messages.icon(stNum));
+        const pop = messages.showStatus(
+          stNum,
+          lang,
+          messages.icon(stNum),
+          true,
+        );
         ctx.answerCbQuery(cbqId, {text: pop});
       } catch (e) {
         showError(e);
@@ -452,9 +458,9 @@ const format = (bot, botHelper) => {
           /del_route_(.*?)_([0-9]+)_(.*?)$/,
         );
         if (typ === 'y') {
-          // await BH2.deleteRoute(_id);
-          await BH2.notifyUsersDel(_id);
-          const view = `You are about to delete your bot CorsaSlaveBot . Is that correct? ?${typ}`;
+          await BH2.deleteRoute(_id);
+          // await BH2.notifyUsersDel(_id);
+          const view = messages.deletedRoute(lang);
           BH2.edit(id, mId, null, view);
           await BH2.goHomeAction(ctx, from, cbqId);
           return;
@@ -469,13 +475,13 @@ const format = (bot, botHelper) => {
         ];
         const yes = [
           {
-            text: 'Yes delete this route',
+            text: messages.yesRoute(lang),
             callback_data: `del_route_${_id}_${page}_y`,
           },
         ];
         const no = [
           {
-            text: 'No',
+            text: messages.no(lang),
             callback_data: `edit_${_id}_${page}_1`,
           },
         ];
@@ -484,7 +490,7 @@ const format = (bot, botHelper) => {
         pagi.push(back);
         const keys = [...pagi];
         const pagination = keyboards.withHome(lang, keys, false);
-        const view = `You are about to delete your bot CorsaSlaveBot . Is that correct? ?${typ}`;
+        const view = messages.confirmDeletion(lang);
         BH2.edit(id, mId, null, view, pagination);
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {

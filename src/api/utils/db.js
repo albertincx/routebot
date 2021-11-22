@@ -269,7 +269,12 @@ const GetUser = async (id, project = null) => {
   // }
   return me || {};
 };
-
+const updateRoutes = async u => {
+  const {id, type} = u;
+  // eslint-disable-next-line no-param-reassign
+  await routesCol.updateMany({userId: id, type: {$ne: type}}, {type});
+  await routesBCol.updateMany({userId: id, type: {$ne: type}}, {type});
+};
 const updateUser = async (u, collection = usersCol) => {
   const {id, ...user} = u;
   // eslint-disable-next-line no-param-reassign
@@ -393,7 +398,7 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
     }
   }
   const $aMatch = {...$match};
-  $aMatch.hourA = {$gte: route.hourA};
+  $aMatch.hourA = {$gte: route.hourA - 2};
   if ($project && $project.userId) {
     $aMatch.notify = 1;
   }
@@ -411,7 +416,7 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
   let aggrB = [];
   if (pointAIds.length) {
     const pointBMatch = {...$match, pointAId: {$in: pointAIds}};
-    pointBMatch.hourB = {$gte: route.hourB};
+    pointBMatch.hourB = {$gte: route.hourB - 2};
     const pipelineB = getPipeline(route, pointBMatch, skip, limit, DIR_B, {
       name: 1,
       pointAId: 1,
@@ -504,3 +509,4 @@ module.exports.getRequest = getRequest;
 module.exports.deleteRoute = deleteRoute;
 module.exports.subscribers = subscribers;
 module.exports.addSubscription = addSubscription;
+module.exports.updateRoutes = updateRoutes;

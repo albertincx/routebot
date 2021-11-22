@@ -64,10 +64,12 @@ class BotHelper {
   async addRoute(id) {
     await db.clearRoutes(id);
   }
-// eslint-disable-next-line class-methods-use-this
+
+  // eslint-disable-next-line class-methods-use-this
   async addSubscription(d) {
     await db.addSubscription(d);
   }
+
   // eslint-disable-next-line class-methods-use-this
   async nextProcessName(ctx) {
     const {from} = ctx.message;
@@ -133,6 +135,7 @@ class BotHelper {
     const user = chat;
     user.type = parseInt(type, 10);
     const {routes, total: totalRoutesCount} = await db.updateUser(user);
+    await db.updateRoutes(user);
     return {routes, count: totalRoutesCount};
   }
 
@@ -286,6 +289,9 @@ class BotHelper {
     let upd = {[field]: st};
     if (field === 'hourA' || field === 'hourB') {
       upd = {[field]: st};
+    }
+    if (field === 'status') {
+      upd.notify = st;
     }
     await db.statusRoute(userId, _id, upd);
   }

@@ -7,6 +7,8 @@ const {
 } = require('./links');
 
 const CREATE_P_RU = 'Введите название';
+const DEL_P_RU = 'Вы действительно хотите удалить маршрут? Вы уверены?';
+const DEL_P_EN = 'You are about to delete your route. Is that correct?';
 const CREATE_P_EN = 'Enter the name of';
 const CREATE_RU = `Шаг 1. ${CREATE_P_RU} *регулярного*(ежедневного) маршрута`;
 const CREATE_EN = `${CREATE_P_EN} your regular (daily) route`;
@@ -46,6 +48,11 @@ const STATUS_OFF_RU = 'Выкл.';
 const STATUS_ON_EN = 'On';
 const STATUS_OFF_EN = 'Off';
 
+const STATUS_ON_P_RU = 'Маршрут активирован. Уведомления включены';
+const STATUS_OFF_P_RU = 'Маршрут выключен. Уведомления выключены';
+const STATUS_ON_P_EN = 'Route enabled. Notifications enabled';
+const STATUS_OFF_P_EN = 'Route disabled. Notifications disabled';
+
 const STATUS_SUB_ON_RU = 'Уведомления вкл.';
 const STATUS_SUB_OFF_RU = 'Уведомления выкл.';
 const STATUS_SUB_ON_EN = 'Notifications enabled';
@@ -73,7 +80,8 @@ const ROUTE_STOP_EN = 'Active routes stopped';
 
 const HELP_POINT = `Используйте кнопку - 📎 или
 пришлите координаты, пример:
-59.939099, 30.315877
+\`\`\`XX.XXXXXX, XX.XXXXXX\`\`\`
+где Х - цифра
 `;
 
 const POINT_1_RU = `Шаг 2. Прикрепите ваши координаты (локацию) пункт отправления (точка А)
@@ -95,9 +103,15 @@ const TYPE_1_EN = BUTTONS.driver.label;
 const TYPE_2_EN = BUTTONS.sharingDriver.label;
 const TYPE_3_EN = BUTTONS.passenger.label;
 
-const getStatus = (status, lang, icon) => {
+const getStatus = (status, lang, icon, pop = false) => {
   if (lang === RU) {
+    if (pop) {
+      return `${status === 0 ? STATUS_OFF_P_RU : STATUS_ON_P_RU} ${icon}`;
+    }
     return `${status === 0 ? STATUS_OFF_RU : STATUS_ON_RU} ${icon}`;
+  }
+  if (pop) {
+    return `${status === 0 ? STATUS_OFF_P_EN : STATUS_ON_P_EN} ${icon}`;
   }
   return `${status === 0 ? STATUS_OFF_EN : STATUS_ON_EN} ${icon}`;
 };
@@ -111,6 +125,7 @@ const getStatusSubscribe = (lang, s, icon) => {
 const getType1 = lang => (lang === RU ? TYPE_1_RU : TYPE_1_EN);
 const getType2 = lang => (lang === RU ? TYPE_2_RU : TYPE_2_EN);
 const getType3 = lang => (lang === RU ? TYPE_3_RU : TYPE_3_EN);
+
 const getTypeShow = (l, t) => {
   if (t === 1) {
     return getType1(l);
@@ -120,6 +135,7 @@ const getTypeShow = (l, t) => {
   }
   return getType3(l);
 };
+
 const getNearLabel = (l, t) => {
   let n = l === RU ? SEARCH_RU : SEARCH_EN;
   if (t) {
@@ -127,6 +143,7 @@ const getNearLabel = (l, t) => {
   }
   return `👀 ${n}`;
 };
+
 const typeLabel = (l, fromRoute) => {
   if (l === RU) {
     return `Тип ${fromRoute ? 'маршрута' : 'аккаунта'}`;
@@ -279,6 +296,12 @@ function showHourTxt(lang, hour, view = false) {
 }
 
 module.exports = {
+  allowReq: l => (l === RU ? 'Маршрут удален' : 'Route deleted'),
+  deletedRoute: l => (l === RU ? 'Маршрут удален' : 'Route deleted'),
+  confirmDeletion: lang => (lang === RU ? DEL_P_RU : DEL_P_EN),
+  yes: l => (l === RU ? 'Да' : 'Yes'),
+  yesRoute: l => (l === RU ? 'Да удалить маршрут' : 'Yes delete this route'),
+  no: l => (l === RU ? 'Нет' : 'No'),
   sentR: l => (l === RU ? 'Запрос отправлен' : 'Request sent'),
   sentNotify: l => (l === RU ? 'Подписка оформлена' : 'Subscription created'),
   sent3R: l => (l === RU ? 'Предложение отправлено' : 'Offer sent'),
