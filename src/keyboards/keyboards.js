@@ -19,6 +19,7 @@ const actions = {
   sendNotify: 'send4R',
   allowReq1: 'allowReq1',
   allowReq2: 'allowReq2',
+  iSetUName: 'iSetUName',
 };
 
 function inline(lang, keys, toHome = false, back = false) {

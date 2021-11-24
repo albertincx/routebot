@@ -238,7 +238,7 @@ const format = (bot, botHelper) => {
     /** @alias request */
     if (data.match(/^req_(.*?)/)) {
       try {
-        const text = await processSendR(ctx, from, BH2);
+        const text = await processSendR(ctx, BH2);
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
@@ -432,7 +432,7 @@ const format = (bot, botHelper) => {
           const sendRequest = [
             {
               text,
-              callback_data: `req_${pointAId}_${id}_${act}_${userId}`,
+              callback_data: `req_${pointAId}_${act}_${userId}`,
             },
           ];
           if (sendRequest) {
@@ -504,6 +504,10 @@ const format = (bot, botHelper) => {
   /** @alias processMessage */
   function test(ctx) {
     if (checkAdmin(ctx)) {
+      return;
+    }
+    if (ctx.message.text.match(/^\/clearreq/)) {
+      BH2.clearReq(ctx);
       return;
     }
     if (ctx.update && ctx.update.message) {

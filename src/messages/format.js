@@ -173,17 +173,17 @@ const showNotifyUser = (lang, name) => {
 A similar route has been added to your route "${name}"
 `;
 };
-const showNotifyUserDriver = (lang, name) => {
+const showNotifyUserDriver = (lang, name, usernameFrom) => {
   if (lang === RU) {
-    return `С вами хочет кататься пользователь по маршруту "${name}"`;
+    return `С вами хочет кататься пользователь @${usernameFrom} по маршруту "${name}"`;
   }
-  return `The user wants to ride with you along the route "${name}"`;
+  return `The user @${usernameFrom} wants to ride with you along the route "${name}"`;
 };
-const showNotifyUserCoop = (lang, name) => {
+const showNotifyUserCoop = (lang, name, uFrom) => {
   if (lang === RU) {
-    return `По вашему маршруту "${name}" появилось предложение по совместным поездкам`;
+    return `По вашему маршруту "${name}" появилось предложение по совместным поездкам от @${uFrom}`;
   }
-  return `There is an offer for joint trips on your route "${name}"`;
+  return `There is an offer from @${uFrom} for joint trips on your route "${name}"`;
 };
 
 const showPoint = (routeType, lang) => {
@@ -264,6 +264,20 @@ const timeError = lang => {
   //   return 'Time is not defined';
   // }
   return `${iconWarn()}Route time is not defined`;
+};
+const noUserNameTxt = lang => {
+  if (lang === RU) {
+    // if (field) {
+    //   return 'Время маршрута не установлено';
+    // }
+    return `${iconWarn()} Внимание! У вас не настроен username в вашем профиле телеграм. 
+Пожалуйста установите username чтобы с вами могли связаться все участники маршрута`;
+  }
+  // if (field) {
+  //   return 'Time is not defined';
+  // }
+  return `${iconWarn()} Attention! You do not have a "username" configured in your telegram profile.
+Please set a "username" so that all route participants can contact you`;
 };
 
 function showHourTxt(lang, hour, view = false) {
@@ -351,6 +365,7 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   editTimeSuccess,
   editTimeOk,
   showHour: showHourTxt,
+  noUserName: noUserNameTxt,
   timeError,
   // menus
   editR: lang => (lang === RU ? 'Редактировать' : 'Edit'),
@@ -378,4 +393,5 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   sendRequest3: lang => (lang === RU ? SEND_R3_RU : SEND_R3_EN),
   sendRequestNotify: lang => (lang === RU ? SEND_RNOTIFY_RU : SEND_RNOTIFY_EN),
   routeExists: lang => (lang === RU ? ROUTE_EX_RU : ROUTE_EX_EN),
+  isUName: l => (l === RU ? 'Я установил username' : 'I have set the username'),
 };

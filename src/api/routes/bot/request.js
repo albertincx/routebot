@@ -1,21 +1,24 @@
 const messages = require('../../../messages/format');
 const keyboards = require('../../../keyboards/keyboards');
-const {actions} = require('../../../keyboards/keyboards');
 
-async function processSendR(ctx, from, BH2) {
-  const {language_code: lang} = from;
+async function processSendR(ctx, BH2) {
+  const msg = ctx.update.callback_query;
+  const {from, message} = msg;
+  const {message_id: mId} = message;
+  const {id, language_code: lang} = from;
   const [data] = ctx.match;
-  const [, _id, requestUserId, sendR, userId] = data.match(
-    /req_(.*?)_([0-9]+)_(.*?)_([0-9]+)$/,
-  );
+  const [, _id, sendR, userId] = data.match(/req_(.*?)_(.*?)_([0-9]+)$/);
   let text = 'error';
-  const reqData = {from: +requestUserId, to: +userId, routeId: _id};
+  const reqData = {from: id, to: +userId, routeId: _id};
   const isNotify = sendR === keyboards.actions.sendNotify;
   if (
     sendR === keyboards.actions.sendDriverReq ||
     sendR === keyboards.actions.sendPassReq ||
     isNotify
   ) {
+    if (isNotify) {
+      return 'soon...';
+    }
     const req = await BH2.getRequest(reqData, isNotify);
     if (req) {
       return messages.sentAlready(lang, isNotify);
@@ -32,23 +35,36 @@ async function processSendR(ctx, from, BH2) {
     // text = messages.sentNotify(lang);
     text = 'soon...';
   } else {
-    const route = await BH2.getRouteById(_id, 'name');
+    const route = await BH2.getRouteById(_id, 'name notify');
     if (route) {
-      const {name} = route;
+      const {name, notify} = route;
+      if (notify !== 1) {
+        return 'soon... soon...';
+      }
       let txt;
       let keyb;
       const keys = [];
       if (sendR.match(keyboards.actions.sendDriverReq)) {
-        txt = messages.notifyUserDriver(lang, name);
+        const usernameFrom = await BH2.GetUserName(id);
+        if (!usernameFrom) {
+          const {txt: t, keyb: k} = BH2.noUserName(id, lang);
+          BH2.edit(id, mId, null, t, k);
+          // ctx.reply(t, k);
+          return '';
+        }
+        const languageTo = await BH2.GetLangUser(userId);
+        txt = messages.notifyUserDriver(languageTo, name, usernameFrom);
         text = messages.sentR(lang);
-        keyb = keyboards.withHome(lang, keys, false);
-        keys.push({
-          text: messages.allowReq(lang),
-          callback_data: `req_${_id}_${requestUserId}_${actions.allowReq1}_${userId}`,
-        });
       }
       if (sendR.match(keyboards.actions.sendPassReq)) {
-        txt = messages.notifyUserCoop(lang, name);
+        const usernameFrom = await BH2.GetUserName(id);
+        if (!usernameFrom) {
+          const {txt: t, keyb: k} = BH2.noUserName(id, lang);
+          BH2.edit(id, mId, null, t, k);
+          return '';
+        }
+        const languageTo = await BH2.GetLangUser(userId);
+        txt = messages.notifyUserCoop(languageTo, name, usernameFrom);
         text = messages.sent3R(lang);
       }
       if (txt) {

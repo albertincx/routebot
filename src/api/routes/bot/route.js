@@ -5,6 +5,7 @@ const {checkAdmin, showError} = require('../../utils');
 const rabbitmq = require('../../../service/rabbitmq');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
+const TG_ADMIN2 = parseInt(process.env.TGADMIN2, 10);
 const cBroad = '/createBroadcast';
 const sBroad = '/startBroadcast';
 
@@ -22,6 +23,7 @@ class BotHelper {
     this.bot = botHelper.getBot();
     this.botHelper = botHelper;
     this.tgAdmin = TG_ADMIN;
+    this.tgAdmin2 = TG_ADMIN2;
     this.perPage = 6;
   }
 
@@ -144,6 +146,20 @@ class BotHelper {
     const {id, language_code: lang} = from;
     const {type} = await db.GetUser(id, 'type');
     return this.goMenu(lang, type);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  noUserName(id, lang) {
+    const txt = messages.noUserName(lang);
+    const keys = [];
+    keys.push([
+      {
+        text: messages.isUName(lang),
+        callback_data: keyboards.actions.iSetUName,
+      },
+    ]);
+    const keyb = keyboards.withHome(lang, keys);
+    return {txt, keyb};
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -381,6 +397,26 @@ class BotHelper {
   // eslint-disable-next-line class-methods-use-this
   async jobMessage(task) {
     console.log('from rab', task);
+  }
+
+  async clearReq(ctx) {
+    try {
+      const [, collId] = ctx.message.text.split('/clearreq_');
+      await db.deleteMany({from: {$in: [this.tgAdmin, this.tgAdmin2]}}, collId);
+      ctx.reply('ok');
+    } catch (e) {
+      ctx.reply(e);
+    }
+  }
+
+  async GetUserName(id) {
+    const u = await db.GetUser(id, 'username');
+    return u?.username;
+  }
+
+  async GetLangUser(id) {
+    const u = await db.GetUser(id, 'language_code');
+    return u?.language_code;
   }
 }
 

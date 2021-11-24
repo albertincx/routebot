@@ -24,6 +24,8 @@ const SUBS = process.env.MONGO_COLL_SUBS || 'subscriptions';
 const REQUESTS = process.env.MONGO_COLL_LINKS || 'requests';
 const ROUTES_B = process.env.MONGO_COLL_ROUTES_B || 'routes_bs';
 
+const collsSystem = [REQUESTS];
+
 const connectDb = () =>
   mongoose.createConnection(process.env.MONGO_URI_SECOND, {
     keepAlive: 1,
@@ -262,6 +264,9 @@ const checkUser = (id, project = 'name') =>
   getFromCollection({userId: id}, usersCol, false, project);
 
 const GetUser = async (id, project = null) => {
+  if (id && typeof id === 'string') {
+    id = +id;
+  }
   // check from old DB without insert
   const me = await getFromCollection({userId: id}, usersCol, false, project);
   // if (!me) {
@@ -487,6 +492,14 @@ async function deleteRoute(_id) {
   return routesBCol.deleteOne({pointAId: mongoose.Types.ObjectId(_id)});
 }
 
+async function deleteMany(filter, collId) {
+  if (!collId || !collsSystem[collId]) {
+    throw 'not found col';
+  }
+  const col = Any.collection.conn.model(collsSystem[collId], Any.schema);
+  await col.deleteMany(filter);
+}
+
 module.exports.stat = stat;
 module.exports.updateOne = updateOne;
 module.exports.GetUser = GetUser;
@@ -510,3 +523,4 @@ module.exports.deleteRoute = deleteRoute;
 module.exports.subscribers = subscribers;
 module.exports.addSubscription = addSubscription;
 module.exports.updateRoutes = updateRoutes;
+module.exports.deleteMany = deleteMany;
