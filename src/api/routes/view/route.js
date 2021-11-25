@@ -1,6 +1,6 @@
 const messages = require('../../../messages/format');
 
-function printRouteOne(r, lang, showPoints = true) {
+function printRouteOne(r, lang, isEdit = false) {
   const {name, status, notify, pointA, pointB, hourA, hourB, type} = r;
   const statu = messages.showStatus(status, lang, messages.icon(status));
   const notif = messages.showStatus(notify, lang, messages.icon(notify));
@@ -8,10 +8,10 @@ function printRouteOne(r, lang, showPoints = true) {
 ${messages.labelName(lang)}: ${name}
 ${messages.labelStatus(lang)}: ${statu}
 ${messages.labelSubs(lang)}: ${notif}
+${isEdit ? messages.editSupLink(lang) : ''}
 ${messages.labelType(lang, true)}: ${messages.getType(lang, type)}
-
 `;
-  if (showPoints) {
+  if (!isEdit) {
     txt += `📍${messages.labelA(lang)}: \`\`\`${pointA.coordinates}\`\`\`
 📍${messages.labelB(lang)}: \`\`\`${pointB.coordinates}\`\`\``;
   }

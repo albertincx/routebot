@@ -11,7 +11,7 @@ const sBroad = '/startBroadcast';
 
 function checkLoc(l) {
   const val = parseFloat(l);
-  return !Number.isNaN(val) && val <= 90 && val >= -90;
+  return !Number.isNaN(val) && val <= 180 && val >= -180;
 }
 
 function checkLocation(loc) {
@@ -190,7 +190,7 @@ class BotHelper {
     const {from, reply_to_message: rpl, location: msgLocation} = message;
     const {language_code: lang} = from;
     if (rpl) {
-      if (msgLocation) {
+      if (!rpl.text || msgLocation) {
         const txt = messages.driverStartNewRoute(lang);
         const keyb = keyboards.fr();
         ctx.reply(txt, keyb);
@@ -207,7 +207,7 @@ class BotHelper {
     if (coordinatesTxtArr.length) {
       location = coordinatesTxtArr;
     } else if (msgLocation) {
-      location = [msgLocation.latitude, msgLocation.longitude];
+      location = [msgLocation.longitude, msgLocation.latitude];
     }
     if (location[0] && location[1]) {
       const {id: userId} = from;

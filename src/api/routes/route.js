@@ -97,7 +97,7 @@ const format = (bot, botHelper) => {
       return;
     }
     try {
-      const coords = [ctx.match[1], ctx.match[2]].map(Number);
+      const coords = [ctx.match[2], ctx.match[1]].map(Number);
       // eslint-disable-next-line consistent-return
       return BH2.processLocation(ctx, coords);
     } catch (e) {
@@ -348,7 +348,7 @@ const format = (bot, botHelper) => {
           callbacks.push(`t_fromB_${_id}_${page}_one`);
         }
         const keyb = keyboards.editRoute(lang, callbacks, route);
-        BH2.edit(id, mId, null, printRouteOne(route, lang, false), keyb);
+        BH2.edit(id, mId, null, printRouteOne(route, lang, true), keyb);
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);

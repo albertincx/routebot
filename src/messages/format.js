@@ -338,6 +338,7 @@ module.exports = {
   labelTimeB: l => (l === RU ? 'Обратно в' : 'Return time'),
   labelA: lang => (lang === RU ? 'Точка А' : 'departure point'),
   labelB: lang => (lang === RU ? 'Точка Б' : 'destination point'),
+  editSupLink: l => l === RU ? getENV('EDIT_TXT_RU') : getENV('EDIT_TXT_EN'),
   check: lang => (lang === RU ? CREATE_P_RU : CREATE_P_EN),
   account: lang => (lang === RU ? CHANGED_RU : CHANGED_EN),
   success: lang => (lang === RU ? ROUTE_ADDED_RU : ROUTE_ADDED_EN),
