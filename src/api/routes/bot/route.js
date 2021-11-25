@@ -99,6 +99,11 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
+  async setUsername(from) {
+    await db.updateUser(from);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
   async driverType(ctx, type) {
     if (checkAdmin(ctx)) {
       return;
@@ -150,7 +155,7 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   noUserName(id, lang) {
-    const txt = messages.noUserName(lang);
+    const txt = messages.noUserNameTxt(lang);
     const keys = [];
     keys.push([
       {
@@ -404,6 +409,22 @@ class BotHelper {
       const [, collId] = ctx.message.text.split('/clearreq_');
       await db.deleteMany({from: {$in: [this.tgAdmin, this.tgAdmin2]}}, collId);
       ctx.reply('ok');
+    } catch (e) {
+      ctx.reply(e);
+    }
+  }
+
+  async cconfig(ctx) {
+    try {
+      const [, PA, VA] = ctx.message.text.split(/\/cconfig (.*?)_(.*?)$/);
+      if (PA) {
+        if (PA === 'SVC') {
+          await db.updateConfig(globalSUPPLINKS);
+        } else {
+          globalSUPPLINKS[PA] = VA;
+        }
+      }
+      ctx.reply(`ok ${PA}`);
     } catch (e) {
       ctx.reply(e);
     }

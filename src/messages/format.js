@@ -1,11 +1,5 @@
 const BUTTONS = require('../config/buttons');
-const {
-  CREATE_TXT_L_RU,
-  CREATE_TXT_L_EN,
-  POINT_TXT_L_EN,
-  POINT_TXT_L_RU,
-} = require('./links');
-
+const getENV = require('../links');
 const CREATE_P_RU = 'Введите название';
 const DEL_P_RU = 'Вы действительно хотите удалить маршрут? Вы уверены?';
 const DEL_P_EN = 'You are about to delete your route. Is that correct?';
@@ -21,7 +15,7 @@ const TGPH_LINK_RU = 'https://telegra.ph/Route-Cab-Russkaya-versiya-11-10';
 const START_RU = `Пожалуйста прочтите информацию о боте, перед началом
 ${TGPH_LINK_RU}
   `;
-const START_EN = `Hello! Please read information about this bot
+const START_EN = `Please read information about this bot
 ${TGPH_LINK}
   `;
 
@@ -189,11 +183,11 @@ const showNotifyUserCoop = (lang, name, uFrom) => {
 const showPoint = (routeType, lang) => {
   if (routeType === 1) {
     return `${lang === RU ? POINT_1_RU : POINT_1_EN}
-${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
+${lang === RU ? getENV('POINT_TXT_L_RU') : getENV('POINT_TXT_L_EN')}`;
   }
   if (routeType === 2) {
     return `${lang === RU ? POINT_2_RU : POINT_2_EN}
-${lang === RU ? POINT_TXT_L_RU : POINT_TXT_L_EN}`;
+${lang === RU ? getENV('POINT_TXT_L_RU') : getENV('POINT_TXT_L_EN')}`;
   }
   return 'error';
 };
@@ -265,7 +259,7 @@ const timeError = lang => {
   // }
   return `${iconWarn()}Route time is not defined`;
 };
-const noUserNameTxt = lang => {
+const noUserNameTxt2 = lang => {
   if (lang === RU) {
     // if (field) {
     //   return 'Время маршрута не установлено';
@@ -279,7 +273,22 @@ const noUserNameTxt = lang => {
   return `${iconWarn()} Attention! You do not have a "username" configured in your telegram profile.
 Please set a "username" so that all route participants can contact you`;
 };
-
+const settingsText2 = lang => {
+  if (lang === RU) {
+    // if (field) {
+    //   return 'Время маршрута не установлено';
+    // }
+    return `Настройки:
+- Вы можете изменить тип аккаунта
+- Отключить все активные маршруты ${getENV('SETT_T_L_RU')}`;
+  }
+  // if (field) {
+  //   return 'Time is not defined';
+  // }
+  return `Settings:
+- You can change your account type 
+- Disable all active routes ${getENV('SETT_T_L_EN')}`;
+};
 function showHourTxt(lang, hour, view = false) {
   const m = `${hour}`.match(/\.3/);
   let h = parseInt(hour, 10);
@@ -340,7 +349,7 @@ ${typeLabel(lang)}: ${getTypeShow(lang, type)}`,
   start3: lang => (lang === RU ? 'Привет!' : 'Hello!'),
   driverStartNewRoute: lang =>
     `${lang === RU ? CREATE_RU : CREATE_EN}
-${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
+${lang === RU ? getENV('CREATE_TXT_L_RU') : getENV('CREATE_TXT_L_EN')}`,
   point: showPoint,
   asDept: () => 'Send my current location as departure',
   asDest: () => 'Send my current location as destination',
@@ -365,8 +374,12 @@ ${lang === RU ? CREATE_TXT_L_RU : CREATE_TXT_L_EN}`,
   editTimeSuccess,
   editTimeOk,
   showHour: showHourTxt,
-  noUserName: noUserNameTxt,
+  noUserNameTxt: noUserNameTxt2,
+  noUnameW: l => (l === RU ? 'Username не установлен' : 'Username is not set'),
+  setUpUname: l => (l === RU ? 'Username сохранен' : 'Username saved'),
   timeError,
+  settingsText: settingsText2,
+
   // menus
   editR: lang => (lang === RU ? 'Редактировать' : 'Edit'),
   activate: lang => (lang === RU ? 'Включить' : 'Enable'),

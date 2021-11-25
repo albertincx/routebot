@@ -18,13 +18,14 @@ anySchema.method({
 });
 const Any = mongoose.model('Any', anySchema);
 
-const USERS = process.env.MONGO_COLL_LINKS || 'users';
-const ROUTES = process.env.MONGO_COLL_LINKS || 'routes';
+const USERS = process.env.MONGO_COLL_USERS || 'users';
+const ROUTES = process.env.MONGO_COLL_ROUTES || 'routes';
 const SUBS = process.env.MONGO_COLL_SUBS || 'subscriptions';
-const REQUESTS = process.env.MONGO_COLL_LINKS || 'requests';
+const REQUESTS = process.env.MONGO_COLL_REQ || 'requests';
 const ROUTES_B = process.env.MONGO_COLL_ROUTES_B || 'routes_bs';
+const CONFIGS = process.env.MONGO_COLL_CONGIFS_B || 'configs';
 
-const collsSystem = [REQUESTS];
+const collsSystem = [REQUESTS, CONFIGS];
 
 const connectDb = () =>
   mongoose.createConnection(process.env.MONGO_URI_SECOND, {
@@ -500,6 +501,14 @@ async function deleteMany(filter, collId) {
   await col.deleteMany(filter);
 }
 
+function updateConfig(data, collId = '1') {
+  if (!collId || !collsSystem[collId]) {
+    throw 'not found col';
+  }
+  const col = Any.collection.conn.model(collsSystem[collId], Any.schema);
+  return col.updateOne({glob: 'glob'}, data, {upsert: true});
+}
+
 module.exports.stat = stat;
 module.exports.updateOne = updateOne;
 module.exports.GetUser = GetUser;
@@ -524,3 +533,4 @@ module.exports.subscribers = subscribers;
 module.exports.addSubscription = addSubscription;
 module.exports.updateRoutes = updateRoutes;
 module.exports.deleteMany = deleteMany;
+module.exports.updateConfig = updateConfig;
