@@ -43,8 +43,10 @@ function withHome(lang, keysArray, toHome = true) {
 }
 
 function withMark(k) {
-  k.parse_mode = 'Markdown';
-  k.disable_web_page_preview = true;
+  if (k) {
+    k.parse_mode = 'Markdown';
+    k.disable_web_page_preview = true;
+  }
   return k;
 }
 
@@ -128,10 +130,10 @@ function nextProcess(routeType, lang) {
   if (routeType === 2) {
     k = loc2(messages.asDest(lang));
   }
-  k = k.resize();
-  k.parse_mode = 'Markdown';
-  k.disable_web_page_preview = true;
-  return k;
+  if (k) {
+    k = k.resize();
+  }
+  return withMark(k);
 }
 
 function fr() {

@@ -1,12 +1,14 @@
 const BUTTONS = require('../config/buttons');
 const getENV = require('../links');
 
-const CREATE_P_RU = 'Введите название';
 const DEL_P_RU = 'Вы действительно хотите удалить маршрут? Вы уверены?';
 const DEL_P_EN = 'You are about to delete your route. Is that correct?';
+const CREATE_P_RU = 'Введите название';
 const CREATE_P_EN = 'Enter the name of';
-const CREATE_RU = `Шаг 1. ${CREATE_P_RU} *регулярного*(ежедневного) маршрута`;
-const CREATE_EN = `${CREATE_P_EN} your regular (daily) route`;
+const CREATE_RU = `Шаг 1. ${CREATE_P_RU} *регулярного*(ежедневного) маршрута
+Просто напишите текстом`;
+const CREATE_EN = `${CREATE_P_EN} your regular (daily) route
+Just type text`;
 const AGREE_EN = "I've read and agree";
 const AGREE_RU = 'Я прочитал и согласен';
 

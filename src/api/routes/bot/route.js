@@ -189,7 +189,13 @@ class BotHelper {
     const {message} = update;
     const {from, reply_to_message: rpl, location: msgLocation} = message;
     const {language_code: lang} = from;
-    if (rpl && !msgLocation) {
+    if (rpl) {
+      if (msgLocation) {
+        const txt = messages.driverStartNewRoute(lang);
+        const keyb = keyboards.fr();
+        ctx.reply(txt, keyb);
+        return;
+      }
       if (rpl.text.match(messages.check(lang))) {
         // Send the name of your route
         return this.nextProcessName(ctx);
