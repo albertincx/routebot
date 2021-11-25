@@ -24,7 +24,23 @@ const SUBS = process.env.MONGO_COLL_SUBS || 'subscriptions';
 const REQUESTS = process.env.MONGO_COLL_REQ || 'requests';
 const ROUTES_B = process.env.MONGO_COLL_ROUTES_B || 'routes_bs';
 const CONFIGS = process.env.MONGO_COLL_CONGIFS_B || 'configs';
-
+global.connCbTest = () => {
+  const col = Any.collection.conn.model(CONFIGS, Any.schema);
+  col.find({glob: 'glob'}).then(rows => {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const row of rows) {
+      const oo = Object.keys(row);
+      // eslint-disable-next-line array-callback-return,no-loop-func
+      oo.map(kk => {
+        if (kk.match('_RU|_EN')) {
+          // eslint-disable-next-line no-undef
+          globalSUPPLINKS[kk] = row[kk];
+        }
+      });
+    }
+    // console.log(globalSUPPLINKS);
+  });
+};
 const collsSystem = [REQUESTS, CONFIGS];
 
 const connectDb = () =>
@@ -266,6 +282,7 @@ const checkUser = (id, project = 'name') =>
 
 const GetUser = async (id, project = null) => {
   if (id && typeof id === 'string') {
+    // eslint-disable-next-line no-param-reassign
     id = +id;
   }
   // check from old DB without insert

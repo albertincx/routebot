@@ -187,9 +187,9 @@ class BotHelper {
   async processLocation(ctx, coordinatesTxtArr = []) {
     const {update} = ctx;
     const {message} = update;
-    const {from, reply_to_message: rpl} = message;
+    const {from, reply_to_message: rpl, location: msgLocation} = message;
     const {language_code: lang} = from;
-    if (rpl) {
+    if (rpl && !msgLocation) {
       if (rpl.text.match(messages.check(lang))) {
         // Send the name of your route
         return this.nextProcessName(ctx);
@@ -197,7 +197,6 @@ class BotHelper {
       // eslint-disable-next-line consistent-return
       return;
     }
-    const {location: msgLocation} = message;
     let location = [];
     if (coordinatesTxtArr.length) {
       location = coordinatesTxtArr;
@@ -416,13 +415,10 @@ class BotHelper {
 
   async cconfig(ctx) {
     try {
-      const [, PA, VA] = ctx.message.text.split(/\/cconfig (.*?)_(.*?)$/);
+      const [, PA, VA] = ctx.message.text.split(/\/cconfig (.*?)=(.*?)$/);
       if (PA) {
-        if (PA === 'SVC') {
-          await db.updateConfig(globalSUPPLINKS);
-        } else {
-          globalSUPPLINKS[PA] = VA;
-        }
+        globalSUPPLINKS[PA] = VA;
+        await db.updateConfig(globalSUPPLINKS);
       }
       ctx.reply(`ok ${PA}`);
     } catch (e) {

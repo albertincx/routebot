@@ -1,5 +1,6 @@
 const BUTTONS = require('../config/buttons');
 const getENV = require('../links');
+
 const CREATE_P_RU = 'Введите название';
 const DEL_P_RU = 'Вы действительно хотите удалить маршрут? Вы уверены?';
 const DEL_P_EN = 'You are about to delete your route. Is that correct?';
@@ -62,8 +63,8 @@ const SEARCH_EN = 'Find the same routes nearby';
 const SEARCH_P_RU = 'Найти водителей с похожими маршрутами рядом';
 const SEARCH_P_EN = 'Find drivers with similar nearby routes';
 
-const HELLO_RU = 'Отлично! Пожалуйста Выберите тип аккаунта!';
-const HELLO_EN = 'Hello! Please select type of your account!';
+const HELLO_RU = `Отлично! Пожалуйста Выберите тип аккаунта! ${getENV('ACC_T_L_RU')}`;
+const HELLO_EN = `Hello! Please select type of your account! ${getENV('ACC_T_L_EN')}`;
 const ROUTE_SAME_RU = 'Похожие маршруты рядом не найдены';
 const ROUTE_SAME_EN = 'Same routes nearby not found';
 const ROUTE_SAME_D_RU = 'Похожие маршруты (с водителями) рядом не найдены';
@@ -319,14 +320,12 @@ function showHourTxt(lang, hour, view = false) {
 }
 
 module.exports = {
-  allowReq: l => (l === RU ? 'Маршрут удален' : 'Route deleted'),
   deletedRoute: l => (l === RU ? 'Маршрут удален' : 'Route deleted'),
   confirmDeletion: lang => (lang === RU ? DEL_P_RU : DEL_P_EN),
-  yes: l => (l === RU ? 'Да' : 'Yes'),
   yesRoute: l => (l === RU ? 'Да удалить маршрут' : 'Yes delete this route'),
   no: l => (l === RU ? 'Нет' : 'No'),
   sentR: l => (l === RU ? 'Запрос отправлен' : 'Request sent'),
-  sentNotify: l => (l === RU ? 'Подписка оформлена' : 'Subscription created'),
+  // sentNotify: l => (l === RU ? 'Подписка оформлена' : 'Subscription created'),
   sent3R: l => (l === RU ? 'Предложение отправлено' : 'Offer sent'),
   labelName: lang => (lang === RU ? 'Наименование' : 'Route name'),
   labelStatus: lang => (lang === RU ? 'Статус' : 'Status'),
@@ -395,6 +394,7 @@ ${lang === RU ? getENV('CREATE_TXT_L_RU') : getENV('CREATE_TXT_L_EN')}`,
   stopRoutes: l => (l === RU ? STOP_ALL_RU : STOP_ALL_EN),
   settings: l => (l === RU ? 'Настройки' : 'Settings'),
   changeType: lang => (lang === RU ? 'Изменить тип' : 'Change account type'),
+  aboutTxt: lang => (lang === RU ? 'о боте' : 'about'),
   myRoutes: lang => (lang === RU ? 'Мои маршруты' : 'My Routes'),
   changeHours: l => (l === RU ? 'Изменить время маршрута' : 'Change time'),
   changeHA: l => (l === RU ? 'Изменить время начала' : 'Change start time'),

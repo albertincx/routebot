@@ -200,6 +200,27 @@ const format = (bot, botHelper) => {
       }
       return;
     }
+    /** @alias about */
+    if (data.match(keyboards.actions.about)) {
+      try {
+        const txt = messages.start(lang);
+        const keys = [
+          [
+            {
+              text: messages.backJust(lang),
+              callback_data: keyboards.actions.startHome,
+            },
+          ]
+        ]
+        const keyb = keyboards.inline(lang, keys);
+        BH2.edit(id, mId, null, txt, keyb);
+        ctx.answerCbQuery(cbqId, {text: ''});
+      } catch (e) {
+        showError(e);
+        // system = `${e}${system}`;
+      }
+      return;
+    }
     /** @alias settings */
     if (data.match(keyboards.actions.settings)) {
       try {
@@ -519,11 +540,11 @@ const format = (bot, botHelper) => {
     if (checkAdmin(ctx)) {
       return;
     }
-    if (ctx.message.text.match(/^\/cconfig/)) {
+    if (ctx.message.text?.match(/^\/cconfig/)) {
       BH2.cconfig(ctx);
       return;
     }
-    if (ctx.message.text.match(/^\/clearreq/)) {
+    if (ctx.message.text?.match(/^\/clearreq/)) {
       BH2.clearReq(ctx);
       return;
     }
