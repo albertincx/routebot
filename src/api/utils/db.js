@@ -18,10 +18,30 @@ anySchema.method({
 });
 const Any = mongoose.model('Any', anySchema);
 
-const USERS = process.env.MONGO_COLL_LINKS || 'users';
-const ROUTES = process.env.MONGO_COLL_LINKS || 'routes';
-const REQUESTS = process.env.MONGO_COLL_LINKS || 'requests';
+const USERS = process.env.MONGO_COLL_USERS || 'users';
+const ROUTES = process.env.MONGO_COLL_ROUTES || 'routes';
+const SUBS = process.env.MONGO_COLL_SUBS || 'subscriptions';
+const REQUESTS = process.env.MONGO_COLL_REQ || 'requests';
 const ROUTES_B = process.env.MONGO_COLL_ROUTES_B || 'routes_bs';
+const CONFIGS = process.env.MONGO_COLL_CONGIFS_B || 'configs';
+global.connCbTest = () => {
+  const col = Any.collection.conn.model(CONFIGS, Any.schema);
+  col.find({glob: 'glob'}).then(rows => {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const row of rows) {
+      const oo = Object.keys(row);
+      // eslint-disable-next-line array-callback-return,no-loop-func
+      oo.map(kk => {
+        if (kk.match('_RU|_EN')) {
+          // eslint-disable-next-line no-undef
+          globalSUPPLINKS[kk] = row[kk];
+        }
+      });
+    }
+    // console.log(globalSUPPLINKS);
+  });
+};
+const collsSystem = [REQUESTS, CONFIGS];
 
 const connectDb = () =>
   mongoose.createConnection(process.env.MONGO_URI_SECOND, {
@@ -42,6 +62,7 @@ const usersCol = Any.collection.conn.model(USERS, Any.schema);
 const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
 const reqCol = Any.collection.conn.model(REQUESTS, Any.schema);
 const routesBCol = Any.collection.conn.model(ROUTES_B, Any.schema);
+const subsCol = Any.collection.conn.model(SUBS, Any.schema);
 
 const DIR_A = 'pointA';
 const DIR_B = 'pointB';
@@ -260,6 +281,10 @@ const checkUser = (id, project = 'name') =>
   getFromCollection({userId: id}, usersCol, false, project);
 
 const GetUser = async (id, project = null) => {
+  if (id && typeof id === 'string') {
+    // eslint-disable-next-line no-param-reassign
+    id = +id;
+  }
   // check from old DB without insert
   const me = await getFromCollection({userId: id}, usersCol, false, project);
   // if (!me) {
@@ -267,7 +292,12 @@ const GetUser = async (id, project = null) => {
   // }
   return me || {};
 };
-
+const updateRoutes = async u => {
+  const {id, type} = u;
+  // eslint-disable-next-line no-param-reassign
+  await routesCol.updateMany({userId: id, type: {$ne: type}}, {type});
+  await routesBCol.updateMany({userId: id, type: {$ne: type}}, {type});
+};
 const updateUser = async (u, collection = usersCol) => {
   const {id, ...user} = u;
   // eslint-disable-next-line no-param-reassign
@@ -333,6 +363,14 @@ const addRoute = async (
   await usersCol.updateOne({userId: filter.userId}, upd, {upsert: true});
   return res;
 };
+const addSubscription = async (d, collection = subsCol) => {
+  const filter = {from: d.from, routeId: d.routeId};
+  const res = await collection.findOneAndUpdate(filter, d, {
+    upsert: true,
+    new: true,
+  });
+  return res;
+};
 
 const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
 const stopAll = userId => routesCol.updateMany({userId}, {status: 0});
@@ -383,7 +421,7 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
     }
   }
   const $aMatch = {...$match};
-  $aMatch.hourA = {$gte: route.hourA};
+  $aMatch.hourA = {$gte: route.hourA - 2};
   if ($project && $project.userId) {
     $aMatch.notify = 1;
   }
@@ -401,7 +439,7 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
   let aggrB = [];
   if (pointAIds.length) {
     const pointBMatch = {...$match, pointAId: {$in: pointAIds}};
-    pointBMatch.hourB = {$gte: route.hourB};
+    pointBMatch.hourB = {$gte: route.hourB - 2};
     const pipelineB = getPipeline(route, pointBMatch, skip, limit, DIR_B, {
       name: 1,
       pointAId: 1,
@@ -439,12 +477,17 @@ const getRoutes = (userId, pageP, perPage) => {
   const startIndex = (page - 1) * limit;
   return routesCol.find({userId}).skip(startIndex).limit(limit);
 };
-
+const subscribers = async (_id, cb) => {
+  const filter = {routeId: _id};
+  const cursor = subsCol.find(filter).cursor();
+  await processRows(cursor, 500, 10, cb);
+};
 const getRoute = (filter, project = null) =>
   getFromCollection(filter, routesCol, false, project);
 
-const getRequest = async (reqData, project = '_id') => {
-  const r = await getFromCollection(reqData, reqCol, false, project);
+const getRequest = async (reqData, n, project = '_id') => {
+  const coll = !n ? reqCol : subsCol;
+  const r = await getFromCollection(reqData, coll, false, project);
   if (!r) {
     await setRequest(reqData);
   }
@@ -454,15 +497,34 @@ const getRequest = async (reqData, project = '_id') => {
 const getActiveCnt = userId =>
   routesCol.countDocuments({userId, status: {$ne: 0}});
 
-const statusRoute = (userId, _id, update) =>
-  routesCol
-    .updateOne({userId, _id}, update)
-    .then(() =>
-      routesBCol.updateOne(
-        {userId, pointAId: mongoose.Types.ObjectId(_id)},
-        update,
-      ),
-    );
+const statusRoute = async (userId, _id, update) => {
+  await routesCol.updateOne({userId, _id}, update);
+  return routesBCol.updateOne(
+    {userId, pointAId: mongoose.Types.ObjectId(_id)},
+    update,
+  );
+};
+
+async function deleteRoute(_id) {
+  await routesCol.deleteOne({_id});
+  return routesBCol.deleteOne({pointAId: mongoose.Types.ObjectId(_id)});
+}
+
+async function deleteMany(filter, collId) {
+  if (!collId || !collsSystem[collId]) {
+    throw 'not found col';
+  }
+  const col = Any.collection.conn.model(collsSystem[collId], Any.schema);
+  await col.deleteMany(filter);
+}
+
+function updateConfig(data, collId = '1') {
+  if (!collId || !collsSystem[collId]) {
+    throw 'not found col';
+  }
+  const col = Any.collection.conn.model(collsSystem[collId], Any.schema);
+  return col.updateOne({glob: 'glob'}, data, {upsert: true});
+}
 
 module.exports.stat = stat;
 module.exports.updateOne = updateOne;
@@ -483,3 +545,9 @@ module.exports.getRoute = getRoute;
 module.exports.checkUser = checkUser;
 module.exports.getRoutesNear = getRoutesNear;
 module.exports.getRequest = getRequest;
+module.exports.deleteRoute = deleteRoute;
+module.exports.subscribers = subscribers;
+module.exports.addSubscription = addSubscription;
+module.exports.updateRoutes = updateRoutes;
+module.exports.deleteMany = deleteMany;
+module.exports.updateConfig = updateConfig;

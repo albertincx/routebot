@@ -2,8 +2,10 @@ const db = require('../../utils/db');
 const messages = require('../../../messages/format');
 const keyboards = require('../../../keyboards/keyboards');
 const {checkAdmin, showError} = require('../../utils');
+const rabbitmq = require('../../../service/rabbitmq');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
+const TG_ADMIN2 = parseInt(process.env.TGADMIN2, 10);
 const cBroad = '/createBroadcast';
 const sBroad = '/startBroadcast';
 
@@ -21,6 +23,7 @@ class BotHelper {
     this.bot = botHelper.getBot();
     this.botHelper = botHelper;
     this.tgAdmin = TG_ADMIN;
+    this.tgAdmin2 = TG_ADMIN2;
     this.perPage = 6;
   }
 
@@ -65,6 +68,11 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
+  async addSubscription(d) {
+    await db.addSubscription(d);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
   async nextProcessName(ctx) {
     const {from} = ctx.message;
     const {id: userId, language_code: lang} = from;
@@ -88,6 +96,11 @@ class BotHelper {
     } catch (e) {
       // system = `${e}${system}`;
     }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async setUsername(from) {
+    await db.updateUser(from);
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -129,6 +142,7 @@ class BotHelper {
     const user = chat;
     user.type = parseInt(type, 10);
     const {routes, total: totalRoutesCount} = await db.updateUser(user);
+    await db.updateRoutes(user);
     return {routes, count: totalRoutesCount};
   }
 
@@ -137,6 +151,29 @@ class BotHelper {
     const {id, language_code: lang} = from;
     const {type} = await db.GetUser(id, 'type');
     return this.goMenu(lang, type);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  noUserName(id, lang) {
+    const txt = messages.noUserNameTxt(lang);
+    const keys = [];
+    keys.push([
+      {
+        text: messages.isUName(lang),
+        callback_data: keyboards.actions.iSetUName,
+      },
+    ]);
+    const keyb = keyboards.withHome(lang, keys);
+    return {txt, keyb};
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async goHomeAction(ctx, from, cbqId) {
+    const {id, language_code: lang} = from;
+    const {type} = await db.GetUser(id, 'type');
+    const {txt, keyb} = this.goMenu(lang, type);
+    ctx.reply(txt, keyb);
+    ctx.answerCbQuery(cbqId, {text: ''});
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -150,9 +187,9 @@ class BotHelper {
   async processLocation(ctx, coordinatesTxtArr = []) {
     const {update} = ctx;
     const {message} = update;
-    const {from, reply_to_message: rpl} = message;
+    const {from, reply_to_message: rpl, location: msgLocation} = message;
     const {language_code: lang} = from;
-    if (rpl) {
+    if (rpl && !msgLocation) {
       if (rpl.text.match(messages.check(lang))) {
         // Send the name of your route
         return this.nextProcessName(ctx);
@@ -160,7 +197,6 @@ class BotHelper {
       // eslint-disable-next-line consistent-return
       return;
     }
-    const {location: msgLocation} = message;
     let location = [];
     if (coordinatesTxtArr.length) {
       location = coordinatesTxtArr;
@@ -233,8 +269,8 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  getRequest(reqData) {
-    return db.getRequest(reqData);
+  getRequest(reqData, n) {
+    return db.getRequest(reqData, n);
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -273,6 +309,9 @@ class BotHelper {
     let upd = {[field]: st};
     if (field === 'hourA' || field === 'hourB') {
       upd = {[field]: st};
+    }
+    if (field === 'status') {
+      upd.notify = st;
     }
     await db.statusRoute(userId, _id, upd);
   }
@@ -341,6 +380,60 @@ class BotHelper {
       }
     }
     return Promise.resolve();
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  deleteRoute(id) {
+    return db.deleteRoute(id);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  notifyUsersDelCb(items) {
+    items.forEach(u => {
+      rabbitmq.addToQueue({...u, delete: 1});
+    });
+  }
+
+  notifyUsersDel(_id) {
+    return db.subscribers(_id, this.notifyUsersDelCb);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async jobMessage(task) {
+    console.log('from rab', task);
+  }
+
+  async clearReq(ctx) {
+    try {
+      const [, collId] = ctx.message.text.split('/clearreq_');
+      await db.deleteMany({from: {$in: [this.tgAdmin, this.tgAdmin2]}}, collId);
+      ctx.reply('ok');
+    } catch (e) {
+      ctx.reply(e);
+    }
+  }
+
+  async cconfig(ctx) {
+    try {
+      const [, PA, VA] = ctx.message.text.split(/\/cconfig (.*?)=(.*?)$/);
+      if (PA) {
+        globalSUPPLINKS[PA] = VA;
+        await db.updateConfig(globalSUPPLINKS);
+      }
+      ctx.reply(`ok ${PA}`);
+    } catch (e) {
+      ctx.reply(e);
+    }
+  }
+
+  async GetUserName(id) {
+    const u = await db.GetUser(id, 'username');
+    return u?.username;
+  }
+
+  async GetLangUser(id) {
+    const u = await db.GetUser(id, 'language_code');
+    return u?.language_code;
   }
 }
 

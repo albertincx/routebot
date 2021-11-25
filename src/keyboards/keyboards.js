@@ -14,8 +14,13 @@ const actions = {
   sharing: 'type_2',
   passenger: 'type_3',
   settings: 'menu_settings',
-  sendR: 'sendR',
-  send3R: 'send3R',
+  sendDriverReq: 'sendR',
+  sendPassReq: 'send3R',
+  sendNotify: 'send4R',
+  allowReq1: 'allowReq1',
+  allowReq2: 'allowReq2',
+  iSetUName: 'iSetUName',
+  about: 'sett_about',
 };
 
 function inline(lang, keys, toHome = false, back = false) {
@@ -32,6 +37,12 @@ function inline(lang, keys, toHome = false, back = false) {
 
 function withHome(lang, keysArray, toHome = true) {
   const k = inline(lang, keysArray, toHome);
+  k.parse_mode = 'Markdown';
+  k.disable_web_page_preview = true;
+  return k;
+}
+
+function withMark(k) {
   k.parse_mode = 'Markdown';
   k.disable_web_page_preview = true;
   return k;
@@ -68,14 +79,18 @@ function driver(lang, type) {
 
 function settings(lang, hasActive, type) {
   const changeType = messages.changeType(lang);
+  const aboutTxt = messages.aboutTxt(lang);
   const stop = messages.stopRoutes(lang);
   const c = Markup.button.callback(changeType, actions.changeType);
+  const about = Markup.button.callback(aboutTxt, actions.about);
   const keys = [[c]];
   if (hasActive) {
     const s = Markup.button.callback(stop, `${actions.stopAll}${type}`);
     keys.push([s]);
   }
-  return inline(lang, keys, true, true);
+  keys.push([about]);
+  const k = inline(lang, keys, true, true);
+  return withMark(k);
 }
 
 function startFirst(txt) {
@@ -154,12 +169,14 @@ function detailRoute(lang, callbacks, noTime = false) {
       keysArray.push([findBtn]);
     }
   }
-  if (callbacks[3]) {
-    const findBtn = {
-      text: messages.nearBy(lang, true),
-      callback_data: callbacks[3],
-    };
-    keysArray.push([findBtn]);
+  if (callbacks.length === 4) {
+    if (callbacks[3]) {
+      const findBtn = {
+        text: messages.nearBy(lang, true),
+        callback_data: callbacks[3],
+      };
+      keysArray.push([findBtn]);
+    }
   }
   return withHome(lang, keysArray);
 }
@@ -272,3 +289,4 @@ module.exports.detailRoute = detailRoute;
 module.exports.editRoute = editRoute;
 module.exports.editTime = editTime;
 module.exports.withHome = withHome;
+module.exports.inline = inline;

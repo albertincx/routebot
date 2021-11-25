@@ -6,11 +6,20 @@ exports.connect = uri => {
   if (!dbUri) {
     return false;
   }
-  mongoose.connect(dbUri, {
-    keepAlive: 1,
-    connectTimeoutMS: 30000,
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+  mongoose.connect(
+    dbUri,
+    {
+      keepAlive: 1,
+      connectTimeoutMS: 30000,
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    },
+    err => {
+      if (err) throw err;
+      if (connCbTest) {
+        connCbTest();
+      }
+    },
+  );
   return mongoose.connection;
 };

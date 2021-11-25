@@ -9,6 +9,7 @@ const {printRouteOne, printRouteFound} = require('./view/route');
 
 const rabbitmq = require('../../service/rabbitmq');
 const BotHelper2 = require('./bot/route');
+const {processSendR} = require('./bot/request');
 
 rabbitmq.startChannel();
 global.lastIvTime = +new Date();
@@ -18,6 +19,13 @@ const DEAC = 'st_dea';
 const ACTI = 'st_act';
 const SUBS = 'st_sub';
 const UNSUB = 'st_uns';
+const getRouteCb = (_id, page, status, notify) => [
+  `route_${_id}_${page}_${NONE}`,
+  `${status === 1 ? DEAC : ACTI}_${_id}_${page}`,
+  `route_${_id}_${page}_${notify === 1 ? UNSUB : SUBS}`,
+  `t_fromA_${_id}_${page}_start`,
+  `del_route_${_id}_${page}_s`,
+];
 
 function getPage(i, fromRoute = '') {
   if (fromRoute) {
@@ -79,13 +87,6 @@ function getPagi(cnt, perPage, pageNum = 1, fromRoute = '') {
   return [];
 }
 
-const getRouteCb = (_id, page, status, notify) => [
-  `route_${_id}_${page}_${NONE}`,
-  `${status === 1 ? DEAC : ACTI}_${_id}_${page}`,
-  `route_${_id}_${page}_${notify === 1 ? UNSUB : SUBS}`,
-  `t_fromA_${_id}_${page}_start`,
-  `del_route_${_id}_${page}`,
-];
 const format = (bot, botHelper) => {
   const BH2 = new BotHelper2(botHelper);
   bot.command(['/createBroadcast', '/startBroadcast'], ctx =>
@@ -118,9 +119,34 @@ const format = (bot, botHelper) => {
     const msg = ctx.update.callback_query;
     const {from, message} = msg;
     const {message_id: mId} = message;
+    const {id, language_code: lang} = from;
     const {id: cbqId} = msg;
     const [data] = ctx.match;
+    /** @alias SET_USERNAME */
+
+    if (data.match(keyboards.actions.iSetUName)) {
+      let system = '';
+      try {
+        let text = '';
+        if (from.username) {
+          await BH2.setUsername(from);
+          const txt = messages.setUpUname(lang);
+          const {keyb} = await BH2.goHome(from);
+          BH2.edit(from.id, mId, null, txt, keyb);
+        } else {
+          text = messages.noUnameW(lang);
+        }
+        ctx.answerCbQuery(cbqId, {text});
+      } catch (e) {
+        system = `${e}${system}`;
+      }
+      if (system) {
+        botHelper.sendAdmin(system);
+      }
+      return;
+    }
     /** @alias startHome */
+
     if (data.match(keyboards.actions.startHome)) {
       let system = '';
       try {
@@ -137,7 +163,6 @@ const format = (bot, botHelper) => {
     }
     /** @alias stopAll */
     if (data.match(keyboards.actions.stopAll)) {
-      const {id, language_code: lang} = from;
       const [, type] = data.match(/stop_all([0-9])/);
       // eslint-disable-next-line consistent-return
       await BH2.stopAll(id);
@@ -148,7 +173,6 @@ const format = (bot, botHelper) => {
     }
     /** @alias addRoute */
     if (data.match(keyboards.actions.addRoute)) {
-      const {id, language_code: lang} = from;
       // eslint-disable-next-line consistent-return
       await BH2.addRoute(id);
       try {
@@ -168,11 +192,31 @@ const format = (bot, botHelper) => {
       data.match(keyboards.actions.changeType)
     ) {
       try {
-        const {id: userId, language_code: lang} = from;
         const txt = messages.start2(lang);
-        BH2.edit(userId, mId, null, txt, keyboards.begin(lang));
+        BH2.edit(id, mId, null, txt, keyboards.begin(lang));
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
+        // system = `${e}${system}`;
+      }
+      return;
+    }
+    /** @alias about */
+    if (data.match(keyboards.actions.about)) {
+      try {
+        const txt = messages.start(lang);
+        const keys = [
+          [
+            {
+              text: messages.backJust(lang),
+              callback_data: keyboards.actions.startHome,
+            },
+          ]
+        ]
+        const keyb = keyboards.inline(lang, keys);
+        BH2.edit(id, mId, null, txt, keyb);
+        ctx.answerCbQuery(cbqId, {text: ''});
+      } catch (e) {
+        showError(e);
         // system = `${e}${system}`;
       }
       return;
@@ -180,10 +224,9 @@ const format = (bot, botHelper) => {
     /** @alias settings */
     if (data.match(keyboards.actions.settings)) {
       try {
-        const {id, language_code: lang} = from;
         const [, type] = data.match(/menu_settings([0-9])/);
         const {total = 0} = await BH2.getCounts(id);
-        const txt = messages.settings(lang);
+        const txt = messages.settingsText(lang);
         const keyb = keyboards.settings(lang, total, type);
         BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text: ''});
@@ -197,7 +240,6 @@ const format = (bot, botHelper) => {
     if (data.match(/type_([0-9])/)) {
       try {
         const [, type] = data.match(/type_([0-9])/);
-        const {id, language_code: lang} = from;
         await BH2.driverTypeChange(from, type);
         const {txt, keyb} = BH2.goMenu(lang, parseInt(type, 10));
         BH2.edit(id, mId, null, txt, keyb);
@@ -210,7 +252,6 @@ const format = (bot, botHelper) => {
     /** @alias page */
     if (data.match(/page_([0-9]+)/)) {
       try {
-        const {id, language_code: lang} = from;
         const [, pageStr] = data.match(/page_([0-9]+)/);
         const page = parseInt(pageStr, 10);
         const {cnt, routes = []} = await BH2.myRoutes(id, page);
@@ -218,8 +259,15 @@ const format = (bot, botHelper) => {
         const pages = getPagi(cnt, BH2.perPage, page);
         const pagi = [...names, ...pages];
         pagi.push(keyboards.addRoute(lang));
-        const pagination = keyboards.withHome(lang, pagi);
-        const txt = messages.routesList();
+        const back = [
+          {
+            text: messages.backJust(lang),
+            callback_data: keyboards.actions.startHome,
+          },
+        ];
+        pagi.push(back);
+        const pagination = keyboards.withHome(lang, pagi, false);
+        const txt = messages.routesList(lang);
         BH2.edit(id, mId, null, txt, pagination);
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
@@ -230,34 +278,7 @@ const format = (bot, botHelper) => {
     /** @alias request */
     if (data.match(/^req_(.*?)/)) {
       try {
-        const {language_code: lang} = from;
-        const [, _id, requestUserId, sendR, userId] = data.match(
-          /req_(.*?)_([0-9]+)_(.*?)_([0-9]+)$/,
-        );
-        let text = 'error';
-        const reqData = {from: +requestUserId, to: +userId, routeId: _id};
-        const req = await BH2.getRequest(reqData);
-        if (req) {
-          text = messages.sentAlready(lang);
-          ctx.answerCbQuery(cbqId, {text});
-          return;
-        }
-        const route = await BH2.getRouteById(_id, 'name');
-        if (route) {
-          const {name} = route;
-          let txt;
-          if (sendR.match(keyboards.actions.sendR)) {
-            txt = messages.notifyUserDriver(lang, name);
-            text = messages.sentR(lang);
-          }
-          if (sendR.match(keyboards.actions.send3R)) {
-            txt = messages.notifyUserCoop(lang, name);
-            text = messages.sent3R(lang);
-          }
-          if (txt) {
-            BH2.botMessage(userId, txt);
-          }
-        }
+        const text = await processSendR(ctx, BH2);
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
@@ -266,7 +287,6 @@ const format = (bot, botHelper) => {
     /** @alias route */
     if (data.match(/^route_(.*?)/)) {
       try {
-        const {id, language_code: lang} = from;
         const [, _id, page, sendR] = data.match(/route_(.*?)_([0-9]+)_(.*?)$/);
         let text = '';
         if (sendR) {
@@ -283,9 +303,7 @@ const format = (bot, botHelper) => {
         }
         const route = await BH2.getRoute(id, _id, 'notify status hourA hourB');
         if (!route) {
-          const {txt, keyb} = await BH2.goHome(from);
-          ctx.reply(txt, keyb);
-          ctx.answerCbQuery(cbqId, {text: ''});
+          await BH2.goHomeAction(ctx, from, cbqId);
           return;
         }
         const {status, hourA, hourB} = route;
@@ -309,7 +327,6 @@ const format = (bot, botHelper) => {
     /** @alias edit */
     if (data.match(/^edit_(.*?)/)) {
       try {
-        const {id, language_code: lang} = from;
         const [, _id, page, frOneT] = data.match(/edit_(.*?)_([0-9]+)_(.*?)$/);
         let text = '';
         if (frOneT && frOneT.match(newReg(`${hoursReg}$`))) {
@@ -320,6 +337,10 @@ const format = (bot, botHelper) => {
           text = messages.editTimeOk(lang, true);
         }
         const route = await BH2.getRoute(id, _id, 'notify status hourA hourB');
+        if (!route) {
+          await BH2.goHomeAction(ctx, from, cbqId);
+          return;
+        }
         const {status, notify, hourA, hourB} = route;
         const callbacks = getRouteCb(_id, page, status, notify);
         if (hourA && hourB) {
@@ -339,7 +360,6 @@ const format = (bot, botHelper) => {
     /** @name hours */
     if (data.match(newReg(hoursReg))) {
       try {
-        const {id, language_code: lang} = from;
         const [, frP, _id, page, _H] = data.match(
           newReg(`${hoursReg}_([0-9]+)_(.*?)$`),
         );
@@ -377,11 +397,11 @@ const format = (bot, botHelper) => {
     /** @alias status */
     if (data.match(newReg(stReg))) {
       try {
-        const {id, language_code: lang} = from;
         const [, status, _id, page] = data.match(newReg(`${stReg}_([0-9]+)$`));
         const v = status === ACTI ? 1 : 0;
         const route = await BH2.setStatusRoute(id, _id, v);
         const editBtn = `edit_${_id}_${page}_1`;
+        route.notify = v;
         const callbacks = [`page_${page}`, editBtn];
         if (route.error) {
           const t = messages.timeError(lang, route.field);
@@ -396,7 +416,12 @@ const format = (bot, botHelper) => {
         const keyb = keyboards.detailRoute(lang, callbacks);
         const txt = printRouteOne(route, lang);
         await BH2.edit(id, mId, null, txt, keyb);
-        const pop = messages.showStatus(stNum, lang, messages.icon(stNum));
+        const pop = messages.showStatus(
+          stNum,
+          lang,
+          messages.icon(stNum),
+          true,
+        );
         ctx.answerCbQuery(cbqId, {text: pop});
       } catch (e) {
         showError(e);
@@ -406,7 +431,6 @@ const format = (bot, botHelper) => {
     /** @alias find */
     if (data.match(/^find_(.*?)/)) {
       try {
-        const {id, language_code: lang} = from;
         const [, pag = 1, _id, typ] = data.match(
           /find_([0-9]+)_(.*?)_([0-9])$/,
         );
@@ -428,30 +452,24 @@ const format = (bot, botHelper) => {
         const preKeys = [];
         if (routes[0]) {
           let text = messages.sendRequest(lang);
-          let act = keyboards.actions.sendR;
+          let act = keyboards.actions.sendDriverReq;
           if (type === 3) {
             // offer for same passenger
             text = messages.sendRequest3(lang);
-            act = keyboards.actions.send3R;
+            act = keyboards.actions.sendPassReq;
           }
           const {pointAId, userId, notify} = routes[0];
-          let sendRequest;
+
           if (!notify) {
-            // act = keyboards.actions.send3R;
-            sendRequest = [
-              {
-                text,
-                callback_data: `req_${pointAId}_${id}_${act}_${userId}`,
-              },
-            ];
-          } else {
-            sendRequest = [
-              {
-                text,
-                callback_data: `req_${pointAId}_${id}_${act}_${userId}`,
-              },
-            ];
+            text = messages.sendRequestNotify(lang);
+            act = keyboards.actions.sendNotify;
           }
+          const sendRequest = [
+            {
+              text,
+              callback_data: `req_${pointAId}_${act}_${userId}`,
+            },
+          ];
           if (sendRequest) {
             preKeys.push(sendRequest);
           }
@@ -466,12 +484,68 @@ const format = (bot, botHelper) => {
         // system = `${e}${system}`;
       }
     }
+
+    /** @alias delete */
+    if (data.match(/^del_route_(.*?)/)) {
+      try {
+        const [, _id, pag = 1, typ] = data.match(
+          /del_route_(.*?)_([0-9]+)_(.*?)$/,
+        );
+        if (typ === 'y') {
+          await BH2.deleteRoute(_id);
+          // await BH2.notifyUsersDel(_id);
+          const view = messages.deletedRoute(lang);
+          BH2.edit(id, mId, null, view);
+          await BH2.goHomeAction(ctx, from, cbqId);
+          return;
+        }
+        const page = parseInt(pag, 10);
+        const pagi = [];
+        const back = [
+          {
+            text: messages.backJust(lang),
+            callback_data: `edit_${_id}_${page}_1`,
+          },
+        ];
+        const yes = [
+          {
+            text: messages.yesRoute(lang),
+            callback_data: `del_route_${_id}_${page}_y`,
+          },
+        ];
+        const no = [
+          {
+            text: messages.no(lang),
+            callback_data: `edit_${_id}_${page}_1`,
+          },
+        ];
+        pagi.push(no);
+        pagi.push(yes);
+        pagi.push(back);
+        const keys = [...pagi];
+        const pagination = keyboards.withHome(lang, keys, false);
+        const view = messages.confirmDeletion(lang);
+        BH2.edit(id, mId, null, view, pagination);
+        ctx.answerCbQuery(cbqId, {text: ''});
+      } catch (e) {
+        showError(e);
+        // system = `${e}${system}`;
+      }
+    }
   });
 
   // eslint-disable-next-line consistent-return
   /** @alias processMessage */
   function test(ctx) {
     if (checkAdmin(ctx)) {
+      return;
+    }
+    if (ctx.message.text?.match(/^\/cconfig/)) {
+      BH2.cconfig(ctx);
+      return;
+    }
+    if (ctx.message.text?.match(/^\/clearreq/)) {
+      BH2.clearReq(ctx);
       return;
     }
     if (ctx.update && ctx.update.message) {
@@ -496,6 +570,14 @@ const format = (bot, botHelper) => {
   }
 
   bot.on('message', ctx => test(ctx));
+  try {
+    setTimeout(() => {
+      rabbitmq.run(BH2.jobMessage);
+      rabbitmq.runSecond(BH2.jobMessage);
+    }, 5000);
+  } catch (e) {
+    botHelper.sendError(e);
+  }
 };
 
 module.exports = format;

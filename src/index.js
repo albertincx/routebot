@@ -4,6 +4,7 @@ const {PORT} = require('./config/vars');
 const mongoose = require('./config/mongoose');
 const botRoute = require('./api/routes/bot');
 const botInstance = require('./config/bot');
+require('./links');
 
 const conn = mongoose.connect();
 const app = express();
