@@ -212,9 +212,9 @@ const editTime = (lang, isFromB) => {
 во сколько выезжаете ТУДА ➡️`;
   }
   if (isFromB) {
-    return 'Select depa from B point time';
+    return 'Select back route time from B (from last point)';
   }
-  return 'Set depa from A point  time';
+  return 'Select start route time from A (first point)';
 };
 
 const editTimeSuccess = (lang, isFromB) => {
@@ -225,9 +225,9 @@ const editTimeSuccess = (lang, isFromB) => {
     return 'Выберите время отправления из точки А';
   }
   if (isFromB) {
-    return 'Select depa from B point time';
+    return 'Set back route time from B (from last point)';
   }
-  return 'Set depa from A point  time';
+  return 'Set start route time from A (first point)';
 };
 const editTimeOk = (lang, isFromB) => {
   if (lang === RU) {
