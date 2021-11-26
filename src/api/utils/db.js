@@ -365,11 +365,10 @@ const addRoute = async (
 };
 const addSubscription = async (d, collection = subsCol) => {
   const filter = {from: d.from, routeId: d.routeId};
-  const res = await collection.findOneAndUpdate(filter, d, {
+  return collection.findOneAndUpdate(filter, d, {
     upsert: true,
     new: true,
   });
-  return res;
 };
 
 const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
@@ -411,7 +410,13 @@ const getPipeline = (
 ];
 
 const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
-  const $match = {userId: {$ne: route.userId}, status: 1};
+  const $match = {
+    userId: {$ne: route.userId},
+    status: 1,
+    pointA: {$exists: true},
+    hourA: {$exists: true},
+    hourB: {$exists: true},
+  };
   const {TYPE_PASS: t3} = constants;
   if (type === 0 || type === t3) {
     if (type === t3) {
@@ -438,7 +443,11 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
   }
   let aggrB = [];
   if (pointAIds.length) {
-    const pointBMatch = {...$match, pointAId: {$in: pointAIds}};
+    const pointBMatch = {
+      ...$match,
+      pointB: {$exists: true},
+      pointAId: {$in: pointAIds},
+    };
     pointBMatch.hourB = {$gte: route.hourB - 2};
     const pipelineB = getPipeline(route, pointBMatch, skip, limit, DIR_B, {
       name: 1,

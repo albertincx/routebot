@@ -65,8 +65,12 @@ const SEARCH_EN = 'Find the same routes nearby';
 const SEARCH_P_RU = 'Найти водителей с похожими маршрутами рядом';
 const SEARCH_P_EN = 'Find drivers with similar nearby routes';
 
-const HELLO_RU = `Отлично! Пожалуйста Выберите тип аккаунта! ${getENV('ACC_T_L_RU')}`;
-const HELLO_EN = `Hello! Please select type of your account! ${getENV('ACC_T_L_EN')}`;
+const HELLO_RU = `Отлично! Пожалуйста Выберите тип аккаунта! ${getENV(
+  'ACC_T_L_RU',
+)}`;
+const HELLO_EN = `Hello! Please select type of your account! ${getENV(
+  'ACC_T_L_EN',
+)}`;
 const ROUTE_SAME_RU = 'Похожие маршруты рядом не найдены';
 const ROUTE_SAME_EN = 'Same routes nearby not found';
 const ROUTE_SAME_D_RU = 'Похожие маршруты (с водителями) рядом не найдены';
@@ -141,12 +145,14 @@ const getNearLabel = (l, t) => {
   return `👀 ${n}`;
 };
 
-const typeLabel = (l, fromRoute) => {
+const typeLabel = l => {
   if (l === RU) {
-    return `Тип ${fromRoute ? 'маршрута' : 'аккаунта'}`;
+    return 'Тип аккаунта';
   }
   return 'Account type';
 };
+const editSupLinkTxt = l =>
+  `${l === RU ? getENV('EDIT_TXT_RU') : getENV('EDIT_TXT_EN')}`;
 
 const sentAlreadyPop = (lang, not = false) => {
   if (not) {
@@ -338,7 +344,7 @@ module.exports = {
   labelTimeB: l => (l === RU ? 'Обратно в' : 'Return time'),
   labelA: lang => (lang === RU ? 'Точка А' : 'departure point'),
   labelB: lang => (lang === RU ? 'Точка Б' : 'destination point'),
-  editSupLink: l => l === RU ? getENV('EDIT_TXT_RU') : getENV('EDIT_TXT_EN'),
+  editSupLink: editSupLinkTxt,
   check: lang => (lang === RU ? CREATE_P_RU : CREATE_P_EN),
   account: lang => (lang === RU ? CHANGED_RU : CHANGED_EN),
   success: lang => (lang === RU ? ROUTE_ADDED_RU : ROUTE_ADDED_EN),

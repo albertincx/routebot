@@ -9,9 +9,9 @@ ${messages.labelName(lang)}: ${name}
 ${messages.labelStatus(lang)}: ${statu}
 ${messages.labelSubs(lang)}: ${notif}
 ${isEdit ? messages.editSupLink(lang) : ''}
-${messages.labelType(lang, true)}: ${messages.getType(lang, type)}
+${messages.labelType(lang)}: ${messages.getType(lang, type)}
 `;
-  if (!isEdit) {
+  if (!isEdit && pointA && pointB) {
     txt += `📍${messages.labelA(lang)}: \`\`\`${pointA.coordinates}\`\`\`
 📍${messages.labelB(lang)}: \`\`\`${pointB.coordinates}\`\`\``;
   }
