@@ -124,51 +124,50 @@ const format = (bot, botHelper) => {
     /** @alias SET_USERNAME */
 
     if (data.match(keyboards.actions.iSetUName)) {
-      let system = '';
+      let text = '';
       try {
-        let text = '';
         if (from.username) {
           await BH2.setUsername(from);
           const txt = messages.setUpUname(lang);
           const {keyb} = await BH2.goHome(from);
-          BH2.edit(from.id, mId, null, txt, keyb);
+          await BH2.edit(from.id, mId, null, txt, keyb);
         } else {
           text = messages.noUnameW(lang);
         }
-        ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
-        system = `${e}${system}`;
+        text = 'err';
+        BH2.sendError(e);
       }
-      if (system) {
-        botHelper.sendAdmin(system);
-      }
+      ctx.answerCbQuery(cbqId, {text});
       return;
     }
     /** @alias startHome */
 
     if (data.match(keyboards.actions.startHome)) {
-      let system = '';
+      let text = '';
       try {
         const {txt, keyb} = await BH2.goHome(from);
-        BH2.edit(from.id, mId, null, txt, keyb);
-        ctx.answerCbQuery(cbqId, {text: ''});
+        await BH2.edit(from.id, mId, null, txt, keyb);
       } catch (e) {
-        system = `${e}${system}`;
+        text = 'err'
+        await BH2.sendError(e);
       }
-      if (system) {
-        botHelper.sendAdmin(system);
-      }
+      ctx.answerCbQuery(cbqId, {text});
       return;
     }
     /** @alias stopAll */
     if (data.match(keyboards.actions.stopAll)) {
-      const [, type] = data.match(/stop_all([0-9])/);
-      // eslint-disable-next-line consistent-return
-      await BH2.stopAll(id);
-      ctx.answerCbQuery(cbqId, {text: messages.stoppedAll(lang)});
-      ctx.reply(messages.stoppedAll(lang), keyboards.hide());
-      const {txt, keyb} = BH2.goMenu(lang, parseInt(type, 10));
-      BH2.edit(id, mId, null, txt, keyb);
+      try {
+        const [, type] = data.match(/stop_all([0-9])/);
+        // eslint-disable-next-line consistent-return
+        await BH2.stopAll(id);
+        ctx.reply(messages.stoppedAll(lang), keyboards.hide());
+        const {txt, keyb} = BH2.goMenu(lang, parseInt(type, 10));
+        await BH2.edit(id, mId, null, txt, keyb);
+        ctx.answerCbQuery(cbqId, {text: messages.stoppedAll(lang)});
+      } catch (e) {
+        BH2.sendError(e);
+      }
     }
     /** @alias addRoute */
     if (data.match(keyboards.actions.addRoute)) {
@@ -179,8 +178,7 @@ const format = (bot, botHelper) => {
         const keyb = keyboards.fr();
         ctx.reply(txt, keyb);
       } catch (e) {
-        // system = `${e}${system}`;
-        BH2.sendError(e);
+        await BH2.sendError(e);
       }
       ctx.answerCbQuery(cbqId, {text: messages.addName(lang)});
       return;
@@ -193,11 +191,10 @@ const format = (bot, botHelper) => {
     ) {
       try {
         const txt = messages.start2(lang);
-        BH2.edit(id, mId, null, txt, keyboards.begin(lang));
+        await BH2.edit(id, mId, null, txt, keyboards.begin(lang));
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
-        // system = `${e}${system}`;
-        BH2.sendError(e);
+        await BH2.sendError(e);
       }
       return;
     }
@@ -214,12 +211,11 @@ const format = (bot, botHelper) => {
           ]
         ]
         const keyb = keyboards.inline(lang, keys);
-        BH2.edit(id, mId, null, txt, keyb);
+        await BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         showError(e);
-        // system = `${e}${system}`;
-        BH2.sendError(e);
+        await BH2.sendError(e);
       }
       return;
     }
@@ -230,12 +226,11 @@ const format = (bot, botHelper) => {
         const {total = 0} = await BH2.getCounts(id);
         const txt = messages.settingsText(lang);
         const keyb = keyboards.settings(lang, total, type);
-        BH2.edit(id, mId, null, txt, keyb);
+        await BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         showError(e);
-        BH2.sendError(e);
-        // system = `${e}${system}`;
+        await BH2.sendError(e);
       }
       return;
     }
@@ -245,12 +240,11 @@ const format = (bot, botHelper) => {
         const [, type] = data.match(/type_([0-9])/);
         await BH2.driverTypeChange(from, type);
         const {txt, keyb} = BH2.goMenu(lang, parseInt(type, 10));
-        BH2.edit(id, mId, null, txt, keyb);
+        await BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text: messages.account(lang)});
       } catch (e) {
         showError(e);
-        BH2.sendError(e);
-        // system = `${e}${system}`;
+        await BH2.sendError(e);
       }
     }
     /** @alias page */
@@ -272,12 +266,11 @@ const format = (bot, botHelper) => {
         pagi.push(back);
         const pagination = keyboards.withHome(lang, pagi, false);
         const txt = messages.routesList(lang);
-        BH2.edit(id, mId, null, txt, pagination);
+        await BH2.edit(id, mId, null, txt, pagination);
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         showError(e);
-        BH2.sendError(e);
-        // system = `${e}${system}`;
+        await BH2.sendError(e);
       }
     }
     /** @alias request */
@@ -287,7 +280,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
-        BH2.sendError(e);
+        await BH2.sendError(e);
       }
     }
     /** @alias route */
@@ -323,12 +316,11 @@ const format = (bot, botHelper) => {
           callbacks.push(`t_fromA_${_id}_${page}_start`);
         }
         const keyb = keyboards.detailRoute(lang, callbacks, noTime);
-        BH2.edit(id, mId, null, printRouteOne(route, lang), keyb);
+        await BH2.edit(id, mId, null, printRouteOne(route, lang), keyb);
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
-        BH2.sendError(e);
-        // system = `${e}${system}`;
+        await BH2.sendError(e);
       }
     }
     /** @alias edit */
@@ -358,12 +350,11 @@ const format = (bot, botHelper) => {
         }
         callbacks.push(`del_route_${_id}_${page}_s`)
         const keyb = keyboards.editRoute(lang, callbacks, route);
-        BH2.edit(id, mId, null, printRouteOne(route, lang, true), keyb);
+        await BH2.edit(id, mId, null, printRouteOne(route, lang, true), keyb);
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
-        BH2.sendError(e);
-        // system = `${e}${system}`;
+        await BH2.sendError(e);
       }
     }
     /** @alias edit */
@@ -398,12 +389,11 @@ const format = (bot, botHelper) => {
         }
         const keys = keyboards.editTime(lang, isFrB, cbPath, v);
         const keyb = keyboards.withHome(lang, [back, ...keys]);
-        BH2.edit(id, mId, null, txt, keyb);
+        await BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
-        BH2.sendError(e);
-        // system = `${e}${system}`;
+        await BH2.sendError(e);
       }
     }
     /** @alias status */
@@ -437,12 +427,12 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: pop});
       } catch (e) {
         showError(e);
-        BH2.sendError(e);
-        // system = `${e}${system}`;
+        await BH2.sendError(e);
       }
     }
     /** @alias find */
     if (data.match(/^find_(.*?)/)) {
+      let text = '';
       try {
         const [, pag = 1, _id, typ] = data.match(
           /find_([0-9]+)_(.*?)_([0-9])$/,
@@ -490,17 +480,18 @@ const format = (bot, botHelper) => {
         const keys = [...preKeys, ...pagi];
         const pagination = keyboards.withHome(lang, keys, false);
         const view = printRouteFound(routes, lang, type);
-        BH2.edit(id, mId, null, view, pagination);
-        ctx.answerCbQuery(cbqId, {text: ''});
+        await BH2.edit(id, mId, null, view, pagination);
       } catch (e) {
         showError(e);
-        BH2.sendError(e);
-        // system = `${e}${system}`;
+        text = 'err'
+        await BH2.sendError(e);
       }
+      ctx.answerCbQuery(cbqId, {text});
     }
 
     /** @alias delete */
     if (data.match(/^del_route_(.*?)/)) {
+      let text = 'err';
       try {
         const [, _id, pag = 1, typ] = data.match(
           /del_route_(.*?)_([0-9]+)_(.*?)$/,
@@ -509,7 +500,7 @@ const format = (bot, botHelper) => {
           await BH2.deleteRoute(_id);
           // await BH2.notifyUsersDel(_id);
           const view = messages.deletedRoute(lang);
-          BH2.edit(id, mId, null, view);
+          await BH2.edit(id, mId, null, view);
           await BH2.goHomeAction(ctx, from, cbqId);
           return;
         }
@@ -539,13 +530,13 @@ const format = (bot, botHelper) => {
         const keys = [...pagi];
         const pagination = keyboards.withHome(lang, keys, false);
         const view = messages.confirmDeletion(lang);
-        BH2.edit(id, mId, null, view, pagination);
-        ctx.answerCbQuery(cbqId, {text: ''});
+        await BH2.edit(id, mId, null, view, pagination);
       } catch (e) {
         showError(e);
-        BH2.sendError(e);
-        // system = `${e}${system}`;
+        text = 'err';
+        await BH2.sendError(e);
       }
+      ctx.answerCbQuery(cbqId, {text});
     }
   });
 

@@ -47,9 +47,13 @@ async function processSendR(ctx, BH2) {
       if (sendR.match(keyboards.actions.sendDriverReq)) {
         const usernameFrom = await BH2.GetUserName(id);
         if (!usernameFrom) {
-          const {txt: t, keyb: k} = BH2.noUserName(id, lang);
-          BH2.edit(id, mId, null, t, k);
-          // ctx.reply(t, k);
+          try {
+            const {txt: t, keyb: k} = BH2.noUserName(id, lang);
+            BH2.edit(id, mId, null, t, k);
+          } catch (e) {
+            BH2.sendError(e);
+            return 'error';
+          }
           return '';
         }
         const languageTo = await BH2.GetLangUser(userId);
@@ -59,8 +63,13 @@ async function processSendR(ctx, BH2) {
       if (sendR.match(keyboards.actions.sendPassReq)) {
         const usernameFrom = await BH2.GetUserName(id);
         if (!usernameFrom) {
-          const {txt: t, keyb: k} = BH2.noUserName(id, lang);
-          BH2.edit(id, mId, null, t, k);
+          try {
+            const {txt: t, keyb: k} = BH2.noUserName(id, lang);
+            BH2.edit(id, mId, null, t, k);
+          } catch (e) {
+            BH2.sendError(e);
+            return 'error';
+          }
           return '';
         }
         const languageTo = await BH2.GetLangUser(userId);
