@@ -1,4 +1,4 @@
-const ADMINS = (process.env.ADMINS || '').split(',');
+const ADMINS = (process.env.ADMINS || '').split(',').filter(Boolean);
 
 function check(txt) {
   const m = txt.match(
@@ -37,7 +37,8 @@ function checkAdmin(ctx) {
     } = ctx.message;
     chatId = id;
   }
-  return !(ADMINS.length && ADMINS.includes(`${chatId}`));
+
+  return ADMINS.length && !ADMINS.includes(`${chatId}`);
 }
 const showError = e => console.log(e);
 
