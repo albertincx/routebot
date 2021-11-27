@@ -1,18 +1,14 @@
 /* eslint-disable */
-const getENV = require('../links');
 const BUTTONS = require('../config/buttons');
-
+const AGREE = 'I have read and agree';
 const DEL_P = 'You are about to delete your route. Is that correct?';
 const CREATE_P = 'Enter the name of';
 const CREATE = `${CREATE_P} your regular (daily) route
 Just type text`;
-const AGREE = 'I\'ve read and agree';
 
 const TGPH_LINK = 'https://telegra.ph/Route-Cab-English-11-10';
 
-const START = `Please read information about this bot
-${TGPH_LINK}
-  `;
+const START = `Please read information about this bot ${TGPH_LINK}`;
 
 const MENU = 'Menu';
 
@@ -38,10 +34,7 @@ const CHANGED = 'Account type changed';
 const SEARCH = 'Find the same routes nearby';
 const SEARCH_P = 'Find drivers with similar nearby routes';
 
-
-const HELLO = `Hello! Please select type of your account! ${getENV(
-  'ACC_T_L',
-)}`;
+const HELLO = 'Hello! Please select type of your account!';
 
 const ROUTE_SAME = 'Same routes nearby not found';
 const ROUTE_SAME_D = 'Same routes (with drivers) nearby not found';
@@ -49,6 +42,7 @@ const ROUTE_STOP = 'Active routes stopped';
 const POINT_1 = 'Send departure point (Start Point)';
 const POINT_2 = 'Send destination point (Last Point)';
 const STOP_ALL = 'Stop all active Routes';
+
 const TYPE_1 = BUTTONS.driver.label;
 const TYPE_2 = BUTTONS.sharingDriver.label;
 const TYPE_3 = BUTTONS.passenger.label;

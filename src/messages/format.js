@@ -235,7 +235,7 @@ module.exports = {
   success: l => getLang(l, 'ROUTE_ADDED'),
   start: l => getLang(l, 'START'),
   agree: l => getLang(l, 'AGREE'),
-  start2: l => getLang(l, 'HELLO'),
+  start2: l => `${getLang(l, 'HELLO')}${getENV('ACC_T_L')}`,
 
   home: (l, type) => `${getLang(l, 'MENU')}
 ${typeLabel(l)}: ${getTypeShow(l, type)}`,
