@@ -23,8 +23,6 @@ const getRouteCb = (_id, page, status, notify) => [
   `route_${_id}_${page}_${NONE}`,
   `${status === 1 ? DEAC : ACTI}_${_id}_${page}`,
   `route_${_id}_${page}_${notify === 1 ? UNSUB : SUBS}`,
-  `t_fromA_${_id}_${page}_start`,
-  `del_route_${_id}_${page}_s`,
 ];
 
 function getPage(i, fromRoute = '') {
@@ -352,10 +350,13 @@ const format = (bot, botHelper) => {
         }
         const {status, notify, hourA, hourB} = route;
         const callbacks = getRouteCb(_id, page, status, notify);
-        if (hourA && hourB) {
+        if (typeof hourA !== 'undefined' && typeof hourB !== 'undefined') {
           callbacks.push(`t_fromA_${_id}_${page}_one`);
           callbacks.push(`t_fromB_${_id}_${page}_one`);
+        } else {
+          callbacks.push(`t_fromA_${_id}_${page}_start`)
         }
+        callbacks.push(`del_route_${_id}_${page}_s`)
         const keyb = keyboards.editRoute(lang, callbacks, route);
         BH2.edit(id, mId, null, printRouteOne(route, lang, true), keyb);
         ctx.answerCbQuery(cbqId, {text});

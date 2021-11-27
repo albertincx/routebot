@@ -7,15 +7,14 @@ function printRouteOne(r, lang, isEdit = false) {
   let txt = `
 ${messages.labelName(lang)}: ${name}
 ${messages.labelStatus(lang)}: ${statu}
-${messages.labelSubs(lang)}: ${notif}
-${isEdit ? messages.editSupLink(lang) : ''}
+${messages.labelSubs(lang)}: ${notif}                            ${isEdit ? messages.editSupLink(lang) : ''}
 ${messages.labelType(lang)}: ${messages.getType(lang, type)}
 `;
   if (!isEdit && pointA && pointB) {
     txt += `📍${messages.labelA(lang)}: \`\`\`${pointA.coordinates}\`\`\`
 📍${messages.labelB(lang)}: \`\`\`${pointB.coordinates}\`\`\``;
   }
-  if (hourA) {
+  if (typeof hourA !== 'undefined') {
     txt += `
 ${messages.labelTime(lang)}
 ${messages.labelTimeA(lang)}: ${messages.showHour(lang, hourA, true)}
@@ -38,7 +37,7 @@ function printRouteFound(routes, lang, type) {
     txt += `${tt}
 ${messages.labelName(lang)}: ${name}
 `;
-    if (hourA) {
+    if (typeof hourA !== 'undefined') {
       txt += `
 ${messages.labelTime(lang)}
 ${messages.labelTimeA(lang)}: ${messages.showHour(lang, hourA)}

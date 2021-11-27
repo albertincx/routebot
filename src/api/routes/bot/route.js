@@ -314,9 +314,6 @@ class BotHelper {
   // eslint-disable-next-line class-methods-use-this
   async setFieldRoute(userId, _id, st, field) {
     let upd = {[field]: st};
-    if (field === 'hourA' || field === 'hourB') {
-      upd = {[field]: st};
-    }
     if (field === 'status') {
       upd.notify = st;
     }

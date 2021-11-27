@@ -74,7 +74,10 @@ function begin(lang) {
 function driver(lang, type) {
   const l = messages.settings(lang);
   const myRoutes = messages.myRoutes(lang);
-  const s = Markup.button.callback(l, `${actions.settings}${[1,2,3].includes(type) ? type : 3}`);
+  const s = Markup.button.callback(
+    l,
+    `${actions.settings}${[1, 2, 3].includes(type) ? type : 3}`,
+  );
   const keys = [[Markup.button.callback(myRoutes, actions.page1)], [s]];
   return Markup.inlineKeyboard(keys);
 }
@@ -184,11 +187,12 @@ function detailRoute(lang, callbacks, noTime = false) {
 }
 
 function editRoute(lang, callbacks, route) {
-  const {status, notify, hourA, hourB} = route;
+  const {status, notify} = route;
   const text =
     status === 1 ? messages.deactivate(lang) : messages.activate(lang);
   const text2 =
     notify === 1 ? messages.unsubscribe(lang) : messages.subscribe(lang);
+
   const keys = [
     {
       text: messages.backRoute(lang),
@@ -206,41 +210,37 @@ function editRoute(lang, callbacks, route) {
       callback_data: callbacks[2],
     },
   ]);
-  let text3;
-  const callB3 = callbacks[3];
-  let callB2;
-  let callB4;
-  if (Number.isNaN(hourA) || !hourB) {
-    text3 = `${messages.iconWarn()}${messages.changeHours(lang)}`;
-    callB2 = [
+
+  // static
+  let callBA;
+  if (callbacks[5]) {
+    const tA = `${messages.changeHA(lang)}`;
+    const tB = `${messages.changeHB(lang)}`;
+    callBA = [
       {
-        text: text3,
-        callback_data: callB3,
+        text: tA,
+        callback_data: callbacks[3],
+      },
+      {
+        text: tB,
+        callback_data: callbacks[4],
       },
     ];
   } else {
-    text3 = `${!hourA ? messages.iconWarn() : ''}${messages.changeHA(lang)}`;
-    const t4 = `${!hourB ? messages.iconWarn() : ''}${messages.changeHB(lang)}`;
-    callB4 = [
+    callBA = [
       {
-        text: text3,
-        callback_data: callbacks[5],
-      },
-      {
-        text: t4,
-        callback_data: callbacks[6],
+        text: `${messages.iconWarn()}${messages.changeHours(lang)}`,
+        callback_data: callbacks[3],
       },
     ];
   }
-  if (callB4) {
-    keysArray.push(callB4);
-  } else {
-    keysArray.push(callB2);
+  if (callBA) {
+    keysArray.push(callBA);
   }
   keysArray.push([
     {
       text: messages.deleteRoute(lang),
-      callback_data: callbacks[4],
+      callback_data: callbacks[5] ? callbacks[5] : callbacks[4],
     },
   ]);
   return withHome(lang, keysArray);

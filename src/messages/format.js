@@ -1,131 +1,50 @@
-const BUTTONS = require('../config/buttons');
 const getENV = require('../links');
+const RUs = require('./RU');
+const EN = require('./EN');
+const DE = require('./DE');
 
-const DEL_P_RU = 'Вы действительно хотите удалить маршрут? Вы уверены?';
-const DEL_P_EN = 'You are about to delete your route. Is that correct?';
-const CREATE_P_RU = 'Введите название';
-const CREATE_P_EN = 'Enter the name of';
-const CREATE_RU = `Шаг 1. ${CREATE_P_RU} *регулярного*(ежедневного) маршрута
-Просто напишите текстом`;
-const CREATE_EN = `${CREATE_P_EN} your regular (daily) route
-Just type text`;
-const AGREE_EN = "I've read and agree";
-const AGREE_RU = 'Я прочитал и согласен';
-
-const TGPH_LINK = 'https://telegra.ph/Route-Cab-English-11-10';
-const TGPH_LINK_RU = 'https://telegra.ph/Route-Cab-Russkaya-versiya-11-10';
-
-const START_RU = `Пожалуйста прочтите информацию о боте, перед началом
-${TGPH_LINK_RU}
-  `;
-const START_EN = `Please read information about this bot
-${TGPH_LINK}
-  `;
-
-const MENU_RU = 'Меню';
-const MENU_EN = 'Menu';
-
-const SEND_R_RU = 'Отправить заявку на совместную поездку';
-const SEND_R_EN = 'Send request to drive';
-
-const SEND_R3_RU = 'Предложить объединиться на совместные поездки';
-const SEND_R3_EN = 'Offer to unite for joint trips';
-const SEND_RNOTIFY_RU = 'Подписаться на обновления';
-const SEND_RNOTIFY_EN = 'Subscribe to updates';
-
-const ROUTE_EX_RU = 'Маршрут с таким именем уже существует';
-const ROUTE_EX_EN = 'A route with the same name already exists';
-const ROUTE_LIST_RU = 'Выберите маршрут из списка ниже:';
-const ROUTE_LIST_EN = 'Choose a route from the list below:';
-const ROUTE_ADDED_RU = 'Маршрут успешно добавлен';
-const ROUTE_ADDED_EN = 'Route added successfully';
-
-const STATUS_ON_RU = 'Вкл.';
-const STATUS_OFF_RU = 'Выкл.';
-const STATUS_ON_EN = 'On';
-const STATUS_OFF_EN = 'Off';
-
-const STATUS_ON_P_RU = 'Маршрут активирован. Уведомления включены';
-const STATUS_OFF_P_RU = 'Маршрут выключен. Уведомления выключены';
-const STATUS_ON_P_EN = 'Route enabled. Notifications enabled';
-const STATUS_OFF_P_EN = 'Route disabled. Notifications disabled';
-
-const STATUS_SUB_ON_RU = 'Уведомления вкл.';
-const STATUS_SUB_OFF_RU = 'Уведомления выкл.';
-const STATUS_SUB_ON_EN = 'Notifications enabled';
-const STATUS_SUB_OFF_EN = 'Notifications disabled';
-const NOTIFY_ON_RU = 'Включить уведомления';
-const NOTIFY_ON_EN = 'Enable notifications';
-const CHANGED_RU = 'Тип изменен';
-const CHANGED_EN = 'Account type changed';
 const RU = 'ru';
-const ARR_L = '«';
-const SEARCH_RU = 'Найти похожие маршруты рядом';
-const SEARCH_EN = 'Find the same routes nearby';
-const SEARCH_P_RU = 'Найти водителей с похожими маршрутами рядом';
-const SEARCH_P_EN = 'Find drivers with similar nearby routes';
+const ARR_L = '« ';
 
-const HELLO_RU = `Отлично! Пожалуйста Выберите тип аккаунта! ${getENV(
-  'ACC_T_L_RU',
-)}`;
-const HELLO_EN = `Hello! Please select type of your account! ${getENV(
-  'ACC_T_L_EN',
-)}`;
-const ROUTE_SAME_RU = 'Похожие маршруты рядом не найдены';
-const ROUTE_SAME_EN = 'Same routes nearby not found';
-const ROUTE_SAME_D_RU = 'Похожие маршруты (с водителями) рядом не найдены';
-const ROUTE_SAME_D_EN = 'Same routes (with drivers) nearby not found';
-const ROUTE_STOP_RU = 'Все маршруты отключены';
-
-const ROUTE_STOP_EN = 'Active routes stopped';
-
-const HELP_POINT = `Используйте кнопку - 📎 или
-пришлите координаты, пример:
-\`\`\`XX.XXXXXX, XX.XXXXXX\`\`\`
-где Х - цифра
-`;
-
-const POINT_1_RU = `Шаг 2. Прикрепите ваши координаты (локацию) пункт отправления (точка А)
-${HELP_POINT}`;
-const POINT_1_EN = 'Send departure point (Start Point)';
-
-const POINT_2_RU = `Шаг 3. Прикрепите ваши координаты (локацию) пункт прибытия (точка Б)
-${HELP_POINT}`;
-const POINT_2_EN = 'Send destination point (Last Point)';
-
-const STOP_ALL_RU = 'Откл. все активные маршруты';
-const STOP_ALL_EN = 'Stop all active Routes';
-
-const TYPE_1_RU = BUTTONS.driver.labelRU;
-const TYPE_2_RU = BUTTONS.sharingDriver.labelRU;
-const TYPE_3_RU = BUTTONS.passenger.labelRU;
-
-const TYPE_1_EN = BUTTONS.driver.label;
-const TYPE_2_EN = BUTTONS.sharingDriver.label;
-const TYPE_3_EN = BUTTONS.passenger.label;
-
-const getStatus = (status, lang, icon, pop = false) => {
-  if (lang === RU) {
-    if (pop) {
-      return `${status === 0 ? STATUS_OFF_P_RU : STATUS_ON_P_RU} ${icon}`;
-    }
-    return `${status === 0 ? STATUS_OFF_RU : STATUS_ON_RU} ${icon}`;
+function getLang(l, key, icon = '') {
+  switch (l) {
+    case 'ru':
+      if (RUs[key]) {
+        return `${icon}${RUs[key]}`;
+      }
+      break;
+    case 'de':
+      if (DE[key]) {
+        return `${icon}${DE[key]}`;
+      }
+      break;
+    default:
+      break;
   }
-  if (pop) {
-    return `${status === 0 ? STATUS_OFF_P_EN : STATUS_ON_P_EN} ${icon}`;
+  if (EN[key]) {
+    return `${icon}${EN[key]}`;
   }
-  return `${status === 0 ? STATUS_OFF_EN : STATUS_ON_EN} ${icon}`;
-};
-const getStatusSubscribe = (lang, s, icon) => {
-  if (lang === RU) {
-    return `${s === 0 || !s ? STATUS_SUB_OFF_RU : STATUS_SUB_ON_RU} ${icon}`;
-  }
-  return `${s === 0 || !s ? STATUS_SUB_OFF_EN : STATUS_SUB_ON_EN} ${icon}`;
-};
+  return `${icon}${key}`;
+}
 
-const getType1 = lang => (lang === RU ? TYPE_1_RU : TYPE_1_EN);
-const getType2 = lang => (lang === RU ? TYPE_2_RU : TYPE_2_EN);
-const getType3 = lang => (lang === RU ? TYPE_3_RU : TYPE_3_EN);
+function getLangLast(l, key) {
+  let lan = '';
+  switch (l) {
+    case 'ru':
+      lan = '_RU';
+      break;
+    case 'de':
+      lan = '_DE';
+      break;
+    default:
+      break;
+  }
+  return `${key}${lan}`;
+}
+
+const getType1 = l => getLang(l, 'TYPE_1');
+const getType2 = l => getLang(l, 'TYPE_2');
+const getType3 = l => getLang(l, 'TYPE_3');
 
 const getTypeShow = (l, t) => {
   if (t === 1) {
@@ -137,22 +56,24 @@ const getTypeShow = (l, t) => {
   return getType3(l);
 };
 
-const getNearLabel = (l, t) => {
-  let n = l === RU ? SEARCH_RU : SEARCH_EN;
-  if (t) {
-    n = l === RU ? SEARCH_P_RU : SEARCH_P_EN;
+const getStatus = (status, l, icon, pop = false) => {
+  if (pop) {
+    return `${getLang(
+      l,
+      status === 0 ? 'STATUS_OFF_P' : 'STATUS_ON_P',
+    )} ${icon}`;
   }
-  return `👀 ${n}`;
+  return `${getLang(l, status === 0 ? 'STATUS_OFF' : 'STATUS_ON')} ${icon}`;
 };
 
-const typeLabel = l => {
-  if (l === RU) {
-    return 'Тип аккаунта';
-  }
-  return 'Account type';
-};
-const editSupLinkTxt = l =>
-  `${l === RU ? getENV('EDIT_TXT_RU') : getENV('EDIT_TXT_EN')}`;
+const getStatusSubscribe = (l, s, icon) =>
+  `${getLang(l, s === 0 || !s ? 'STATUS_SUB_OFF' : 'STATUS_SUB_ON')} ${icon}`;
+
+const getNearLabel = (l, t) => `👀 ${getLang(l, t ? 'SEARCH_P' : 'SEARCH')}`;
+
+const typeLabel = l => `${getLang(l, 'Account type')}`;
+
+const editSupLinkTxt = l => `${getENV(getLangLast(l, 'EDIT_TXT'))}`;
 
 const sentAlreadyPop = (lang, not = false) => {
   if (not) {
@@ -166,22 +87,21 @@ const sentAlreadyPop = (lang, not = false) => {
   }
   return 'You have already sent a request on this route';
 };
+
 const showNotifyUser = (lang, name) => {
   if (lang === RU) {
-    return `
-По вашему маршруту "${name}" добавлен похожий маршрут
-`;
+    return `По вашему маршруту "${name}" добавлен похожий маршрут`;
   }
-  return `
-A similar route has been added to your route "${name}"
-`;
+  return `A similar route has been added to your route "${name}"`;
 };
+
 const showNotifyUserDriver = (lang, name, usernameFrom) => {
   if (lang === RU) {
     return `С вами хочет кататься пользователь @${usernameFrom} по маршруту "${name}"`;
   }
   return `The user @${usernameFrom} wants to ride with you along the route "${name}"`;
 };
+
 const showNotifyUserCoop = (lang, name, uFrom) => {
   if (lang === RU) {
     return `По вашему маршруту "${name}" появилось предложение по совместным поездкам от @${uFrom}`;
@@ -189,14 +109,14 @@ const showNotifyUserCoop = (lang, name, uFrom) => {
   return `There is an offer from @${uFrom} for joint trips on your route "${name}"`;
 };
 
-const showPoint = (routeType, lang) => {
+const showPoint = (routeType, l) => {
   if (routeType === 1) {
-    return `${lang === RU ? POINT_1_RU : POINT_1_EN}
-${lang === RU ? getENV('POINT_TXT_L_RU') : getENV('POINT_TXT_L_EN')}`;
+    return `${getLang(l, 'POINT_1')}
+${getENV(getLangLast(l, 'POINT_TXT_L'))}`;
   }
   if (routeType === 2) {
-    return `${lang === RU ? POINT_2_RU : POINT_2_EN}
-${lang === RU ? getENV('POINT_TXT_L_RU') : getENV('POINT_TXT_L_EN')}`;
+    return `${getLang(l, 'POINT_2')}
+${getENV(getLangLast(l, 'POINT_TXT_L'))}`;
   }
   return 'error';
 };
@@ -229,75 +149,39 @@ const editTimeSuccess = (lang, isFromB) => {
   }
   return 'Set start route time from A (first point)';
 };
-const editTimeOk = (lang, isFromB) => {
-  if (lang === RU) {
-    if (isFromB) {
-      return 'Время сохранено';
-    }
-    return 'Время сохранено';
-  }
-  if (isFromB) {
-    return 'Times saved';
-  }
-  return 'Times saved';
-};
+const editTimeOkTxt = l => getLang(l, 'Times saved');
 
-const showRoutesEmpty = (lang, t) => {
-  if (lang === RU) {
-    if (t) {
-      return ROUTE_SAME_D_RU;
-    }
-    return ROUTE_SAME_RU;
-  }
-  if (t) {
-    return ROUTE_SAME_D_EN;
-  }
-  return ROUTE_SAME_EN;
-};
+const showRoutesEmpty = (l, t) => getLang(l, t ? 'ROUTE_SAME_D' : 'ROUTE_SAME');
 
 const iconWarn = () => '⚠ ';
-const timeError = lang => {
+
+const timeErrorTxt = lang => {
   if (lang === RU) {
-    // if (field) {
-    //   return 'Время маршрута не установлено';
-    // }
     return `${iconWarn()}Время маршрута не установлено`;
   }
-  // if (field) {
-  //   return 'Time is not defined';
-  // }
   return `${iconWarn()}Route time is not defined`;
 };
+
 const noUserNameTxt2 = lang => {
   if (lang === RU) {
-    // if (field) {
-    //   return 'Время маршрута не установлено';
-    // }
     return `${iconWarn()} Внимание! У вас не настроен username в вашем профиле телеграм. 
 Пожалуйста установите username чтобы с вами могли связаться все участники маршрута`;
   }
-  // if (field) {
-  //   return 'Time is not defined';
-  // }
   return `${iconWarn()} Attention! You do not have a "username" configured in your telegram profile.
 Please set a "username" so that all route participants can contact you`;
 };
-const settingsText2 = lang => {
-  if (lang === RU) {
-    // if (field) {
-    //   return 'Время маршрута не установлено';
-    // }
+
+const settingsText2 = l => {
+  if (l === RU) {
     return `Настройки:
 - Вы можете изменить тип аккаунта
-- Отключить все активные маршруты ${getENV('SETT_T_L_RU')}`;
+- Отключить все активные маршруты ${getENV(getLangLast(l, 'SETT_T_L'))}`;
   }
-  // if (field) {
-  //   return 'Time is not defined';
-  // }
   return `Settings:
 - You can change your account type 
-- Disable all active routes ${getENV('SETT_T_L_EN')}`;
+- Disable all active routes ${getLangLast(l, 'SETT_T_L')}`;
 };
+
 function showHourTxt(lang, hour, view = false) {
   const m = `${hour}`.match(/\.3/);
   let h = parseInt(hour, 10);
@@ -328,48 +212,39 @@ function showHourTxt(lang, hour, view = false) {
 }
 
 module.exports = {
-  deletedRoute: l => (l === RU ? 'Маршрут удален' : 'Route deleted'),
-  confirmDeletion: lang => (lang === RU ? DEL_P_RU : DEL_P_EN),
-  yesRoute: l => (l === RU ? 'Да удалить маршрут' : 'Yes delete this route'),
-  no: l => (l === RU ? 'Нет' : 'No'),
-  sentR: l => (l === RU ? 'Запрос отправлен' : 'Request sent'),
-  // sentNotify: l => (l === RU ? 'Подписка оформлена' : 'Subscription created'),
-  sent3R: l => (l === RU ? 'Предложение отправлено' : 'Offer sent'),
-  labelName: lang => (lang === RU ? 'Наименование' : 'Route name'),
-  labelStatus: lang => (lang === RU ? 'Статус' : 'Status'),
-  labelSubs: l => (l === RU ? 'Уведомления' : 'Notifications'),
+  deletedRoute: l => getLang(l, 'Route deleted'),
+  yesRoute: l => getLang(l, 'Yes delete this route'),
+  no: l => getLang(l, 'No'),
+  sentR: l => getLang(l, 'Request sent'),
+  sent3R: l => getLang(l, 'Offer sent'),
+  labelName: l => getLang(l, 'Route name'),
+  labelStatus: l => getLang(l, 'Status'),
+  labelSubs: l => getLang(l, 'Notifications'),
+  labelTime: l => getLang(l, 'Time'),
+  labelTimeA: l => getLang(l, 'Start drive time'),
+  labelTimeB: l => getLang(l, 'Return time'),
+  labelA: l => getLang(l, 'departure point'),
+  labelB: l => getLang(l, 'destination point'),
+  start3: l => getLang(l, 'Hello!'),
+
   labelType: typeLabel,
-  labelTime: l => (l === RU ? 'Время' : 'Time'),
-  labelTimeA: l => (l === RU ? 'Туда в' : 'Start drive time'),
-  labelTimeB: l => (l === RU ? 'Обратно в' : 'Return time'),
-  labelA: lang => (lang === RU ? 'Точка А' : 'departure point'),
-  labelB: lang => (lang === RU ? 'Точка Б' : 'destination point'),
   editSupLink: editSupLinkTxt,
-  check: lang => (lang === RU ? CREATE_P_RU : CREATE_P_EN),
-  account: lang => (lang === RU ? CHANGED_RU : CHANGED_EN),
-  success: lang => (lang === RU ? ROUTE_ADDED_RU : ROUTE_ADDED_EN),
-  home: (lang, type) =>
-    `${lang === RU ? MENU_RU : MENU_EN}
-${typeLabel(lang)}: ${getTypeShow(lang, type)}`,
-  start: lang => (lang === RU ? START_RU : START_EN),
-  agree: lang => (lang === RU ? AGREE_RU : AGREE_EN),
-  start2: lang => (lang === RU ? HELLO_RU : HELLO_EN),
-  start3: lang => (lang === RU ? 'Привет!' : 'Hello!'),
-  driverStartNewRoute: lang =>
-    `${lang === RU ? CREATE_RU : CREATE_EN}
-${lang === RU ? getENV('CREATE_TXT_L_RU') : getENV('CREATE_TXT_L_EN')}`,
+  confirmDeletion: l => getLang(l, 'DEL_P'),
+  check: l => getLang(l, 'CREATE_P'),
+  account: l => getLang(l, 'CHANGED'),
+  success: l => getLang(l, 'ROUTE_ADDED'),
+  start: l => getLang(l, 'START'),
+  agree: l => getLang(l, 'AGREE'),
+  start2: l => getLang(l, 'HELLO'),
+
+  home: (l, type) => `${getLang(l, 'MENU')}
+${typeLabel(l)}: ${getTypeShow(l, type)}`,
+
+  driverStartNewRoute: l => `${getLang(l, 'CREATE')}
+${getENV(getLangLast(l, 'CREATE_TXT_L'))}`,
+
   point: showPoint,
-  asDept: () => 'Send my current location as departure',
-  asDest: () => 'Send my current location as destination',
-  support: links => {
-    let s = 'For support:';
-    s += `${links.length ? `\n${links.join('\n\n')}` : ''}`;
-    return s;
-  },
-  stoppedAll: lang => (lang === RU ? ROUTE_STOP_RU : ROUTE_STOP_EN),
-  icon: s => `${s === 0 || !s ? '🔴' : '🟢'}`,
   iconWarn,
-  routesList: lang => (lang === RU ? ROUTE_LIST_RU : ROUTE_LIST_EN),
   routesEmpty: showRoutesEmpty,
   getType: getTypeShow,
   notifyUser: showNotifyUser,
@@ -380,40 +255,49 @@ ${lang === RU ? getENV('CREATE_TXT_L_RU') : getENV('CREATE_TXT_L_EN')}`,
   sentAlready: sentAlreadyPop,
   editTime,
   editTimeSuccess,
-  editTimeOk,
+  editTimeOk: editTimeOkTxt,
   showHour: showHourTxt,
   noUserNameTxt: noUserNameTxt2,
-  noUnameW: l => (l === RU ? 'Username не установлен' : 'Username is not set'),
-  setUpUname: l => (l === RU ? 'Username сохранен' : 'Username saved'),
-  timeError,
+  timeError: timeErrorTxt,
   settingsText: settingsText2,
-
+  asDept: l => getLang(l, 'Send my current location as departure'),
+  asDest: l => getLang(l, 'Send my current location as destination'),
+  stoppedAll: l => getLang(l, 'ROUTE_STOP'),
+  routesList: l => getLang(l, 'ROUTE_LIST'),
+  noUnameW: l => getLang(l, 'Username is not set'),
+  setUpUname: l => getLang(l, 'Username saved'),
   // menus
-  editR: lang => (lang === RU ? 'Редактировать' : 'Edit'),
-  activate: lang => (lang === RU ? 'Включить' : 'Enable'),
-  deactivate: lang => (lang === RU ? 'Выключить' : 'Disable'),
-  subscribe: l => (l === RU ? NOTIFY_ON_RU : NOTIFY_ON_EN),
-  unsubscribe: l =>
-    `🔕 ${l === RU ? 'Выключить уведомления' : 'Disable notifications'}`,
-  back: lang => `${ARR_L} ${lang === RU ? 'Список Маршрутов' : 'Routes List'}`,
-  backRoute: l => `${ARR_L} ${l === RU ? 'к маршруту' : 'to Route'}`,
-  backJust: lang => `${ARR_L} ${lang === RU ? 'Назад' : 'Back'}`,
-  addRoute: lang => (lang === RU ? 'Добавить маршрут' : 'Add route'),
-  addName: lang => (lang === RU ? 'Придумайте имя' : 'Send name of the route'),
-  stopRoutes: l => (l === RU ? STOP_ALL_RU : STOP_ALL_EN),
-  settings: l => (l === RU ? 'Настройки' : 'Settings'),
-  changeType: lang => (lang === RU ? 'Изменить тип' : 'Change account type'),
-  aboutTxt: lang => (lang === RU ? 'о боте' : 'about'),
-  myRoutes: lang => (lang === RU ? 'Мои маршруты' : 'My Routes'),
-  changeHours: l => (l === RU ? 'Изменить время маршрута' : 'Change time'),
-  changeHA: l => (l === RU ? 'Изменить время начала' : 'Change start time'),
-  changeHB: l => (l === RU ? 'Изменить время обратно' : 'Change return time'),
-  deleteRoute: l => `${l === RU ? 'Удалить маршрут' : 'Delete route'}`,
   nearBy: getNearLabel,
-  menu: lang => (lang === RU ? MENU_RU : MENU_EN),
-  sendRequest: lang => (lang === RU ? SEND_R_RU : SEND_R_EN),
-  sendRequest3: lang => (lang === RU ? SEND_R3_RU : SEND_R3_EN),
-  sendRequestNotify: lang => (lang === RU ? SEND_RNOTIFY_RU : SEND_RNOTIFY_EN),
-  routeExists: lang => (lang === RU ? ROUTE_EX_RU : ROUTE_EX_EN),
-  isUName: l => (l === RU ? 'Я установил username' : 'I have set the username'),
+  editR: l => getLang(l, 'Edit'),
+  activate: l => getLang(l, 'Enable'),
+  deactivate: l => getLang(l, 'Disable'),
+  unsubscribe: l => getLang(l, 'Disable notifications', '🔕'),
+  back: l => getLang(l, 'Routes List', ARR_L),
+  backRoute: l => getLang(l, 'to Route', ARR_L),
+  backJust: l => getLang(l, 'Back', ARR_L),
+  addRoute: l => getLang(l, 'Add route'),
+  addName: l => getLang(l, 'Send name of the route'),
+  settings: l => getLang(l, 'Settings'),
+  changeType: l => getLang(l, 'Change account type'),
+  aboutTxt: l => getLang(l, 'about'),
+  myRoutes: l => getLang(l, 'My Routes'),
+  changeHours: l => getLang(l, 'Change time'),
+  changeHA: l => getLang(l, 'Change start time'),
+  changeHB: l => getLang(l, 'Change return time'),
+
+  deleteRoute: l => getLang(l, 'Delete route'),
+  isUName: l => getLang(l, 'I have set the username'),
+  subscribe: l => getLang(l, 'NOTIFY_ON'),
+  stopRoutes: l => getLang(l, 'STOP_ALL'),
+  menu: l => getLang(l, 'MENU'),
+  sendRequest: l => getLang(l, 'SEND_R'),
+  sendRequest3: l => getLang(l, 'SEND_R3'),
+  sendRequestNotify: l => getLang(l, 'SEND_RNOTIFY'),
+  routeExists: l => getLang(l, 'ROUTE_EX'),
+  icon: s => `${s === 0 || !s ? '🔴' : '🟢'}`,
+  support: links => {
+    let s = 'For support:';
+    s += `${links.length ? `\n${links.join('\n\n')}` : ''}`;
+    return s;
+  },
 };

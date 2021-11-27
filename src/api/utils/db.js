@@ -38,7 +38,6 @@ global.connCbTest = () => {
         }
       });
     }
-    // console.log(globalSUPPLINKS);
   });
 };
 const collsSystem = [REQUESTS, CONFIGS];
