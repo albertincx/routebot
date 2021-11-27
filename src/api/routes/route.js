@@ -101,6 +101,7 @@ const format = (bot, botHelper) => {
       // eslint-disable-next-line consistent-return
       return BH2.processLocation(ctx, coords);
     } catch (e) {
+      BH2.sendError(e);
       showError(e);
     }
   });
@@ -181,6 +182,7 @@ const format = (bot, botHelper) => {
         ctx.reply(txt, keyb);
       } catch (e) {
         // system = `${e}${system}`;
+        BH2.sendError(e);
       }
       ctx.answerCbQuery(cbqId, {text: messages.addName(lang)});
       return;
@@ -197,6 +199,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         // system = `${e}${system}`;
+        BH2.sendError(e);
       }
       return;
     }
@@ -218,6 +221,7 @@ const format = (bot, botHelper) => {
       } catch (e) {
         showError(e);
         // system = `${e}${system}`;
+        BH2.sendError(e);
       }
       return;
     }
@@ -232,6 +236,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         showError(e);
+        BH2.sendError(e);
         // system = `${e}${system}`;
       }
       return;
@@ -246,6 +251,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: messages.account(lang)});
       } catch (e) {
         showError(e);
+        BH2.sendError(e);
         // system = `${e}${system}`;
       }
     }
@@ -272,6 +278,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         showError(e);
+        BH2.sendError(e);
         // system = `${e}${system}`;
       }
     }
@@ -282,6 +289,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
+        BH2.sendError(e);
       }
     }
     /** @alias route */
@@ -321,6 +329,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
+        BH2.sendError(e);
         // system = `${e}${system}`;
       }
     }
@@ -352,6 +361,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
+        BH2.sendError(e);
         // system = `${e}${system}`;
       }
     }
@@ -391,6 +401,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
+        BH2.sendError(e);
         // system = `${e}${system}`;
       }
     }
@@ -425,6 +436,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: pop});
       } catch (e) {
         showError(e);
+        BH2.sendError(e);
         // system = `${e}${system}`;
       }
     }
@@ -481,6 +493,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         showError(e);
+        BH2.sendError(e);
         // system = `${e}${system}`;
       }
     }
@@ -529,6 +542,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         showError(e);
+        BH2.sendError(e);
         // system = `${e}${system}`;
       }
     }
@@ -556,14 +570,20 @@ const format = (bot, botHelper) => {
           return BH2.processLocation(ctx);
         } catch (e) {
           showError(e);
+          BH2.sendError(e);
         }
       }
       if (rplMess) {
-        const {from} = ctx.update.message;
-        const {language_code: lang} = from;
-        if (rplMess.text.match(messages.check(lang))) {
-          // Send the name of your route
-          BH2.nextProcessName(ctx);
+        try {
+          const {from} = ctx.update.message;
+          const {language_code: lang} = from;
+          if (rplMess.text.match(messages.check(lang))) {
+            // Send the name of your route
+            BH2.nextProcessName(ctx);
+          }
+        } catch (e) {
+          showError(e);
+          BH2.sendError(e);
         }
       }
     }

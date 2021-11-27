@@ -94,6 +94,7 @@ class BotHelper {
     try {
       ctx.reply(txt, keyb);
     } catch (e) {
+      this.sendError(e);
       // system = `${e}${system}`;
     }
   }
