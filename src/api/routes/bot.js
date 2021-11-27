@@ -97,7 +97,7 @@ const botRoute = (bot, conn) => {
 
   bot.command('stat', ctx => {
     if (botHelper.isAdmin(ctx.message.chat.id)) {
-      db.stat().then(r => ctx.reply(r).catch(e => botHelper.sendError(e)));
+      db.statAll().then(r => ctx.reply(r).catch(e => botHelper.sendError(e)));
     }
   });
 

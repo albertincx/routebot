@@ -3,7 +3,6 @@ const RUs = require('./RU');
 const EN = require('./EN');
 const DE = require('./DE');
 
-const RU = 'ru';
 const ARR_L = '« ';
 
 function getLang(l, key, icon = '') {
@@ -75,39 +74,25 @@ const typeLabel = l => `${getLang(l, 'Account type')}`;
 
 const editSupLinkTxt = l => `${getENV(getLangLast(l, 'EDIT_TXT'))}`;
 
-const sentAlreadyPop = (lang, not = false) => {
-  if (not) {
-    if (lang === RU) {
-      return 'Вы уже подписаны на обновления';
-    }
-    return 'You have already subscribed to route updates';
-  }
-  if (lang === RU) {
-    return 'Вы уже отправляли запрос по этому маршруту';
-  }
-  return 'You have already sent a request on this route';
+const sentAlreadyPop = (l, not = false) => {
+  const key = not
+    ? 'You have already subscribed to route updates'
+    : 'You have already sent a request on this route';
+  return getLang(l, key);
 };
 
-const showNotifyUser = (lang, name) => {
-  if (lang === RU) {
-    return `По вашему маршруту "${name}" добавлен похожий маршрут`;
-  }
-  return `A similar route has been added to your route "${name}"`;
-};
+const showNotifyUser = (l, name) =>
+  `${name}: ${getLang(l, 'A similar route has been added to this route')}`;
 
-const showNotifyUserDriver = (lang, name, usernameFrom) => {
-  if (lang === RU) {
-    return `С вами хочет кататься пользователь @${usernameFrom} по маршруту "${name}"`;
-  }
-  return `The user @${usernameFrom} wants to ride with you along the route "${name}"`;
-};
+const showNotifyUserDriver = (l, name, usernameFrom) => `${getLang(
+  l,
+  'This user wants to ride with you along the route',
+)} "${name}"
+  ${getLang(l, 'User')}: @${usernameFrom}`;
 
-const showNotifyUserCoop = (lang, name, uFrom) => {
-  if (lang === RU) {
-    return `По вашему маршруту "${name}" появилось предложение по совместным поездкам от @${uFrom}`;
-  }
-  return `There is an offer from @${uFrom} for joint trips on your route "${name}"`;
-};
+const showNotifyUserCoop = (l, name, uFrom) => `${name} 
+${getLang(l, 'There is an offer for joint trips on your route')}
+${getLang(l, 'From')} @${uFrom}`;
 
 const showPoint = (routeType, l) => {
   if (routeType === 1) {
@@ -120,67 +105,32 @@ ${getENV(getLangLast(l, 'POINT_TXT_L'))}`;
   }
   return 'error';
 };
-const editTime = (lang, isFromB) => {
-  if (lang === RU) {
-    if (isFromB) {
-      return `Выберите время отправления из точки Б
-🕝
-во сколько выезжаете ОТТУДА ⬅️`;
-    }
-    return `Выберите время отправления из точки А
-🕝
-во сколько выезжаете ТУДА ➡️`;
-  }
+const editTime = (l, isFromB) => {
   if (isFromB) {
-    return 'Select back route time from B (from last point)';
+    return getLang(l, 'Select back route time from B (from last point)');
   }
-  return 'Select start route time from A (first point)';
+  return getLang(l, 'Select start route time from A (first point)');
 };
 
-const editTimeSuccess = (lang, isFromB) => {
-  if (lang === RU) {
-    if (isFromB) {
-      return 'Выберите время отправления из точки Б';
-    }
-    return 'Выберите время отправления из точки А';
-  }
+const editTimeSuccess = (l, isFromB) => {
   if (isFromB) {
-    return 'Set back route time from B (from last point)';
+    return getLang(l, 'Set back route time from B (from last point)');
   }
-  return 'Set start route time from A (first point)';
+  return getLang(l, 'Set start route time from A (first point)');
 };
+
 const editTimeOkTxt = l => getLang(l, 'Times saved');
 
 const showRoutesEmpty = (l, t) => getLang(l, t ? 'ROUTE_SAME_D' : 'ROUTE_SAME');
 
 const iconWarn = () => '⚠ ';
 
-const timeErrorTxt = lang => {
-  if (lang === RU) {
-    return `${iconWarn()}Время маршрута не установлено`;
-  }
-  return `${iconWarn()}Route time is not defined`;
-};
+const timeErrorTxt = l => getLang(l, 'Route time is not defined');
 
-const noUserNameTxt2 = lang => {
-  if (lang === RU) {
-    return `${iconWarn()} Внимание! У вас не настроен username в вашем профиле телеграм. 
-Пожалуйста установите username чтобы с вами могли связаться все участники маршрута`;
-  }
-  return `${iconWarn()} Attention! You do not have a "username" configured in your telegram profile.
-Please set a "username" so that all route participants can contact you`;
-};
+const noUserNameTxt2 = l => getLang(l, 'NO_USERNAME', iconWarn());
 
-const settingsText2 = l => {
-  if (l === RU) {
-    return `Настройки:
-- Вы можете изменить тип аккаунта
-- Отключить все активные маршруты ${getENV(getLangLast(l, 'SETT_T_L'))}`;
-  }
-  return `Settings:
-- You can change your account type 
-- Disable all active routes ${getLangLast(l, 'SETT_T_L')}`;
-};
+const settingsText2 = l =>
+  `${getLang(l, 'SETTING_TEXT')} ${getENV(getLangLast(l, 'SETT_T_L'))}`;
 
 function showHourTxt(lang, hour, view = false) {
   const m = `${hour}`.match(/\.3/);
@@ -189,7 +139,7 @@ function showHourTxt(lang, hour, view = false) {
     h -= 12;
   }
   let txtHour = `${h}`;
-  if (h < 10 && lang === RU) {
+  if (h < 10 && lang === 'ru') {
     txtHour = `0${h}`;
   }
   let min = '00';
@@ -206,7 +156,7 @@ function showHourTxt(lang, hour, view = false) {
   }
   let afternoon = '';
   if (hour === 12.3 && !view) {
-    afternoon = lang === RU ? ' полдень' : ' afternoon';
+    afternoon = ` ${getLang(lang, 'afternoon')}`;
   }
   return `${time}${llang}${afternoon}`;
 }

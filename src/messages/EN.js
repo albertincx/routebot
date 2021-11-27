@@ -46,6 +46,11 @@ const STOP_ALL = 'Stop all active Routes';
 const TYPE_1 = BUTTONS.driver.label;
 const TYPE_2 = BUTTONS.sharingDriver.label;
 const TYPE_3 = BUTTONS.passenger.label;
+const NO_USERNAME = `Attention! You do not have a "username" configured in your telegram profile.
+Please set a "username" so that all route participants can contact you`;
+const SETTING_TEXT = `Settings:
+- You can change your account type 
+- Disable all active routes`
 
 module.exports = {
   'TYPE_1': TYPE_1,
@@ -82,4 +87,6 @@ module.exports = {
   'CHANGED': CHANGED,
   'SEARCH': SEARCH,
   'SEARCH_P': SEARCH_P,
+  'SETTING_TEXT': SETTING_TEXT,
+  'NO_USERNAME': NO_USERNAME,
 };

@@ -72,6 +72,18 @@ const constants = {
 };
 
 const stat = filter => routesCol.countDocuments(filter);
+const statAll = async () => {
+  const c = await routesCol.countDocuments({});
+  const ca = await routesCol.countDocuments({status: 1});
+  const u = await usersCol.countDocuments({});
+  const r = await reqCol.countDocuments({});
+  return {
+    all: c,
+    active: ca,
+    users: u,
+    req: r,
+  };
+};
 
 const processRows = async (cc, limit, timeout, cb) => {
   let items = [];
@@ -559,3 +571,4 @@ module.exports.addSubscription = addSubscription;
 module.exports.updateRoutes = updateRoutes;
 module.exports.deleteMany = deleteMany;
 module.exports.updateConfig = updateConfig;
+module.exports.statAll = statAll;
