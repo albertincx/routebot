@@ -43,11 +43,12 @@ function withHome(lang, keysArray, toHome = true) {
 }
 
 function withMark(k) {
-  if (k) {
-    k.parse_mode = 'Markdown';
-    k.disable_web_page_preview = true;
+  const kb = k;
+  if (kb) {
+    kb.parse_mode = 'Markdown';
+    kb.disable_web_page_preview = true;
   }
-  return k;
+  return kb;
 }
 
 function addRoute(lang) {
@@ -158,30 +159,29 @@ function detailRoute(lang, callbacks, noTime = false) {
     },
   ];
   const keysArray = [keys];
-
+  let findBtn;
   if (callbacks[2]) {
     if (noTime) {
-      const findBtn = {
+      findBtn = {
         text: `${messages.iconWarn()}${messages.changeHours(lang)}`,
         callback_data: callbacks[2],
       };
-      keysArray.push([findBtn]);
     } else {
-      const findBtn = {
+      findBtn = {
         text: messages.nearBy(lang),
         callback_data: callbacks[2],
       };
-      keysArray.push([findBtn]);
     }
   }
-  if (callbacks.length === 4) {
-    if (callbacks[3]) {
-      const findBtn = {
-        text: messages.nearBy(lang, true),
-        callback_data: callbacks[3],
-      };
-      keysArray.push([findBtn]);
-    }
+  if (findBtn) {
+    keysArray.push([findBtn]);
+  }
+  if (callbacks.length === 4 && callbacks[3] && !noTime) {
+    const findBtn2 = {
+      text: messages.nearBy(lang, true),
+      callback_data: callbacks[3],
+    };
+    keysArray.push([findBtn2]);
   }
   return withHome(lang, keysArray);
 }
