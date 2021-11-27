@@ -74,7 +74,7 @@ function begin(lang) {
 function driver(lang, type) {
   const l = messages.settings(lang);
   const myRoutes = messages.myRoutes(lang);
-  const s = Markup.button.callback(l, `${actions.settings}${type || 3}`);
+  const s = Markup.button.callback(l, `${actions.settings}${[1,2,3].includes(type) ? type : 3}`);
   const keys = [[Markup.button.callback(myRoutes, actions.page1)], [s]];
   return Markup.inlineKeyboard(keys);
 }
