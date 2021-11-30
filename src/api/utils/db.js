@@ -417,18 +417,24 @@ const stopAll = userId => routesCol.updateMany({userId}, {status: 0});
 const routesCnt = f => stat(f);
 const coord = (route, dir = DIR_A) => route[dir].coordinates;
 
-const getNear = (route, dir = DIR_A) => ({
-  $geoNear: {
-    near: {
-      type: 'Point',
-      coordinates: coord(route, dir),
+const getNear = (route, dir = DIR_A) => {
+  let dist = route.distA;
+  if (dir === DIR_B) {
+    dist = route.distB;
+  }
+  return {
+    $geoNear: {
+      near: {
+        type: 'Point',
+        coordinates: coord(route, dir),
+      },
+      distanceField: 'dist.calculated',
+      maxDistance: dist || 400,
+      query: {category: 'Routes'},
+      spherical: true,
     },
-    distanceField: 'dist.calculated',
-    maxDistance: 400,
-    query: {category: 'Routes'},
-    spherical: true,
-  },
-});
+  };
+};
 
 const getPipeline = (
   route,
@@ -454,7 +460,6 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
   const $match = {
     userId: {$ne: route.userId},
     status: 1,
-    pointA: {$exists: true},
     hourA: {$exists: true},
     hourB: {$exists: true},
   };
@@ -468,6 +473,8 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
   }
   const $aMatch = {...$match};
   $aMatch.hourA = {$gte: route.hourA - 2};
+  $aMatch.pointA = {$exists: true};
+
   if ($project && $project.userId) {
     $aMatch.notify = 1;
   }
@@ -490,6 +497,7 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
       pointAId: {$in: pointAIds},
     };
     pointBMatch.hourB = {$gte: route.hourB - 2};
+    // console.log(pointBMatch);
     const pipelineB = getPipeline(route, pointBMatch, skip, limit, DIR_B, {
       name: 1,
       pointAId: 1,

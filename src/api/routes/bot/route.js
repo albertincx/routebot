@@ -304,7 +304,7 @@ class BotHelper {
   async findRoutes(id, page, _id, type) {
     const route = await db.getRoute(
       {userId: id, _id},
-      'userId pointA pointB hourA hourB dist',
+      'userId pointA pointB hourA hourB distA distB',
     );
     let cnt = 0;
     let r = [];

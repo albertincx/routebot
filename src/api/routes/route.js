@@ -320,11 +320,13 @@ const format = (bot, botHelper) => {
         const editBtn = `${EDIT_}${_id}_${page}_1`;
         const callbacks = [`page_${page}`, editBtn];
         const noTime = Number.isNaN(hourA) || !hourB;
-        if (status === 1) {
-          callbacks.push(`find_1_${_id}_3`);
-          callbacks.push(`find_1_${_id}_0`);
-        } else if (noTime) {
+        if (noTime) {
           callbacks.push(`${HOUR_A}_${_id}_${page}_start`);
+        } else {
+          if (status === 1) {
+            callbacks.push(`find_1_${_id}_3`);
+            callbacks.push(`find_1_${_id}_0`);
+          }
         }
         const keyb = keyboards.detailRoute(lang, callbacks, noTime);
         const view = printRouteOne(route, lang, false, adm);
