@@ -384,7 +384,7 @@ const addSubscription = async (d, collection = subsCol) => {
 
 const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
 const stopAll = userId => routesCol.updateMany({userId}, {status: 0});
-const routesCnt = userId => stat({userId});
+const routesCnt = f => stat(f);
 const coord = (route, dir = DIR_A) => route[dir].coordinates;
 
 const getNear = (route, dir = DIR_A) => ({

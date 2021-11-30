@@ -287,13 +287,13 @@ class BotHelper {
   }
 
   async myRoutes(id, page = 1, adm = false) {
-    const cnt = await db.routesCnt(id);
     let filter = {userId: id};
     let perPage = this.perPage;
     if (adm) {
       filter = {};
       perPage = this.admPerPage;
     }
+    const cnt = await db.routesCnt(filter);
     let r = await db.getRoutes(filter, page, perPage);
     r = r.map(i => i.toObject());
     return {cnt, routes: r};
