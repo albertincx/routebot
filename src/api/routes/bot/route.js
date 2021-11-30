@@ -25,6 +25,7 @@ class BotHelper {
     this.tgAdmin = TG_ADMIN;
     this.tgAdmin2 = TG_ADMIN2;
     this.perPage = 6;
+    this.admPerPage = 30;
   }
 
   isAdmin(chatId) {
@@ -271,8 +272,8 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  getRoute(id, _id) {
-    return db.getRoute({userId: id, _id});
+  getRoute(f) {
+    return db.getRoute(f);
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -285,9 +286,15 @@ class BotHelper {
     return db.getRoute({_id}, project);
   }
 
-  async myRoutes(id, page = 1) {
+  async myRoutes(id, page = 1, adm = false) {
     const cnt = await db.routesCnt(id);
-    let r = await db.getRoutes(id, page, this.perPage);
+    let filter = {userId: id};
+    let perPage = this.perPage;
+    if (adm) {
+      filter = {};
+      perPage = this.admPerPage;
+    }
+    let r = await db.getRoutes(filter, page, perPage);
     r = r.map(i => i.toObject());
     return {cnt, routes: r};
   }
@@ -438,6 +445,9 @@ class BotHelper {
   async GetLangUser(id) {
     const u = await db.GetUser(id, 'language_code');
     return u?.language_code;
+  }
+  getPpage(adm) {
+    return adm ? this.admPerPage : this.perPage;
   }
 }
 

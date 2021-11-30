@@ -491,11 +491,11 @@ const getRoutesNear = (route, pageP, type, perPage = 1) => {
   return findRoutes(route, startIndex, limit, type);
 };
 
-const getRoutes = (userId, pageP, perPage) => {
+const getRoutes = (filter, pageP, perPage) => {
   const page = parseInt(pageP, 10) || 1;
   const limit = parseInt(perPage, 10) || 5;
   const startIndex = (page - 1) * limit;
-  return routesCol.find({userId}).skip(startIndex).limit(limit);
+  return routesCol.find(filter).skip(startIndex).limit(limit);
 };
 const subscribers = async (_id, cb) => {
   const filter = {routeId: _id};

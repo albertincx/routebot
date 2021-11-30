@@ -1,13 +1,23 @@
 const messages = require('../../../messages/format');
 
-function printRouteOne(r, lang, isEdit = false) {
+const showAdmin = (pointA, pointB) => {
+  const loc1 = `${pointA.coordinates[1]},${pointA.coordinates[0]}`;
+  const loc2 = `${pointB.coordinates[1]},${pointB.coordinates[0]}`;
+  return `
+  https://routing.openstreetmap.de/?z=10&center=${loc1}&loc=${loc1}&loc=${loc2}&hl=en&alt=0&srv=1
+  `;
+};
+
+function printRouteOne1(r, lang, isEdit = false, admin = false) {
   const {name, status, notify, pointA, pointB, hourA, hourB, type} = r;
   const statu = messages.showStatus(status, lang, messages.icon(status));
   const notif = messages.showStatus(notify, lang, messages.icon(notify));
   let txt = `
 ${messages.labelName(lang)}: ${name}
 ${messages.labelStatus(lang)}: ${statu}
-${messages.labelSubs(lang)}: ${notif}                            ${isEdit ? messages.editSupLink(lang) : ''}
+${messages.labelSubs(lang)}: ${notif}                            ${
+  isEdit ? messages.editSupLink(lang) : ''
+}
 ${messages.labelType(lang)}: ${messages.getType(lang, type)}
 `;
   if (!isEdit && pointA && pointB) {
@@ -20,10 +30,13 @@ ${messages.labelTime(lang)}
 ${messages.labelTimeA(lang)}: ${messages.showHour(lang, hourA, true)}
 ${messages.labelTimeB(lang)}: ${messages.showHour(lang, hourB, true)}`;
   }
+  if (admin) {
+    txt += showAdmin(pointA, pointB);
+  }
   return txt;
 }
 
-function printRouteFound(routes, lang, type) {
+function printRouteFound1(routes, lang, type) {
   let txt = '';
   if (routes.length === 0) {
     return messages.routesEmpty(lang, type === 0);
@@ -48,6 +61,6 @@ ${messages.labelTimeB(lang)}: ${messages.showHour(lang, hourB)}`;
 }
 
 module.exports = {
-  printRouteFound: printRouteFound,
-  printRouteOne: printRouteOne,
+  printRouteFound: printRouteFound1,
+  printRouteOne: printRouteOne1,
 };

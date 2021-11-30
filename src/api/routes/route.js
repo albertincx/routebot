@@ -252,9 +252,10 @@ const format = (bot, botHelper) => {
       try {
         const [, pageStr] = data.match(/page_([0-9]+)/);
         const page = parseInt(pageStr, 10);
-        const {cnt, routes = []} = await BH2.myRoutes(id, page);
+        const adm = BH2.isAdmin(id);
+        const {cnt, routes = []} = await BH2.myRoutes(id, page, adm);
         const names = getPagiRoutes(routes, page);
-        const pages = getPagi(cnt, BH2.perPage, page);
+        const pages = getPagi(cnt, BH2.getPpage(adm), page);
         const pagi = [...names, ...pages];
         pagi.push(keyboards.addRoute(lang));
         const back = [
@@ -300,7 +301,9 @@ const format = (bot, botHelper) => {
             text = messages.statusSubscribe(lang, v, messages.icon(v));
           }
         }
-        const route = await BH2.getRoute(id, _id, 'notify status hourA hourB');
+        const adm = BH2.isAdmin(id);
+        const filter = adm ? {_id} : {userId: id, _id};
+        const route = await BH2.getRoute(filter);
         if (!route) {
           await BH2.goHomeAction(ctx, from, cbqId);
           return;
@@ -316,7 +319,7 @@ const format = (bot, botHelper) => {
           callbacks.push(`t_fromA_${_id}_${page}_start`);
         }
         const keyb = keyboards.detailRoute(lang, callbacks, noTime);
-        await BH2.edit(id, mId, null, printRouteOne(route, lang), keyb);
+        await BH2.edit(id, mId, null, printRouteOne(route, lang, false, adm), keyb);
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
@@ -335,7 +338,7 @@ const format = (bot, botHelper) => {
           await BH2.setFieldRoute(id, _id, v, field);
           text = messages.editTimeOk(lang, true);
         }
-        const route = await BH2.getRoute(id, _id, 'notify status hourA hourB');
+        const route = await BH2.getRoute({userId: id, _id});
         if (!route) {
           await BH2.goHomeAction(ctx, from, cbqId);
           return;
