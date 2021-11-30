@@ -1,6 +1,7 @@
 /* eslint-disable */
 const AGREE = 'Ich habe es gelesen und verstanden';
 const DEL_P = 'Du bist dabei, deine Route zu löschen. Bist du dir sicher?';
+const DIST_P = 'Legen Sie den maximalen Entfernungsradius in Metern für die Suche fest';
 const CREATE_P = 'Gib den Namen ein für';
 const CREATE = `${CREATE_P} deine Standard (tägliche) Route
 Nur Text eintippen`;
@@ -135,5 +136,9 @@ module.exports = {
   'User': 'Nutzer',
   'This user wants to ride with you along the route': 'Dieser Nutzer möchte sich deiner Route anschließen',
   'You have already subscribed to route updates': "Du hast bereits Updates zu dieser Route abonniert",
-  'You have already sent a request on this route': "Du hast bereits eine Anfrage zu dieser Route gesendet"
+  'You have already sent a request on this route': "Du hast bereits eine Anfrage zu dieser Route gesendet",
+  'Set distance for point A': 'Suchradius für Punkt A . einstellen',
+  'Set distance for point B': 'Suchradius für Punkt B . einstellen',
+  'Distance saved': 'Entfernung gespeichert',
+  'DIST_P': DIST_P,
 };

@@ -1,6 +1,7 @@
 /* eslint-disable */
 const AGREE = 'Я прочитал и согласен';
 const DEL_P = 'Вы действительно хотите удалить маршрут? Вы уверены?';
+const DIST_P = 'Укажите максимальный радиус расстояния в метрах для поиска';
 const CREATE_P = 'Введите название';
 const CREATE = `Шаг 1. ${CREATE_P} *регулярного*(ежедневного) маршрута
 Просто напишите текстом`;
@@ -153,5 +154,9 @@ module.exports = {
   'From': 'От',
   'User': 'Пользователь',
   'Route time is not defined': 'Время маршрута не установлено',
-  'This user wants to ride with you along the route': 'С вами хочет кататься пользователь по маршруту'
+  'This user wants to ride with you along the route': 'С вами хочет кататься пользователь по маршруту',
+  'Set distance for point A': 'Установить радиус поиска для точки А',
+  'Set distance for point B': 'Установить радиус поиска для точки Б',
+  'Distance saved': 'Дистанция сохранена',
+  'DIST_P': DIST_P,
 };

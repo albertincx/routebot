@@ -8,6 +8,7 @@ const actions = {
   stopAll: 'stop_all',
   changeType: 'change_type',
   page1: 'page_1',
+  pageAdm1: 'page_1_a',
   startAgree: 'start_agree',
   startHome: 'start_home',
   driver: 'type_1',
@@ -22,6 +23,9 @@ const actions = {
   iSetUName: 'iSetUName',
   about: 'sett_about',
 };
+function inlineBtn(txt, cb) {
+  return Markup.button.callback(txt, cb);
+}
 
 function inline(lang, keys, toHome = false, back = false) {
   if (toHome) {
@@ -72,7 +76,7 @@ function begin(lang) {
   return inline(lang, keys, true);
 }
 
-function driver(lang, type) {
+function driver(lang, type, adm) {
   const l = messages.settings(lang);
   const myRoutes = messages.myRoutes(lang);
   const s = Markup.button.callback(
@@ -80,6 +84,9 @@ function driver(lang, type) {
     `${actions.settings}${[1, 2, 3].includes(type) ? type : 3}`,
   );
   const keys = [[Markup.button.callback(myRoutes, actions.page1)], [s]];
+  if (adm) {
+    keys.push([Markup.button.callback('all r', actions.pageAdm1)]);
+  }
   return Markup.inlineKeyboard(keys);
 }
 
@@ -243,6 +250,16 @@ function editRoute(lang, callbacks, route) {
       callback_data: callbacks[5] ? callbacks[5] : callbacks[4],
     },
   ]);
+  const k = inlineBtn(
+    messages.distA(lang),
+    callbacks[6] ? callbacks[6] : callbacks[5],
+  );
+  const k2 = inlineBtn(
+    messages.distB(lang),
+    callbacks[7] ? callbacks[7] : callbacks[6],
+  );
+  keysArray.push([k]);
+  keysArray.push([k2]);
   return withHome(lang, keysArray);
 }
 
@@ -292,3 +309,4 @@ module.exports.editRoute = editRoute;
 module.exports.editTime = editTime;
 module.exports.withHome = withHome;
 module.exports.inline = inline;
+module.exports.inlineBtn = inlineBtn;

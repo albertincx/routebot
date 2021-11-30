@@ -152,7 +152,8 @@ class BotHelper {
   async goHome(from) {
     const {id, language_code: lang} = from;
     const {type} = await db.GetUser(id, 'type');
-    return this.goMenu(lang, type);
+    const adm = this.isAdmin(id);
+    return this.goMenu(lang, type, adm);
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -179,9 +180,9 @@ class BotHelper {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  goMenu(lang, type) {
+  goMenu(lang, type, adm) {
     const txt = messages.home(lang, type);
-    const keyb = keyboards.driver(lang, type);
+    const keyb = keyboards.driver(lang, type, adm);
     return {txt, keyb};
   }
 
@@ -290,7 +291,7 @@ class BotHelper {
     let filter = {userId: id};
     let perPage = this.perPage;
     if (adm) {
-      filter = {};
+      filter = {status: 1};
       perPage = this.admPerPage;
     }
     const cnt = await db.routesCnt(filter);
@@ -303,7 +304,7 @@ class BotHelper {
   async findRoutes(id, page, _id, type) {
     const route = await db.getRoute(
       {userId: id, _id},
-      'userId pointA pointB hourA hourB',
+      'userId pointA pointB hourA hourB dist',
     );
     let cnt = 0;
     let r = [];
@@ -448,6 +449,9 @@ class BotHelper {
   }
   getPpage(adm) {
     return adm ? this.admPerPage : this.perPage;
+  }
+  setDist(_id, d){
+    return db.setField({_id}, 'dist', d);
   }
 }
 

@@ -100,7 +100,13 @@ const botRoute = (bot, conn) => {
       db.statAll().then(r => ctx.reply(r).catch(e => botHelper.sendError(e)));
     }
   });
-
+  bot.command('statl', ctx => {
+    if (botHelper.isAdmin(ctx.message.chat.id)) {
+      db.statAllLang().then(r =>
+        ctx.reply(r).catch(e => botHelper.sendError(e)),
+      );
+    }
+  });
   bot.command('srv', ({message}) => {
     if (botHelper.isAdmin(message.from.id)) {
       botHelper.sendAdmin(`srv: ${JSON.stringify(message)}`);

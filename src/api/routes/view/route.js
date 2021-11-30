@@ -30,7 +30,7 @@ ${messages.labelTime(lang)}
 ${messages.labelTimeA(lang)}: ${messages.showHour(lang, hourA, true)}
 ${messages.labelTimeB(lang)}: ${messages.showHour(lang, hourB, true)}`;
   }
-  if (admin) {
+  if (admin && pointA && pointB) {
     txt += showAdmin(pointA, pointB);
   }
   return txt;

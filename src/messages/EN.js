@@ -2,6 +2,7 @@
 const BUTTONS = require('../config/buttons');
 const AGREE = 'I have read and agree';
 const DEL_P = 'You are about to delete your route. Is that correct?';
+const DIST_P = 'Set maximum distance radius in meters for search';
 const CREATE_P = 'Enter the name of';
 const CREATE = `${CREATE_P} your regular (daily) route
 Just type text`;
@@ -65,6 +66,7 @@ module.exports = {
   'HELLO': HELLO,
   'I have set the username': 'Я установил username',
   'DEL_P': DEL_P,
+  'DIST_P': DIST_P,
   'CREATE_P': CREATE_P,
   'CREATE': CREATE,
   'AGREE': AGREE,

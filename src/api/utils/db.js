@@ -72,6 +72,20 @@ const constants = {
 };
 
 const stat = filter => routesCol.countDocuments(filter);
+const groupUsers = field =>
+  usersCol.aggregate([
+    {
+      $group: {
+        _id: `${field}`,
+        cnt: {$sum: 1},
+      },
+    },
+    {
+      $sort: {
+        cnt: -1,
+      },
+    },
+  ]);
 const statAll = async () => {
   const c = await routesCol.countDocuments({});
   const ca = await routesCol.countDocuments({status: 1});
@@ -83,6 +97,17 @@ const statAll = async () => {
     users: u,
     req: r,
   };
+};
+
+const statAllLang = async () => {
+  const u2 = await groupUsers('$language_code');
+  let txt = '';
+  if (u2 && Array.isArray(u2)) {
+    u2.forEach(i => {
+      txt += `\n${i._id} ${i.cnt}`;
+    });
+  }
+  return txt;
 };
 
 const processRows = async (cc, limit, timeout, cb) => {
@@ -319,6 +344,11 @@ const updateUser = async (u, collection = usersCol) => {
 const setRequest = async (reqData, collection = reqCol) => {
   // eslint-disable-next-line no-param-reassign
   await collection.updateOne(reqData, reqData, {upsert: true});
+};
+
+const setField = async (filter, field, data, collection = routesCol) => {
+  // eslint-disable-next-line no-param-reassign
+  await collection.updateOne(filter, {[field]: data}, {upsert: true});
 };
 
 // eslint-disable-next-line consistent-return
@@ -572,3 +602,5 @@ module.exports.updateRoutes = updateRoutes;
 module.exports.deleteMany = deleteMany;
 module.exports.updateConfig = updateConfig;
 module.exports.statAll = statAll;
+module.exports.statAllLang = statAllLang;
+module.exports.setField = setField;

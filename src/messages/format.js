@@ -120,6 +120,7 @@ const editTimeSuccess = (l, isFromB) => {
 };
 
 const editTimeOkTxt = l => getLang(l, 'Times saved');
+const editDistOkTxt = l => getLang(l, 'Distance saved');
 
 const showRoutesEmpty = (l, t) => getLang(l, t ? 'ROUTE_SAME_D' : 'ROUTE_SAME');
 
@@ -185,8 +186,7 @@ module.exports = {
   success: l => getLang(l, 'ROUTE_ADDED'),
   start: l => getLang(l, 'START'),
   agree: l => getLang(l, 'AGREE'),
-  start2: l => `${getLang(l, 'HELLO')}${getENV('ACC_T_L')}`,
-
+  start2: l => `${getLang(l, 'HELLO')}${getENV(getLangLast(l, 'ACC_T_L'))}`,
   home: (l, type) => `${getLang(l, 'MENU')}
 ${typeLabel(l)}: ${getTypeShow(l, type)}`,
 
@@ -206,6 +206,7 @@ ${getENV(getLangLast(l, 'CREATE_TXT_L'))}`,
   editTime,
   editTimeSuccess,
   editTimeOk: editTimeOkTxt,
+  editDistOk: editDistOkTxt,
   showHour: showHourTxt,
   noUserNameTxt: noUserNameTxt2,
   timeError: timeErrorTxt,
@@ -250,4 +251,8 @@ ${getENV(getLangLast(l, 'CREATE_TXT_L'))}`,
     s += `${links.length ? `\n${links.join('\n\n')}` : ''}`;
     return s;
   },
+  distA: l => getLang(l, 'Set distance for point A'),
+  distB: l => getLang(l, 'Set distance for point B'),
+  distTxt: l =>
+    `${getLang(l, 'DIST_P')}${getENV(getLangLast(l, 'DIST_T_L'))}`,
 };
