@@ -106,7 +106,7 @@ const format = (bot, botHelper) => {
       // eslint-disable-next-line consistent-return
       return BH2.processLocation(ctx, coords);
     } catch (e) {
-      BH2.sendError(e);
+      BH2.sendError(e, 'loc mess');
       showError(e);
     }
   });
@@ -143,7 +143,7 @@ const format = (bot, botHelper) => {
         }
       } catch (e) {
         text = 'err';
-        BH2.sendError(e);
+        BH2.sendError(e, 'setUname');
       }
       ctx.answerCbQuery(cbqId, {text});
       return;
@@ -157,7 +157,7 @@ const format = (bot, botHelper) => {
         await BH2.edit(from.id, mId, null, txt, keyb);
       } catch (e) {
         text = 'err';
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'start home');
       }
       ctx.answerCbQuery(cbqId, {text});
       return;
@@ -173,7 +173,7 @@ const format = (bot, botHelper) => {
         await BH2.edit(id, mId, null, txt, keyb);
         ctx.answerCbQuery(cbqId, {text: messages.stoppedAll(lang)});
       } catch (e) {
-        BH2.sendError(e);
+        BH2.sendError(e, 'stopall');
       }
     }
     /** @alias addRoute */
@@ -185,7 +185,7 @@ const format = (bot, botHelper) => {
         const keyb = keyboards.fr();
         ctx.reply(txt, keyb);
       } catch (e) {
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'addRoute');
       }
       ctx.answerCbQuery(cbqId, {text: messages.addName(lang)});
       return;
@@ -201,7 +201,7 @@ const format = (bot, botHelper) => {
         await BH2.edit(id, mId, null, txt, keyboards.begin(lang));
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'changeType');
       }
       return;
     }
@@ -222,7 +222,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         showError(e);
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'about');
       }
       return;
     }
@@ -237,9 +237,8 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         showError(e);
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'setttings');
       }
-      return;
     }
     /** @alias type */
     if (data.match(/type_([0-9])/)) {
@@ -252,7 +251,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: messages.account(lang)});
       } catch (e) {
         showError(e);
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'type_');
       }
     }
     /** @alias page */
@@ -279,7 +278,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: ''});
       } catch (e) {
         showError(e);
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'page_');
       }
     }
     /** @alias request */
@@ -289,7 +288,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'reg_');
       }
     }
     /** @alias route */
@@ -334,7 +333,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'route_');
       }
     }
     /** @alias edit */
@@ -377,7 +376,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'edit_');
       }
     }
     /** @alias edit */
@@ -416,7 +415,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
         showError(e);
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'hoursReg');
       }
     }
     /** @alias status */
@@ -450,7 +449,7 @@ const format = (bot, botHelper) => {
         ctx.answerCbQuery(cbqId, {text: pop});
       } catch (e) {
         showError(e);
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'st Reg');
       }
     }
     /** @alias find */
@@ -507,7 +506,7 @@ const format = (bot, botHelper) => {
       } catch (e) {
         showError(e);
         text = 'err';
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'find_');
       }
       ctx.answerCbQuery(cbqId, {text});
     }
@@ -543,7 +542,7 @@ const format = (bot, botHelper) => {
       } catch (e) {
         showError(e);
         text = 'err';
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'distReg');
       }
       ctx.answerCbQuery(cbqId, {text});
     }
@@ -592,7 +591,7 @@ const format = (bot, botHelper) => {
       } catch (e) {
         showError(e);
         text = 'err';
-        await BH2.sendError(e);
+        await BH2.sendError(e, 'del_route_');
       }
       ctx.answerCbQuery(cbqId, {text});
     }
@@ -620,7 +619,7 @@ const format = (bot, botHelper) => {
           return BH2.processLocation(ctx);
         } catch (e) {
           showError(e);
-          BH2.sendError(e);
+          BH2.sendError(e, 'proLoc');
         }
       }
       if (rplMess) {
@@ -633,7 +632,7 @@ const format = (bot, botHelper) => {
           }
         } catch (e) {
           showError(e);
-          BH2.sendError(e);
+          BH2.sendError(e, 'test mes');
         }
       }
     }
@@ -646,7 +645,7 @@ const format = (bot, botHelper) => {
       rabbitmq.runSecond(BH2.jobMessage);
     }, 5000);
   } catch (e) {
-    botHelper.sendError(e);
+    botHelper.sendError(e, 'rabbit');
   }
 };
 

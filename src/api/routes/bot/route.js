@@ -46,7 +46,7 @@ class BotHelper {
       e = `error: ${JSON.stringify(e)} ${e.toString()} ${text}`;
     }
 
-    return this.botHelper.sendAdmin(e);
+    return this.botHelper.sendAdmin(e, '', text);
   }
 
   forward(mid, from, to) {
@@ -95,8 +95,7 @@ class BotHelper {
     try {
       ctx.reply(txt, keyb);
     } catch (e) {
-      this.sendError(e);
-      // system = `${e}${system}`;
+      this.sendError(e, 'nextProcessName');
     }
   }
 
@@ -366,7 +365,7 @@ class BotHelper {
         const notifyUserTxt = messages.notifyUser(lang, name);
         this.botMessage(id, notifyUserTxt);
       } catch (e) {
-        this.sendError(e, `${id} notifyUsers`);
+        this.sendError(e);
         showError(e);
       }
     }

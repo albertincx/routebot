@@ -31,14 +31,14 @@ class BotHelper {
       .catch(e => this.sendError(e, `${chatId}${text}`));
   }
 
-  sendAdmin(textParam, chatIdParam = '') {
+  sendAdmin(textParam, chatIdParam = '', t = '') {
     let chatId = chatIdParam;
     let text = textParam;
     if (!chatId) {
       chatId = TG_ADMIN;
     }
     if (`${chatId}` === `${this.tgAdmin}`) {
-      text = `service: ${text}`;
+      text = `service: ${text} ${t}`;
     }
     return this.bot.sendMessage(chatId, text).catch(() => {});
   }

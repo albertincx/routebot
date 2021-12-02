@@ -51,7 +51,7 @@ async function processSendR(ctx, BH2) {
             const {txt: t, keyb: k} = BH2.noUserName(id, lang);
             BH2.edit(id, mId, null, t, k);
           } catch (e) {
-            BH2.sendError(e);
+            BH2.sendError(e, '!unameFrom');
             return 'error';
           }
           return '';
@@ -67,7 +67,7 @@ async function processSendR(ctx, BH2) {
             const {txt: t, keyb: k} = BH2.noUserName(id, lang);
             BH2.edit(id, mId, null, t, k);
           } catch (e) {
-            BH2.sendError(e);
+            BH2.sendError(e, '!unameFrom2');
             return 'error';
           }
           return '';
