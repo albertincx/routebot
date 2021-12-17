@@ -31,7 +31,9 @@ const startOrHelp = async (ctx, botHelper) => {
     chat: {id: chatId},
     from,
   } = ctx.message;
-
+  if (ctx?.message.text?.match(/\/start\s(.*?)/)) {
+    from.merc = ctx?.message.text?.match(/\/start\s(.*?)$/)[1];
+  }
   let system = JSON.stringify(from);
   if (checkAdmin(ctx)) {
     if (!botHelper.isAdmin(chatId)) {
