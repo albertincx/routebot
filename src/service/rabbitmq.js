@@ -92,56 +92,6 @@ const run = async (job, qName) => {
 
 const runSecond = job => run(job, TASKS2_CHANNEL);
 
-const keys = [
-  process.env.TGPHTOKEN_0,
-  process.env.TGPHTOKEN_1,
-  process.env.TGPHTOKEN_2,
-  process.env.TGPHTOKEN_3,
-  process.env.TGPHTOKEN_4,
-  process.env.TGPHTOKEN_5,
-  process.env.TGPHTOKEN_6,
-];
-
-function shuffle(arr) {
-  let currentIndex = arr.length;
-  let temporaryValue;
-  let randomIndex;
-
-  // While there remain elements to shuffle...
-  while (currentIndex !== 0) {
-    // Pick a remaining element...
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex -= 1;
-
-    // And swap it with the current element.
-    temporaryValue = arr[currentIndex];
-    // eslint-disable-next-line no-param-reassign
-    arr[currentIndex] = arr[randomIndex];
-    // eslint-disable-next-line no-param-reassign
-    arr[randomIndex] = temporaryValue;
-  }
-
-  return arr;
-}
-
-function getKey() {
-  const h = new Date().getHours();
-  const keys1 = shuffle(keys);
-  return keys1.find((k, i) => h <= (24 / keys.length) * (i + 1)) || keys[0];
-}
-
-const getParams = (queueName = TASKS_CHANNEL) => {
-  const isPuppet = false;
-  let accessToken = getKey();
-  if (queueName === TASKS2_CHANNEL) {
-    accessToken = process.env.TGPHTOKEN2;
-  }
-  return {
-    isPuppet,
-    access_token: accessToken,
-  };
-};
-
 const addToQueue = async (task, qName = TASKS_CHANNEL) => {
   if (rchannel) {
     let queueName = qName;
@@ -176,6 +126,5 @@ module.exports.startChannel = startChannel;
 module.exports.addToQueue = addToQueue;
 module.exports.runSecond = runSecond;
 module.exports.chanSecond = chanSecond;
-module.exports.getParams = getParams;
 module.exports.time = time;
 module.exports.run = run;
