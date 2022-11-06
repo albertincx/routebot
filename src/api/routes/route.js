@@ -7,11 +7,11 @@ const {checkAdmin} = require('../utils');
 const {showError} = require('../utils');
 const {printRouteOne, printRouteFound} = require('./view/route');
 
-const rabbitmq = require('../../service/rabbitmq');
+// const rabbitmq = require('../../service/rabbitmq');
 const BotHelper2 = require('./bot/route');
 const {processSendR} = require('./bot/request');
 
-rabbitmq.startChannel();
+// rabbitmq.startChannel();
 global.lastIvTime = +new Date();
 
 const EDIT_ = 'edit_';
@@ -641,8 +641,8 @@ const format = (bot, botHelper) => {
   bot.on('message', ctx => test(ctx));
   try {
     setTimeout(() => {
-      rabbitmq.run(BH2.jobMessage);
-      rabbitmq.runSecond(BH2.jobMessage);
+      // rabbitmq.run(BH2.jobMessage);
+      // rabbitmq.runSecond(BH2.jobMessage);
     }, 5000);
   } catch (e) {
     botHelper.sendError(e, 'rabbit');

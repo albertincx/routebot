@@ -9,16 +9,13 @@ exports.connect = uri => {
   mongoose.connect(
     dbUri,
     {
-      keepAlive: 1,
+      keepAlive: true,
       connectTimeoutMS: 30000,
       useNewUrlParser: true,
       useUnifiedTopology: true,
     },
     err => {
       if (err) throw err;
-      if (connCbTest) {
-        connCbTest();
-      }
     },
   );
   return mongoose.connection;
