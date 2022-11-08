@@ -1,7 +1,9 @@
 const passport = require('passport');
 const router = require('express').Router();
+require('../models/route');
 
 router.use('/users', require('./users'));
+router.use('/routes', require('./routes'));
 
 router.get(
   '/reviews',
@@ -13,4 +15,5 @@ router.get(
     });
   },
 );
+
 module.exports = router;

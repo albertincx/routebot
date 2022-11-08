@@ -5,5 +5,13 @@ const UserSchema = new mongoose.Schema({
   hash: String,
   salt: String,
 });
+// Duplicate the ID field.
+UserSchema.virtual('id').get(function () {
+  return this._id.toHexString();
+});
 
+// Ensure virtual fields are serialised.
+UserSchema.set('toJSON', {
+  virtuals: true,
+});
 mongoose.model('User', UserSchema);

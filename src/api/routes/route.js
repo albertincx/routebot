@@ -321,11 +321,9 @@ const format = (bot, botHelper) => {
         const noTime = Number.isNaN(hourA) || !hourB;
         if (noTime) {
           callbacks.push(`${HOUR_A}_${_id}_${page}_start`);
-        } else {
-          if (status === 1) {
-            callbacks.push(`find_1_${_id}_3`);
-            callbacks.push(`find_1_${_id}_0`);
-          }
+        } else if (status === 1) {
+          callbacks.push(`find_1_${_id}_3`);
+          callbacks.push(`find_1_${_id}_0`);
         }
         const keyb = keyboards.detailRoute(lang, callbacks, noTime);
         const view = printRouteOne(route, lang, false, adm);
@@ -476,7 +474,7 @@ const format = (bot, botHelper) => {
         pagi.push(back);
         const preKeys = [];
         if (routes[0]) {
-          let text = messages.sendRequest(lang);
+          text = messages.sendRequest(lang);
           let act = keyboards.actions.sendDriverReq;
           if (type === 3) {
             // offer for same passenger
@@ -515,7 +513,8 @@ const format = (bot, botHelper) => {
       let text = '';
       try {
         const [, distPoint, _id, page = 1, typ] = data.match(
-          newReg(`${distReg}_([0-9]+)(.*?)$`));
+          newReg(`${distReg}_([0-9]+)(.*?)$`),
+        );
         if (typ) {
           const dist = parseInt(typ.replace('_', ''), 10);
           await BH2.setDist(_id, dist);
@@ -525,10 +524,18 @@ const format = (bot, botHelper) => {
           return;
         }
         const pagi = [];
-        pagi.push(keyboards.inlineBtn('700', `${EDIT_}${_id}_${page}_${distPoint}_7`));
-        pagi.push(keyboards.inlineBtn('1000', `${EDIT_}${_id}_${page}_${distPoint}_10`));
-        pagi.push(keyboards.inlineBtn('1500', `${EDIT_}${_id}_${page}_${distPoint}_15`));
-        pagi.push(keyboards.inlineBtn('2000', `${EDIT_}${_id}_${page}_${distPoint}_20`));
+        pagi.push(
+          keyboards.inlineBtn('700', `${EDIT_}${_id}_${page}_${distPoint}_7`),
+        );
+        pagi.push(
+          keyboards.inlineBtn('1000', `${EDIT_}${_id}_${page}_${distPoint}_10`),
+        );
+        pagi.push(
+          keyboards.inlineBtn('1500', `${EDIT_}${_id}_${page}_${distPoint}_15`),
+        );
+        pagi.push(
+          keyboards.inlineBtn('2000', `${EDIT_}${_id}_${page}_${distPoint}_20`),
+        );
         const back = [
           {
             text: messages.backJust(lang),
@@ -603,11 +610,11 @@ const format = (bot, botHelper) => {
     if (checkAdmin(ctx)) {
       return;
     }
-    if (ctx.message.text?.match(/^\/cconfig/)) {
+    if (ctx.message.text && ctx.message.text.match(/^\/cconfig/)) {
       BH2.cconfig(ctx);
       return;
     }
-    if (ctx.message.text?.match(/^\/clearreq/)) {
+    if (ctx.message.text && ctx.message.text.match(/^\/clearreq/)) {
       BH2.clearReq(ctx);
       return;
     }
