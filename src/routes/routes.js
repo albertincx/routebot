@@ -17,14 +17,34 @@ router.get(
     Route.find(filter).then(r => res.status(200).json(r[0]));
   },
 );
-router.get('/', passport.authenticate('jwt', {session: false}), (req, res) => {
-  const filter = {
-    userId: req.user.toJSON().userId,
-  };
-  Route.find(filter, 'id name createdAt').then(r =>
-    res.set('Content-Range', `items 0-5/${r.length}`).status(200).json(r),
-  );
-});
+router.get(
+  '/',
+  passport.authenticate('jwt', {session: false}),
+  async (req, res) => {
+    const filter = {
+      userId: req.user.toJSON().userId,
+    };
+    const {range = '[0,5]', filter: F} = req.query;
+    const F2 = JSON.parse(F);
+    const [skip, limit] = JSON.parse(range);
+    const limit2 = limit + 1 - skip;
+    const opts = {limit: limit2, skip};
+    if (F.match('point":true')) {
+      filter.pointA = {$exists: true};
+      filter.pointB = {$exists: true};
+    }
+    if (F2.q) {
+      filter.name = new RegExp(F2.q);
+    }
+    const countTotal = await Route.count(filter);
+    Route.find(filter, 'id name createdAt', opts).then(r =>
+      res
+        .set('Content-Range', `items ${skip}-${limit2}/${countTotal}`)
+        .status(200)
+        .json(r),
+    );
+  },
+);
 
 router.post(
   '/',
@@ -35,19 +55,20 @@ router.post(
     const filter = {name: req.body.name, userId};
     const exists = await Route.findOne(filter, '_id');
     if (exists) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         message: 'route with this name is already exists',
       });
+      return;
     }
     const newUser = new Route(req.body);
     newUser.userId = userId;
     try {
-      newUser.save().then(user => {
-        res.json(user);
+      newUser.save().then(route => {
+        res.json(route);
       });
     } catch (err) {
-      res.json({success: false, msg: err});
+      res.json({success: false, message: err});
     }
   },
 );
@@ -62,10 +83,11 @@ router.put(
     const filterExists = {name: req.body.name, userId};
     const exists = await Route.findOne(filterExists, '_id');
     if (exists) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         message: 'route with this name is already exists',
       });
+      return;
     }
     const filter = {_id, userId};
     const update = _.pick(req.body, ['name']);
@@ -74,7 +96,7 @@ router.put(
         res.json({...update, id: _id});
       });
     } catch (err) {
-      res.json({success: false, msg: err});
+      res.json({success: false, message: err});
     }
   },
 );

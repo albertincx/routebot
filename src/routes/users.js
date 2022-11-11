@@ -3,20 +3,8 @@ const router = require('express').Router();
 const {createHmac, createHash} = require('node:crypto');
 
 const User = mongoose.model('User');
-const passport = require('passport');
 const utils = require('../lib/utils');
 const db = require('../api/utils/db');
-
-router.get(
-  '/protected',
-  passport.authenticate('jwt', {session: false}),
-  (req, res) => {
-    res.status(200).json({
-      success: true,
-      msg: 'You are successfully authenticated to this route!',
-    });
-  },
-);
 
 function genChkString(dataCheck) {
   let res = '';
