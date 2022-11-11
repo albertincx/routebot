@@ -1,6 +1,6 @@
 # API reference
 
-### Auth
+### Auth ([source](https://github.com/albertincx/routebot/blob/main/src/routes/users.js))
 ```http
 POST /users/login
 ```
@@ -24,12 +24,6 @@ POST /users/login
     "expiresIn" : string, // "2d"
 }
 ```
-
-The `message` attribute contains a message commonly used to indicate errors or, in the case of deleting a resource, success that the resource was properly deleted.
-
-The `success` attribute describes if the transaction was successful or not.
-
-The `data` attribute contains any other metadata associated with the response. This will be an escaped string containing JSON data.
 
 </p>
 </details>
@@ -67,12 +61,6 @@ POST /users/register
 }
 ```
 
-The `message` attribute contains a message commonly used to indicate errors or, in the case of deleting a resource, success that the resource was properly deleted.
-
-The `success` attribute describes if the transaction was successful or not.
-
-The `data` attribute contains any other metadata associated with the response. This will be an escaped string containing JSON data.
-
 </p>
 </details>
 <details><summary>Status Codes</summary>
@@ -85,7 +73,7 @@ The `data` attribute contains any other metadata associated with the response. T
 </p>
 </details>
 
-### Get routes
+### Get routes ([source](https://github.com/albertincx/routebot/blob/main/src/routes/routes.js))
 ```http
 GET /routes
 ```
@@ -118,12 +106,6 @@ GET /routes
   route1, route2, ..., routeN,
 ]
 ```
-
-The `message` attribute contains a message commonly used to indicate errors or, in the case of deleting a resource, success that the resource was properly deleted.
-
-The `success` attribute describes if the transaction was successful or not.
-
-The `data` attribute contains any other metadata associated with the response. This will be an escaped string containing JSON data.
 
 </p>
 </details>
