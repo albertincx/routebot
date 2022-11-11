@@ -1,7 +1,7 @@
 const db = require('../../utils/db');
 const messages = require('../../../messages/format');
 const keyboards = require('../../../keyboards/keyboards');
-const {checkAdmin, showError} = require('../../utils');
+const {checkAdmin, showError, matchEscapeRegex} = require('../../utils');
 const rabbitmq = require('../../../service/rabbitmq');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
@@ -9,13 +9,16 @@ const TG_ADMIN2 = parseInt(process.env.TGADMIN2, 10);
 const cBroad = '/createBroadcast';
 const sBroad = '/startBroadcast';
 
-function checkLoc(l) {
+function checkLocLong(l) {
   const val = parseFloat(l);
   return !Number.isNaN(val) && val <= 180 && val >= -180;
 }
-
+function checkLocLat(l) {
+  const val = parseFloat(l);
+  return !Number.isNaN(val) && val <= 90 && val >= -90;
+}
 function checkLocation(loc) {
-  return checkLoc(loc[0]) && checkLoc(loc[1]);
+  return checkLocLong(loc[0]) && checkLocLat(loc[1]);
 }
 
 class BotHelper {
@@ -191,12 +194,26 @@ class BotHelper {
     const {message} = update;
     const {from, reply_to_message: rpl, location: msgLocation} = message;
     const {language_code: lang} = from;
+
+    let location = [];
+    if (coordinatesTxtArr.length) {
+      location = coordinatesTxtArr;
+    } else if (msgLocation) {
+      location = [msgLocation.longitude, msgLocation.latitude];
+    }
+
     if (rpl) {
-      if (!rpl.text || msgLocation) {
-        const txt = messages.driverStartNewRoute(lang);
-        const keyb = keyboards.fr();
-        ctx.reply(txt, keyb);
-        return;
+      if (msgLocation) {
+        if (!rpl.text) {
+          ctx.reply(messages.driverStartNewRoute(lang), keyboards.fr());
+          return;
+        } else {
+          const s = matchEscapeRegex(messages.point(1, lang), rpl.text) ||
+            matchEscapeRegex(messages.point(2, lang), rpl.text);
+          if (s) {
+            return this.nextProcessLocation(ctx, location);
+          }
+        }
       }
       if (rpl.text.match(messages.check(lang))) {
         // Send the name of your route
@@ -205,22 +222,20 @@ class BotHelper {
       // eslint-disable-next-line consistent-return
       return;
     }
-    let location = [];
-    if (coordinatesTxtArr.length) {
-      location = coordinatesTxtArr;
-    } else if (msgLocation) {
-      location = [msgLocation.longitude, msgLocation.latitude];
-    }
+    return this.nextProcessLocation(ctx, location)
+  }
+
+  async nextProcessLocation(ctx, location) {
+    const {update} = ctx;
+    const {message} = update;
+    const {from} = message;
+    const {language_code: lang} = from;
     if (location[0] && location[1]) {
+      if (!checkLocation(location)) {
+        throw 'bounds'
+      }
       const {id: userId} = from;
       const {routes, type} = await db.GetUser(userId, 'routes type');
-      if (!checkLocation(location)) {
-        const txt = messages.point(routes, lang);
-        const keyb = keyboards.nextProcess(routes, lang);
-        ctx.reply(txt, keyb);
-        // eslint-disable-next-line consistent-return
-        return;
-      }
       const loc = {
         type: 'Point',
         coordinates: location,
@@ -254,6 +269,9 @@ class BotHelper {
           this.notifyUsers(notifyRoutes, lang);
         }
         await db.updateOne(userId);
+      }
+      if (txt === messages.success(lang)) {
+        keyb = keyboards.hide();
       }
       await ctx.reply(txt, keyb);
       if (routes === 2) {
@@ -439,17 +457,19 @@ class BotHelper {
 
   async GetUserName(id) {
     const u = await db.GetUser(id, 'username');
-    return u?.username;
+    return u && u.username;
   }
 
   async GetLangUser(id) {
     const u = await db.GetUser(id, 'language_code');
-    return u?.language_code;
+    return u && u.language_code;
   }
+
   getPpage(adm) {
     return adm ? this.admPerPage : this.perPage;
   }
-  setDist(_id, d){
+
+  setDist(_id, d) {
     return db.setField({_id}, 'dist', d);
   }
 }

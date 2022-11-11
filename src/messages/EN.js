@@ -42,6 +42,7 @@ const ROUTE_SAME_D = 'Same routes (with drivers) nearby not found';
 const ROUTE_STOP = 'Active routes stopped';
 const POINT_1 = 'Send departure point (Start Point)';
 const POINT_2 = 'Send destination point (Last Point)';
+const POINT_ERR = 'bounds error, enter "longitude, latitude" coordinates';
 const STOP_ALL = 'Stop all active Routes';
 
 const TYPE_1 = BUTTONS.driver.label;
@@ -91,4 +92,5 @@ module.exports = {
   'SEARCH_P': SEARCH_P,
   'SETTING_TEXT': SETTING_TEXT,
   'NO_USERNAME': NO_USERNAME,
+  'POINT_ERR': POINT_ERR,
 };

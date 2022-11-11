@@ -10,6 +10,7 @@ const {printRouteOne, printRouteFound} = require('./view/route');
 // const rabbitmq = require('../../service/rabbitmq');
 const BotHelper2 = require('./bot/route');
 const {processSendR} = require('./bot/request');
+const db = require('../utils/db');
 
 // rabbitmq.startChannel();
 global.lastIvTime = +new Date();
@@ -97,17 +98,32 @@ const format = (bot, botHelper) => {
   bot.command(['/createBroadcast', '/startBroadcast'], ctx =>
     BH2.broadcast(ctx, botHelper),
   );
-  bot.hears(/([0-9.]+),[\s+]?([0-9.]+)/, ctx => {
+  bot.hears(/([0-9.]+),[\s+]?([0-9.]+)/, async ctx => {
     if (checkAdmin(ctx)) {
       return;
     }
     try {
-      const coords = [ctx.match[2], ctx.match[1]].map(Number);
+      const coords = [ctx.match[1], ctx.match[2]].map(Number);
       // eslint-disable-next-line consistent-return
-      return BH2.processLocation(ctx, coords);
+      await BH2.processLocation(ctx, coords);
     } catch (e) {
-      BH2.sendError(e, 'loc mess');
-      showError(e);
+      if (`${e}`.match('bounds')) {
+        const {update} = ctx;
+        const {message} = update;
+        const {from} = message;
+        const {language_code: lang} = from;
+        const {id: userId} = from;
+        const {routes} = await db.GetUser(userId, 'routes');
+        const txt2 = messages.pointError(lang);
+        const txt = messages.point(routes, lang);
+        const keyb = keyboards.nextProcess(routes, lang);
+        ctx.reply(txt2).then(() => {
+          ctx.reply(txt, keyb);
+        });
+      } else {
+        await BH2.sendError(e, 'loc mess');
+        showError(e);
+      }
     }
   });
   bot.command(BUTTONS.driver.command, ctx => BH2.driverType(ctx, 1));
@@ -326,7 +342,7 @@ const format = (bot, botHelper) => {
           callbacks.push(`find_1_${_id}_0`);
         }
         const keyb = keyboards.detailRoute(lang, callbacks, noTime);
-        const view = printRouteOne(route, lang, false, adm);
+        const view = printRouteOne(route, lang, false);
         await BH2.edit(id, mId, null, view, keyb);
         ctx.answerCbQuery(cbqId, {text});
       } catch (e) {
@@ -606,7 +622,7 @@ const format = (bot, botHelper) => {
 
   // eslint-disable-next-line consistent-return
   /** @alias processMessage */
-  function test(ctx) {
+  function anyMessage(ctx) {
     if (checkAdmin(ctx)) {
       return;
     }
@@ -645,7 +661,8 @@ const format = (bot, botHelper) => {
     }
   }
 
-  bot.on('message', ctx => test(ctx));
+  bot.on('message', anyMessage);
+
   try {
     setTimeout(() => {
       // rabbitmq.run(BH2.jobMessage);

@@ -161,6 +161,7 @@ function showHourTxt(lang, hour, view = false) {
   }
   return `${time}${llang}${afternoon}`;
 }
+const pointErrorShow = l => `${getLang(l, 'POINT_ERR')}`;
 
 module.exports = {
   deletedRoute: l => getLang(l, 'Route deleted'),
@@ -194,6 +195,7 @@ ${typeLabel(l)}: ${getTypeShow(l, type)}`,
 ${getENV(getLangLast(l, 'CREATE_TXT_L'))}`,
 
   point: showPoint,
+  pointError: pointErrorShow,
   iconWarn,
   routesEmpty: showRoutesEmpty,
   getType: getTypeShow,
@@ -253,6 +255,5 @@ ${getENV(getLangLast(l, 'CREATE_TXT_L'))}`,
   },
   distA: l => getLang(l, 'Set distance for point A'),
   distB: l => getLang(l, 'Set distance for point B'),
-  distTxt: l =>
-    `${getLang(l, 'DIST_P')}${getENV(getLangLast(l, 'DIST_T_L'))}`,
+  distTxt: l => `${getLang(l, 'DIST_P')}${getENV(getLangLast(l, 'DIST_T_L'))}`,
 };

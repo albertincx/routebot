@@ -379,6 +379,7 @@ const addRouteA = async (data, loc, dir = DIR_A) => {
     return {lastUpdatedId};
   }
 };
+const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
 
 const addRoute = async (
   filter,
@@ -390,10 +391,14 @@ const addRoute = async (
     // eslint-disable-next-line no-param-reassign
     filter.name = route.name;
   }
-  const res = await collection.findOneAndUpdate(filter, route, {
-    upsert: true,
-    new: true,
-  });
+  const res = await collection
+    .findOneAndUpdate(filter, route, {
+      upsert: true,
+      new: true,
+    })
+    .catch(() => {
+      throw new Error('bounds');
+    });
   const upd = {};
   if (!routes) {
     upd.routes = 1;
@@ -412,7 +417,6 @@ const addSubscription = async (d, collection = subsCol) => {
   });
 };
 
-const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
 const stopAll = userId => routesCol.updateMany({userId}, {status: 0});
 const routesCnt = f => stat(f);
 const coord = (route, dir = DIR_A) => route[dir].coordinates;

@@ -40,10 +40,17 @@ function checkAdmin(ctx) {
 
   return ADMINS.length && !ADMINS.includes(`${chatId}`);
 }
+
 const showError = e => console.log(e);
+
+function matchEscapeRegex(str, search) {
+  if (!str || !search) return null;
+  return str.match(new RegExp(search.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')));
+}
 
 module.exports.checkAdmin = checkAdmin;
 module.exports.check = check;
 module.exports.timeout = timeout;
 module.exports.checkData = checkData;
 module.exports.showError = showError;
+module.exports.matchEscapeRegex = matchEscapeRegex;
