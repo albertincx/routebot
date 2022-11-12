@@ -199,7 +199,7 @@ class BotHelper {
     if (coordinatesTxtArr.length) {
       location = coordinatesTxtArr;
     } else if (msgLocation) {
-      location = [msgLocation.longitude, msgLocation.latitude];
+      location = [msgLocation.latitude, msgLocation.longitude];
     }
 
     if (rpl) {
@@ -208,7 +208,8 @@ class BotHelper {
           ctx.reply(messages.driverStartNewRoute(lang), keyboards.fr());
           return;
         } else {
-          const s = matchEscapeRegex(messages.point(1, lang), rpl.text) ||
+          const s =
+            matchEscapeRegex(messages.point(1, lang), rpl.text) ||
             matchEscapeRegex(messages.point(2, lang), rpl.text);
           if (s) {
             return this.nextProcessLocation(ctx, location);
@@ -338,7 +339,7 @@ class BotHelper {
 
   // eslint-disable-next-line class-methods-use-this
   async setFieldRoute(userId, _id, st, field) {
-    let upd = {[field]: st};
+    const upd = {[field]: st};
     if (field === 'status') {
       upd.notify = st;
     }
