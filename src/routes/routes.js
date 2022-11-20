@@ -85,18 +85,9 @@ router.put(
   // eslint-disable-next-line consistent-return
   async (req, res) => {
     const {userId} = req.user.toJSON();
-    const {_id} = req.body;
-    const filterExists = {name: req.body.name, userId};
-    const exists = await Route.findOne(filterExists, '_id');
-    if (exists) {
-      res.status(403).json({
-        success: false,
-        message: 'route with this name is already exists',
-      });
-      return;
-    }
+    const {id: _id} = req.params;
     const filter = {_id, userId};
-    const update = _.pick(req.body, ['name']);
+    const update = _.pick(req.body, ['name', 'pointA', 'pointB']);
     try {
       Route.updateOne(filter, update).then(() => {
         res.json({...update, id: _id});

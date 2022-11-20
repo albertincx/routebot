@@ -19,22 +19,39 @@ Route.virtual('id').get(function () {
 Route.set('toJSON', {
   virtuals: true,
 });
+const a = {
+  type: 'Point',
+  coordinates: [],
+};
+const getPoint = (upd, pointKey) => {
+  let _pointKey = 'pointA';
+  if (pointKey === 'B') {
+    _pointKey = 'pointB';
+  }
+  const point = {...a};
+  if (upd[_pointKey]) {
+    if (typeof upd[_pointKey] === 'object') {
+      point.coordinates = upd[_pointKey].coordinates;
+    } else {
+      point.coordinates = upd[_pointKey].split(',').map(Number);
+    }
+  }
+  return point;
+};
+
 Route.pre('save', function (next) {
-  const a = {
-    type: 'Point',
-    coordinates: [],
-  };
   if (this.pointA) {
-    const point = {...a};
-    point.coordinates = this.pointA.split(',').map(Number);
-    this.pointA = point;
+    this.pointA = getPoint(this);
   }
   if (this.pointB) {
-    const point = {...a};
-    point.coordinates = this.pointB.split(',').map(Number);
-    this.pointB = point;
+    this.pointA = getPoint(this, 'B');
   }
-  console.log(this);
   next();
+});
+
+Route.pre(/(updateOne|update)/, function (next) {
+  const update = this._update;
+  this.set({pointA: getPoint(update, 'A'), pointB: getPoint(update, 'B')});
+  return next();
 });
 mongoose.model('Route', Route);
