@@ -19,4 +19,22 @@ Route.virtual('id').get(function () {
 Route.set('toJSON', {
   virtuals: true,
 });
+Route.pre('save', function (next) {
+  const a = {
+    type: 'Point',
+    coordinates: [],
+  };
+  if (this.pointA) {
+    const point = {...a};
+    point.coordinates = this.pointA.split(',').map(Number);
+    this.pointA = point;
+  }
+  if (this.pointB) {
+    const point = {...a};
+    point.coordinates = this.pointB.split(',').map(Number);
+    this.pointB = point;
+  }
+  console.log(this);
+  next();
+});
 mongoose.model('Route', Route);

@@ -14,7 +14,11 @@ router.get(
       userId: req.user.toJSON().userId,
       _id: req.params.id,
     };
-    Route.find(filter).then(r => res.status(200).json(r[0]));
+    Route.find(filter)
+      .then(r => res.status(200).json(r[0]))
+      .catch(err => {
+        res.json({success: false, message: err});
+      });
   },
 );
 router.get(
@@ -61,15 +65,17 @@ router.post(
       });
       return;
     }
-    const newUser = new Route(req.body);
-    newUser.userId = userId;
-    try {
-      newUser.save().then(route => {
+    const newRoute = new Route(req.body);
+    newRoute.userId = userId;
+    // console.log(newRoute);
+    newRoute
+      .save()
+      .then(route => {
         res.json(route);
+      })
+      .catch(err => {
+        res.json({success: false, message: err});
       });
-    } catch (err) {
-      res.json({success: false, message: err});
-    }
   },
 );
 
