@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const {getPoint} = require('../lib/utils');
 
 const Route = new mongoose.Schema({
   createdAt: Date,
@@ -19,25 +20,6 @@ Route.virtual('id').get(function () {
 Route.set('toJSON', {
   virtuals: true,
 });
-const a = {
-  type: 'Point',
-  coordinates: [],
-};
-const getPoint = (upd, pointKey) => {
-  let _pointKey = 'pointA';
-  if (pointKey === 'B') {
-    _pointKey = 'pointB';
-  }
-  const point = {...a};
-  if (upd[_pointKey]) {
-    if (typeof upd[_pointKey] === 'object') {
-      point.coordinates = upd[_pointKey].coordinates;
-    } else {
-      point.coordinates = upd[_pointKey].split(',').map(Number);
-    }
-  }
-  return point;
-};
 
 Route.pre('save', function (next) {
   if (this.pointA) {
@@ -47,11 +29,5 @@ Route.pre('save', function (next) {
     this.pointA = getPoint(this, 'B');
   }
   next();
-});
-
-Route.pre(/(updateOne|update)/, function (next) {
-  const update = this._update;
-  this.set({pointA: getPoint(update, 'A'), pointB: getPoint(update, 'B')});
-  return next();
 });
 mongoose.model('Route', Route);

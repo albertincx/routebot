@@ -5,6 +5,7 @@ const router = require('express').Router();
 const Route = mongoose.model('Route');
 
 const passport = require('passport');
+const {getPoint} = require('../lib/utils');
 
 router.get(
   '/:id',
@@ -88,8 +89,10 @@ router.put(
     const {id: _id} = req.params;
     const filter = {_id, userId};
     const update = _.pick(req.body, ['name', 'pointA', 'pointB']);
+    update.pointA = getPoint(update);
+    update.pointB = getPoint(update, 'B');
     try {
-      Route.updateOne(filter, update).then(() => {
+      await Route.updateOne(filter, update).then(() => {
         res.json({...update, id: _id});
       });
     } catch (err) {
