@@ -26,7 +26,7 @@ Route.pre('save', function (next) {
     this.pointA = getPoint(this);
   }
   if (this.pointB) {
-    this.pointA = getPoint(this, 'B');
+    this.pointB = getPoint(this, 'B');
   }
   next();
 });

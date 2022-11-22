@@ -7,6 +7,12 @@ const Route = mongoose.model('Route');
 const passport = require('passport');
 const {getPoint} = require('../lib/utils');
 
+const getData = body => {
+  const update = _.pick(body, ['name', 'pointA', 'pointB']);
+  update.pointA = getPoint(update);
+  update.pointB = getPoint(update, 'B');
+  return update;
+};
 router.get(
   '/:id',
   passport.authenticate('jwt', {session: false}),
@@ -66,7 +72,8 @@ router.post(
       });
       return;
     }
-    const newRoute = new Route(req.body);
+    const update = getData(req.body);
+    const newRoute = new Route(update);
     newRoute.userId = userId;
     // console.log(newRoute);
     newRoute
@@ -88,9 +95,7 @@ router.put(
     const {userId} = req.user.toJSON();
     const {id: _id} = req.params;
     const filter = {_id, userId};
-    const update = _.pick(req.body, ['name', 'pointA', 'pointB']);
-    update.pointA = getPoint(update);
-    update.pointB = getPoint(update, 'B');
+    const update = getData(req.body);
     try {
       await Route.updateOne(filter, update).then(() => {
         res.json({...update, id: _id});
