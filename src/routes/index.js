@@ -6,12 +6,23 @@ router.use('/users', require('./users'));
 router.use('/routes', require('./routes'));
 
 router.get(
-  '/reviews',
+  '/restart/1',
   passport.authenticate('jwt', {session: false}),
   (req, res) => {
+    const {userId} = req.user.toJSON();
+    if (userId !== TG_ADMIN) {
+      res.status(200).send('');
+      return;
+    }
+    // eslint-disable-next-line global-require
+    const {spawn} = require('child_process');
+    const gpull = spawn('git', ['pull']);
+    const rest = spawn('pm2', ['restart', 'Routes']);
+    gpull.stdout.pipe(rest.stdin);
+    rest.stdout.pipe(process.stdin);
     res.status(200).json({
       success: true,
-      msg: 'You are successfully authenticated to this route!',
+      id: '1',
     });
   },
 );
