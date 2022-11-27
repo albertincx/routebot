@@ -4,6 +4,9 @@ require('../models/route');
 
 router.use('/users', require('./users'));
 router.use('/routes', require('./routes'));
+// router.use('/search', require('./search'));
+
+const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 
 router.get(
   '/restart/1',
@@ -22,7 +25,7 @@ router.get(
     rest.stdout.pipe(process.stdin);
     res.status(200).json({
       success: true,
-      id: '1',
+      id: '12',
     });
   },
 );
