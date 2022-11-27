@@ -25,7 +25,7 @@ router.get(
     rest.stdout.pipe(process.stdin);
     res.status(200).json({
       success: true,
-      id: '12',
+      id: '1',
     });
   },
 );
