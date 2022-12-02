@@ -461,6 +461,9 @@ const getPipeline = (
 ];
 
 const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
+  if (!route.pointA || !route.pointB) {
+    return {cnt: 0, routes: []};
+  }
   const $match = {
     userId: {$ne: route.userId},
     status: 1,
