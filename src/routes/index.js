@@ -1,5 +1,7 @@
 const passport = require('passport');
 const router = require('express').Router();
+const fs = require('fs');
+
 require('../models/route');
 
 router.use('/users', require('./users'));
@@ -7,6 +9,7 @@ router.use('/routes', require('./routes'));
 // router.use('/search', require('./search'));
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
+const filepath = 'update.txt';
 
 router.get(
   '/restart/1',
@@ -23,6 +26,7 @@ router.get(
     const rest = spawn('pm2', ['restart', 'Routes']);
     gpull.stdout.pipe(rest.stdin);
     rest.stdout.pipe(process.stdin);
+    fs.writeFileSync(filepath, `${new Date()}`);
     res.status(200).json({
       success: true,
       id: '1',

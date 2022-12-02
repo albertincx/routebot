@@ -24,15 +24,15 @@ for (let i = 1; i < 10; i += 1) {
 }
 if (!fs.existsSync(filepath)) fs.writeFileSync(filepath, '0');
 
-let startCnt = parseInt(`${fs.readFileSync('count.txt')}`, 10);
+let startCnt = parseInt(`${fs.readFileSync(filepath)}`, 10);
 
 const startOrHelp = async (ctx, botHelper) => {
   const {
     chat: {id: chatId},
     from,
   } = ctx.message;
-  if (ctx?.message.text?.match(/\/start\s(.*?)/)) {
-    from.merc = ctx?.message.text?.match(/\/start\s(.*?)$/)[1];
+  if (ctx && ctx.message.text && ctx.message.text.match(/\/start\s(.*?)/)) {
+    from.merc = ctx && ctx.message.text.match(/\/start\s(.*?)$/)[1];
   }
   let system = JSON.stringify(from);
   if (checkAdmin(ctx)) {
@@ -114,7 +114,15 @@ const botRoute = (bot, conn) => {
       botHelper.sendAdmin(`srv: ${JSON.stringify(message)}`);
     }
   });
-
+  bot.command('updateTime', ({message}) => {
+    if (botHelper.isAdmin(message.chat.id)) {
+      let updTime = 'empty';
+      if (fs.existsSync('update.txt')) {
+        updTime = fs.readFileSync('update.txt');
+      }
+      botHelper.sendAdmin(`time: ${updTime}`);
+    }
+  });
   route(bot, botHelper, startOrHelp);
   bot.launch();
 

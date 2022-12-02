@@ -23,7 +23,7 @@ function checkLocation(loc) {
 
 class BotHelper {
   constructor(botHelper) {
-    this.bot = botHelper.getBot();
+    this.bot = botHelper && botHelper.getBot();
     this.botHelper = botHelper;
     this.tgAdmin = TG_ADMIN;
     this.tgAdmin2 = TG_ADMIN2;
@@ -207,23 +207,25 @@ class BotHelper {
         if (!rpl.text) {
           ctx.reply(messages.driverStartNewRoute(lang), keyboards.fr());
           return;
-        } else {
-          const s =
-            matchEscapeRegex(messages.point(1, lang), rpl.text) ||
-            matchEscapeRegex(messages.point(2, lang), rpl.text);
-          if (s) {
-            return this.nextProcessLocation(ctx, location);
-          }
+        }
+        const s =
+          matchEscapeRegex(messages.point(1, lang), rpl.text) ||
+          matchEscapeRegex(messages.point(2, lang), rpl.text);
+        if (s) {
+          // eslint-disable-next-line consistent-return
+          return this.nextProcessLocation(ctx, location);
         }
       }
       if (rpl.text.match(messages.check(lang))) {
         // Send the name of your route
+        // eslint-disable-next-line consistent-return
         return this.nextProcessName(ctx);
       }
       // eslint-disable-next-line consistent-return
       return;
     }
-    return this.nextProcessLocation(ctx, location)
+    // eslint-disable-next-line consistent-return
+    return this.nextProcessLocation(ctx, location);
   }
 
   async nextProcessLocation(ctx, location) {
@@ -233,7 +235,8 @@ class BotHelper {
     const {language_code: lang} = from;
     if (location[0] && location[1]) {
       if (!checkLocation(location)) {
-        throw 'bounds'
+        // eslint-disable-next-line no-throw-literal
+        throw 'bounds';
       }
       const {id: userId} = from;
       const {routes, type} = await db.GetUser(userId, 'routes type');
@@ -307,7 +310,7 @@ class BotHelper {
 
   async myRoutes(id, page = 1, adm = false) {
     let filter = {userId: id};
-    let perPage = this.perPage;
+    let {perPage} = this;
     if (adm) {
       filter = {status: 1};
       perPage = this.admPerPage;
@@ -443,12 +446,17 @@ class BotHelper {
     }
   }
 
+  // eslint-disable-next-line class-methods-use-this
   async cconfig(ctx) {
     try {
       const [, PA, VA] = ctx.message.text.split(/\/cconfig (.*?)=(.*?)$/);
       if (PA) {
-        globalSUPPLINKS[PA] = VA;
-        await db.updateConfig(globalSUPPLINKS);
+        if (typeof globalSUPPLINKS !== 'undefined') {
+          // eslint-disable-next-line no-undef
+          globalSUPPLINKS[PA] = VA;
+          // eslint-disable-next-line no-undef
+          await db.updateConfig(globalSUPPLINKS);
+        }
       }
       ctx.reply(`ok ${PA}`);
     } catch (e) {
@@ -456,11 +464,13 @@ class BotHelper {
     }
   }
 
+  // eslint-disable-next-line class-methods-use-this
   async GetUserName(id) {
     const u = await db.GetUser(id, 'username');
     return u && u.username;
   }
 
+  // eslint-disable-next-line class-methods-use-this
   async GetLangUser(id) {
     const u = await db.GetUser(id, 'language_code');
     return u && u.language_code;
@@ -470,6 +480,7 @@ class BotHelper {
     return adm ? this.admPerPage : this.perPage;
   }
 
+  // eslint-disable-next-line class-methods-use-this
   setDist(_id, d) {
     return db.setField({_id}, 'dist', d);
   }
