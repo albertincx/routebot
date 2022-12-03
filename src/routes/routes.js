@@ -7,10 +7,32 @@ const Route = mongoose.model('Route');
 const passport = require('passport');
 const {getPoint} = require('../lib/utils');
 
+const getHour = v => {
+  const timestamp = Date.parse(v);
+  if (isNaN(timestamp) === false) {
+    const d = new Date(timestamp);
+    return parseFloat(`${d.getHours()}.${d.getMinutes()}`);
+  }
+  return;
+};
+
 const getData = body => {
   const update = _.pick(body, ['name', 'pointA', 'pointB']);
+  const hours = _.pick(body, ['hourA', 'hourB']);
   update.pointA = getPoint(update);
   update.pointB = getPoint(update, 'B');
+  if (hours.hourA) {
+    const v = getHour(hours.hourA);
+    if (v) {
+      update.hourA = v;
+    }
+  }
+  if (hours.hourB) {
+    const v = getHour(hours.hourB);
+    if (v) {
+      update.hourB = v;
+    }
+  }
   return update;
 };
 router.get(
@@ -32,23 +54,25 @@ router.get(
   '/',
   passport.authenticate('jwt', {session: false}),
   async (req, res) => {
-    const filter = {
-      userId: req.user.toJSON().userId,
-    };
     const {range = '[0,5]', filter: F} = req.query;
     const F2 = JSON.parse(F);
+
+    const filter = {
+      userId: req.user.toJSON().userId,
+      ..._.pick(F2, ['status', 'name']),
+    };
     const [skip, limit] = JSON.parse(range);
     const limit2 = limit + 1 - skip;
     const opts = {limit: limit2, skip};
-    if (F.match('point":true')) {
-      filter.pointA = {$exists: true};
-      filter.pointB = {$exists: true};
+    if (typeof F2.point !== 'undefined') {
+      filter.pointA = {$exists: F2.point};
+      filter.pointB = {$exists: F2.point};
     }
-    if (F2.q) {
-      filter.name = new RegExp(F2.q);
+    if (filter.name) {
+      filter.name = new RegExp(filter.name);
     }
     const countTotal = await Route.count(filter);
-    Route.find(filter, 'id name createdAt', opts).then(r =>
+    Route.find(filter, 'id name createdAt status', opts).then(r =>
       res
         .set('Content-Range', `items ${skip}-${limit2}/${countTotal}`)
         .status(200)

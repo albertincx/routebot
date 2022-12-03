@@ -56,8 +56,7 @@ router.post('/login', (req, res, next) => {
       let isValid;
       if (validTgUser) {
         isValid = true;
-      } else {
-        // Function defined at bottom of app.js
+      } else if (user.salt) {
         isValid = utils.validPassword(req.body.password, user.hash, user.salt);
       }
       if (isValid) {
