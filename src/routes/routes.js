@@ -7,31 +7,41 @@ const Route = mongoose.model('Route');
 const passport = require('passport');
 const {getPoint} = require('../lib/utils');
 
+const db = require('../api/utils/db');
+const {DIR_A, DIR_B} = require('../api/utils/db');
+const BotHelper = require('../api/routes/bot/route');
+
+const botHelper = new BotHelper();
+
+// eslint-disable-next-line consistent-return
 const getHour = v => {
   const timestamp = Date.parse(v);
+  // eslint-disable-next-line no-restricted-globals
   if (isNaN(timestamp) === false) {
     const d = new Date(timestamp);
     return parseFloat(`${d.getHours()}.${d.getMinutes()}`);
   }
-  return;
 };
 
 const getData = body => {
   const update = _.pick(body, ['name', 'pointA', 'pointB']);
-  const hours = _.pick(body, ['hourA', 'hourB']);
+  const additionals = _.pick(body, ['hourA', 'hourB', 'status']);
   update.pointA = getPoint(update);
   update.pointB = getPoint(update, 'B');
-  if (hours.hourA) {
-    const v = getHour(hours.hourA);
+  if (additionals.hourA) {
+    const v = getHour(additionals.hourA);
     if (v) {
       update.hourA = v;
     }
   }
-  if (hours.hourB) {
-    const v = getHour(hours.hourB);
+  if (additionals.hourB) {
+    const v = getHour(additionals.hourB);
     if (v) {
       update.hourB = v;
     }
+  }
+  if (typeof additionals.status !== 'undefined') {
+    update.status = additionals.status ? 1 : 0;
   }
   return update;
 };
@@ -72,7 +82,7 @@ router.get(
       filter.name = new RegExp(filter.name);
     }
     const countTotal = await Route.count(filter);
-    Route.find(filter, 'id name createdAt status', opts).then(r =>
+    Route.find(filter, 'id name createdAt status hourA hourB', opts).then(r =>
       res
         .set('Content-Range', `items ${skip}-${limit2}/${countTotal}`)
         .status(200)
@@ -97,17 +107,35 @@ router.post(
       return;
     }
     const update = getData(req.body);
-    const newRoute = new Route(update);
+    const {
+      // eslint-disable-next-line no-unused-vars
+      _id: routeId,
+      // eslint-disable-next-line no-unused-vars
+      id,
+      pointA,
+      pointB,
+      name,
+      ...newRoute
+    } = new Route(update).toJSON();
     newRoute.userId = userId;
-    // console.log(newRoute);
-    newRoute
-      .save()
-      .then(route => {
-        res.json(route);
-      })
-      .catch(err => {
-        res.json({success: false, message: err});
-      });
+    const routeData = {
+      ...newRoute,
+      userId,
+      category: 'Routes',
+      type: newRoute.type || 3,
+      status: 0,
+    };
+    try {
+      const {_id: rID} = await db.addRoute({userId}, {name});
+      await db.addRouteA(routeData, pointA, DIR_A, name);
+      // literally B
+      await db.addRouteA(routeData, pointB, DIR_B, name);
+      const route = await Route.find({userId, _id: rID.toHexString()});
+      res.json(route[0]);
+      // res.json({});
+    } catch (err) {
+      res.json({success: false, message: err});
+    }
   },
 );
 
@@ -118,12 +146,10 @@ router.put(
   async (req, res) => {
     const {userId} = req.user.toJSON();
     const {id: _id} = req.params;
-    const filter = {_id, userId};
     const update = getData(req.body);
     try {
-      await Route.updateOne(filter, update).then(() => {
-        res.json({...update, id: _id});
-      });
+      await botHelper.setFieldsRoute(userId, _id, update);
+      res.json({...update, id: _id});
     } catch (err) {
       res.json({success: false, message: err});
     }
@@ -137,10 +163,14 @@ router.delete(
   async (req, res) => {
     const {userId} = req.user.toJSON();
     const filter = {_id: req.params.id, userId};
+    const exists = await Route.findOne(filter, '_id');
+    if (!exists) {
+      res.json({});
+      return;
+    }
     try {
-      Route.deleteOne({...filter}).then(() => {
-        res.json({});
-      });
+      await db.deleteRoute(req.params.id);
+      res.json({});
     } catch (err) {
       res.json({success: false, msg: err});
     }

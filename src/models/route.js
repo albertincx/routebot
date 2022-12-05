@@ -34,6 +34,8 @@ Route.pre('save', function (next) {
   if (this.pointB) {
     this.pointB = getPoint(this, 'B');
   }
+  this.category = 'Routes';
+  this.status = this.status ? 1 : 0;
   next();
 });
 mongoose.model('Route', Route);

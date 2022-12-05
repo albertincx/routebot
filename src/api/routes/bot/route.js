@@ -239,7 +239,7 @@ class BotHelper {
         throw 'bounds';
       }
       const {id: userId} = from;
-      const {routes, type} = await db.GetUser(userId, 'routes type');
+      const {routes, type, name} = await db.GetUser(userId, 'routes type name');
       const loc = {
         type: 'Point',
         coordinates: location,
@@ -259,7 +259,7 @@ class BotHelper {
       if (routes === 1) {
         keyb = keyboards.nextProcess(2, lang);
         txt = messages.point(2, lang);
-        await db.addRouteA(routeData, loc);
+        await db.addRouteAFirst(routeData, loc, name);
       }
       let lastUpdatedId = '';
       if (routes === 2) {
@@ -267,6 +267,7 @@ class BotHelper {
         const {routes: notifyRoutes, lastUpdatedId: lId} = await db.addRouteB(
           routeData,
           loc,
+          name,
         );
         lastUpdatedId = lId;
         if (Array.isArray(notifyRoutes) && notifyRoutes.length) {
@@ -345,6 +346,15 @@ class BotHelper {
     const upd = {[field]: st};
     if (field === 'status') {
       upd.notify = st;
+    }
+    await db.statusRoute(userId, _id, upd);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async setFieldsRoute(userId, _id, upd) {
+    if (typeof upd.status !== 'undefined') {
+      // eslint-disable-next-line no-param-reassign
+      upd.notify = upd.status;
     }
     await db.statusRoute(userId, _id, upd);
   }

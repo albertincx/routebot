@@ -1,12 +1,12 @@
+const fs = require('fs');
 const passport = require('passport');
 const router = require('express').Router();
-const fs = require('fs');
 
 require('../models/route');
 
 router.use('/users', require('./users'));
 router.use('/routes', require('./routes'));
-// router.use('/search', require('./search'));
+router.use('/search', require('./search'));
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 const filepath = 'update.txt';

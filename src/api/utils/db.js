@@ -1,29 +1,14 @@
-const co = require('co');
 const mongoose = require('mongoose');
+require('../../models/any');
 
-const {showError} = require('./index');
-
-const anySchema = new mongoose.Schema(
-  {},
-  {
-    timestamps: {createdAt: true, updatedAt: false},
-    strict: false,
-  },
-);
-
-anySchema.method({
-  transform() {
-    return this.toObject();
-  },
-});
-const Any = mongoose.model('Any', anySchema);
+const Any = mongoose.model('Any');
 
 const USERS = process.env.MONGO_COLL_USERS || 'users';
 const ROUTES = process.env.MONGO_COLL_ROUTES || 'routes';
-const SUBS = process.env.MONGO_COLL_SUBS || 'subscriptions';
 const REQUESTS = process.env.MONGO_COLL_REQ || 'requests';
 const ROUTES_B = process.env.MONGO_COLL_ROUTES_B || 'routes_bs';
 const CONFIGS = process.env.MONGO_COLL_CONGIFS_B || 'configs';
+
 global.connCbTest = () => {
   const col = Any.collection.conn.model(CONFIGS, Any.schema);
   col.find({glob: 'glob'}).then(rows => {
@@ -40,28 +25,12 @@ global.connCbTest = () => {
     }
   });
 };
-const collsSystem = [REQUESTS, CONFIGS];
 
-const connectDb = () =>
-  mongoose.createConnection(process.env.MONGO_URI_SECOND, {
-    keepAlive: 1,
-    connectTimeoutMS: 30000,
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-const connectDb2 = () =>
-  mongoose.createConnection(process.env.MONGO_URI23, {
-    keepAlive: 1,
-    connectTimeoutMS: 30000,
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+const collsSystem = [REQUESTS, CONFIGS];
 
 const usersCol = Any.collection.conn.model(USERS, Any.schema);
 const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
-const reqCol = Any.collection.conn.model(REQUESTS, Any.schema);
 const routesBCol = Any.collection.conn.model(ROUTES_B, Any.schema);
-const subsCol = Any.collection.conn.model(SUBS, Any.schema);
 
 const DIR_A = 'pointA';
 const DIR_B = 'pointB';
@@ -86,18 +55,6 @@ const groupUsers = field =>
       },
     },
   ]);
-const statAll = async () => {
-  const c = await routesCol.countDocuments({});
-  const ca = await routesCol.countDocuments({status: 1});
-  const u = await usersCol.countDocuments({});
-  const r = await reqCol.countDocuments({});
-  return {
-    all: c,
-    active: ca,
-    users: u,
-    req: r,
-  };
-};
 
 const statAllLang = async () => {
   const u2 = await groupUsers('$language_code');
@@ -108,175 +65,6 @@ const statAllLang = async () => {
     });
   }
   return txt;
-};
-
-const processRows = async (cc, limit, timeout, cb) => {
-  let items = [];
-  if (!cb) {
-    return;
-  }
-  // eslint-disable-next-line func-names
-  await co(function* () {
-    for (let doc = yield cc.next(); doc != null; doc = yield cc.next()) {
-      const item = doc.toObject();
-      if (items.length === limit) {
-        try {
-          yield cb(items);
-        } catch (e) {
-          showError(e);
-        }
-        items = [];
-        if (timeout) {
-          // eslint-disable-next-line no-promise-executor-return
-          yield new Promise(resolve => setTimeout(() => resolve(), timeout));
-        }
-      }
-      items.push(item);
-    }
-  });
-  if (items.length) {
-    try {
-      await cb(items);
-    } catch (e) {
-      showError(e);
-    }
-  }
-};
-
-const getCids = txt => {
-  let l = txt.match(/r_c_id_([0-9_-]+)/);
-  if (l && l[1]) l = l[1].split('_').map(Number);
-  return l || [];
-};
-
-const createBroadcast = async (ctx, txt) => {
-  const [cId] = getCids(txt);
-  if (!cId) {
-    return ctx.reply('broad completed no id');
-  }
-  const connSecond = connectDb2();
-  const messCol = Any.collection.conn.model('messages', Any.schema);
-  const model = connSecond.model('broadcasts', Any.schema);
-  const filter = {};
-  if (process.env.DEV) {
-    // filter.username = {$in: ['safiullin']};
-  }
-  // await model.updateMany(
-  //   {cId: 10, error: /:429/},
-  //   {$unset: {sent: '', error: ''}},
-  // );
-  /* await model.updateMany({ cId: 10, code: 403 },
-    { $unset: { sent: '', error: '', code:'' } }); */
-  const cursor = messCol.find(filter).cursor();
-  await processRows(cursor, 500, 10, items => {
-    const updates = [];
-    items.forEach(({id}) => {
-      updates.push({
-        updateOne: {
-          filter: {id, cId, sent: {$exists: false}},
-          update: {id, cId},
-          upsert: true,
-        },
-      });
-    });
-    return updates.length ? model.bulkWrite(updates) : null;
-  });
-  ctx.reply('broad completed');
-  return connSecond.close();
-};
-
-const startBroadcast = async (ctx, txtParam, bot) => {
-  const [cId, Mid, FromId, isChannel, SecondMid] = getCids(txtParam);
-  if (!cId) {
-    return ctx.reply('broad completed no id');
-  }
-  const result = {err: 0, success: 0};
-  let model;
-  let connSecond;
-
-  if (process.env.DEV) {
-    connSecond = connectDb();
-    model = connSecond.model('broadcasts', Any.schema);
-  } else {
-    model = Any.collection.conn.model('broadcasts', Any.schema);
-  }
-
-  const filter = {sent: {$exists: false}, cId};
-  const sendCmd = Mid ? 'forward' : 'sendAdmin';
-  const cursor = model.find(filter).limit(800).cursor();
-  let breakProcess = false;
-  await processRows(cursor, 5, 500, async items => {
-    if (breakProcess) {
-      return;
-    }
-    const success = [];
-    try {
-      for (let i = 0; i < items.length; i += 1) {
-        if (breakProcess) {
-          break;
-        }
-        const {_id, id} = items[i];
-        let runCmd;
-        if (Mid) {
-          runCmd = () => bot[sendCmd](Mid, FromId * (isChannel ? -1 : 1), id);
-        } else {
-          runCmd = () =>
-            bot[sendCmd](txtParam.replace(/(\s|_)?r_c_id_(.*?)\s/, ''), id);
-        }
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          await runCmd();
-          if (SecondMid) {
-            const runCmd2 = () =>
-              bot[sendCmd](SecondMid, FromId * (isChannel ? -1 : 1), id);
-            // eslint-disable-next-line no-await-in-loop
-            await runCmd2();
-          }
-          success.push({
-            updateOne: {
-              filter: {_id},
-              update: {sent: true},
-            },
-          });
-          result.success += 1;
-        } catch (e) {
-          if (e.code === 429) {
-            breakProcess = JSON.stringify(e);
-          }
-          result.err += 1;
-          success.push({
-            updateOne: {
-              filter: {_id},
-              update: {
-                sent: true,
-                error: JSON.stringify(e),
-                code: e.code,
-              },
-            },
-          });
-        }
-      }
-    } catch (e) {
-      if (
-        e.code === 429 &&
-        e.response.parameters &&
-        e.response.parameters.retry_after
-      ) {
-        // await timeout(e.response.parameters.retry_after);
-      }
-      if (e.code === 429) {
-        breakProcess = JSON.stringify(e);
-      }
-    }
-    if (success.length) {
-      await model.bulkWrite(success);
-    }
-  });
-  const r = `${JSON.stringify(result)}`;
-  if (connSecond) {
-    await connSecond.close();
-  }
-  return ctx.reply(`broad completed: ${r} with ${breakProcess || ''}`);
 };
 
 const updateOne = (userId, collection = usersCol) => {
@@ -341,23 +129,17 @@ const updateUser = async (u, collection = usersCol) => {
   return (await getFromCollection({userId: id}, collection, false)) || {};
 };
 
-const setRequest = async (reqData, collection = reqCol) => {
-  // eslint-disable-next-line no-param-reassign
-  await collection.updateOne(reqData, reqData, {upsert: true});
-};
-
 const setField = async (filter, field, data, collection = routesCol) => {
   // eslint-disable-next-line no-param-reassign
   await collection.updateOne(filter, {[field]: data}, {upsert: true});
 };
 
-// eslint-disable-next-line consistent-return
-const addRouteA = async (data, loc, dir = DIR_A) => {
+const addRouteAFirst = async (data, loc, name = '') =>
+  addRouteA(data, loc, DIR_A, name);
+const addRouteA = async (data, loc, dir = DIR_A, name = '') => {
   const saveRoute = {...data};
   saveRoute[dir] = loc;
   const {userId} = data;
-  const u = await GetUser(userId, 'name');
-  const {name} = u;
   const routes = dir === DIR_B ? 3 : 2;
   const res = await addRoute({userId, name}, saveRoute, routes);
   let lastUpdatedId = '';
@@ -378,8 +160,10 @@ const addRouteA = async (data, loc, dir = DIR_A) => {
     }
     return {lastUpdatedId};
   }
+  return res._id;
 };
-const addRouteB = (userId, loc) => addRouteA(userId, loc, DIR_B);
+
+const addRouteB = (data, loc, name) => addRouteA(data, loc, DIR_B, name);
 
 const addRoute = async (
   filter,
@@ -409,13 +193,6 @@ const addRoute = async (
   await usersCol.updateOne({userId: filter.userId}, upd, {upsert: true});
   return res;
 };
-const addSubscription = async (d, collection = subsCol) => {
-  const filter = {from: d.from, routeId: d.routeId};
-  return collection.findOneAndUpdate(filter, d, {
-    upsert: true,
-    new: true,
-  });
-};
 
 const stopAll = userId => routesCol.updateMany({userId}, {status: 0});
 const routesCnt = f => stat(f);
@@ -433,7 +210,7 @@ const getNear = (route, dir = DIR_A) => {
         coordinates: coord(route, dir),
       },
       distanceField: 'dist.calculated',
-      maxDistance: dist || 400,
+      maxDistance: dist || 900,
       query: {category: 'Routes'},
       spherical: true,
     },
@@ -542,22 +319,8 @@ const getRoutes = (filter, pageP, perPage) => {
   const startIndex = (page - 1) * limit;
   return routesCol.find(filter).skip(startIndex).limit(limit);
 };
-const subscribers = async (_id, cb) => {
-  const filter = {routeId: _id};
-  const cursor = subsCol.find(filter).cursor();
-  await processRows(cursor, 500, 10, cb);
-};
 const getRoute = (filter, project = null) =>
   getFromCollection(filter, routesCol, false, project);
-
-const getRequest = async (reqData, n, project = '_id') => {
-  const coll = !n ? reqCol : subsCol;
-  const r = await getFromCollection(reqData, coll, false, project);
-  if (!r) {
-    await setRequest(reqData);
-  }
-  return r;
-};
 
 const getActiveCnt = userId =>
   routesCol.countDocuments({userId, status: {$ne: 0}});
@@ -577,6 +340,7 @@ async function deleteRoute(_id) {
 
 async function deleteMany(filter, collId) {
   if (!collId || !collsSystem[collId]) {
+    // eslint-disable-next-line no-throw-literal
     throw 'not found col';
   }
   const col = Any.collection.conn.model(collsSystem[collId], Any.schema);
@@ -585,17 +349,20 @@ async function deleteMany(filter, collId) {
 
 function updateConfig(data, collId = '1') {
   if (!collId || !collsSystem[collId]) {
+    // eslint-disable-next-line no-throw-literal
     throw 'not found col';
   }
   const col = Any.collection.conn.model(collsSystem[collId], Any.schema);
   return col.updateOne({glob: 'glob'}, data, {upsert: true});
 }
 
+module.exports.DIR_A = DIR_A;
+module.exports.DIR_B = DIR_B;
+
 module.exports.stat = stat;
 module.exports.updateOne = updateOne;
 module.exports.GetUser = GetUser;
-module.exports.createBroadcast = createBroadcast;
-module.exports.startBroadcast = startBroadcast;
+
 module.exports.updateUser = updateUser;
 module.exports.addRoute = addRoute;
 module.exports.addRouteA = addRouteA;
@@ -609,13 +376,11 @@ module.exports.statusRoute = statusRoute;
 module.exports.getRoute = getRoute;
 module.exports.checkUser = checkUser;
 module.exports.getRoutesNear = getRoutesNear;
-module.exports.getRequest = getRequest;
 module.exports.deleteRoute = deleteRoute;
-module.exports.subscribers = subscribers;
-module.exports.addSubscription = addSubscription;
 module.exports.updateRoutes = updateRoutes;
 module.exports.deleteMany = deleteMany;
 module.exports.updateConfig = updateConfig;
-module.exports.statAll = statAll;
 module.exports.statAllLang = statAllLang;
 module.exports.setField = setField;
+module.exports.addRouteAFirst = addRouteAFirst;
+module.exports.getFromCollection = getFromCollection;
