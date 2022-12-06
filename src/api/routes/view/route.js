@@ -1,15 +1,7 @@
 const messages = require('../../../messages/format');
 
-const showAdmin = (pointA, pointB) => {
-  const loc1 = `${pointA.coordinates[0]},${pointA.coordinates[1]}`;
-  const loc2 = `${pointB.coordinates[0]},${pointB.coordinates[1]}`;
-  return `
-  https://routing.openstreetmap.de/?z=10&center=${loc1}&loc=${loc1}&loc=${loc2}&hl=en&alt=0&srv=1
-  `;
-};
-
 function printRouteOne1(r, lang, isEdit = false) {
-  const {name, status, notify, pointA, pointB, hourA, hourB, type} = r;
+  const {name, status, notify, pointA, pointB, hourA, hourB, type, _id} = r;
   const statu = messages.showStatus(status, lang, messages.icon(status));
   const notif = messages.showStatus(notify, lang, messages.icon(notify));
   let txt = `
@@ -31,7 +23,10 @@ ${messages.labelTimeA(lang)}: ${messages.showHour(lang, hourA, true)}
 ${messages.labelTimeB(lang)}: ${messages.showHour(lang, hourB, true)}`;
   }
   if (pointA && pointB) {
-    txt += showAdmin(pointA, pointB);
+    txt += `
+
+[Show route on Route.cab](https://web.route.cab/#/show/${_id}) 
+  `;
   }
   return txt;
 }

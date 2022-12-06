@@ -1,12 +1,15 @@
 const fs = require('fs');
 const passport = require('passport');
 const router = require('express').Router();
+const mongoose = require('mongoose');
 
 require('../models/route');
 
 router.use('/users', require('./users'));
 router.use('/routes', require('./routes'));
 router.use('/search', require('./search'));
+
+const Route = mongoose.model('Route');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 const filepath = 'update.txt';
@@ -33,5 +36,16 @@ router.get(
     });
   },
 );
-
+router.get(
+  '/show/:id',
+  passport.authenticate('jwt', {session: false}),
+  (req, res) => {
+    const filter = {_id: req.params.id};
+    Route.findOne(filter, '_id pointA pointB')
+      .then(r => res.status(200).json(r))
+      .catch(err => {
+        res.json({success: false, message: err});
+      });
+  },
+);
 module.exports = router;
