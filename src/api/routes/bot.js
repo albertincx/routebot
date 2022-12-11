@@ -123,6 +123,15 @@ const botRoute = (bot, conn) => {
       botHelper.sendAdmin(`time: ${updTime}`);
     }
   });
+  bot.command('restartFormat', ({message}) => {
+    if (botHelper.isAdmin(message.chat.id)) {
+      // eslint-disable-next-line global-require
+      const {spawn} = require('child_process');
+      const rest = spawn('pm2', ['restart', 'Format']);
+      rest.stdout.pipe(process.stdin);
+      botHelper.sendAdmin('restarted');
+    }
+  });
   route(bot, botHelper, startOrHelp);
   bot.launch();
 
