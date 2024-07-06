@@ -55,7 +55,9 @@ router.post('/login', (req, res, next) => {
         if (uu.id !== TG_ADMIN) {
           throw 'no access';
         }
-        if (uu) u = uu;
+        if (uu) {
+          u = uu;
+        }
         hasHash = true;
       } catch (e) {
         validTgUser = false;
@@ -65,7 +67,7 @@ router.post('/login', (req, res, next) => {
   }
   User.findOne({username: u.username})
     .then(async user => {
-      if (hasHash && !user) {
+      if (validTgUser && hasHash && !user) {
         await db.updateUser(u);
         // eslint-disable-next-line no-param-reassign
         user = u;
@@ -74,14 +76,10 @@ router.post('/login', (req, res, next) => {
         res.status(401).json({success: false, msg: 'could not find user'});
         return;
       }
-      let isValid;
+
       if (validTgUser) {
-        isValid = true;
-      } else if (user.salt) {
-        isValid = utils.validPassword(req.body.password, user.hash, user.salt);
-      }
-      if (isValid) {
         const tokenObject = utils.issueJWT(user);
+
         res.status(200).json({
           success: true,
           token: tokenObject.token,
