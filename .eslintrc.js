@@ -4,7 +4,7 @@ module.exports = {
     es6: true,
     node: true,
   },
-  extends: ['prettier', 'plugin:prettier/recommended', 'airbnb-base'],
+  extends: ['airbnb-base'],
   globals: {
     Atomics: 'readonly',
     SharedArrayBuffer: 'readonly',
@@ -15,7 +15,6 @@ module.exports = {
     ecmaVersion: 2018,
     sourceType: 'module',
   },
-  plugins: ['prettier'],
   rules: {
     'operator-linebreak': 0,
     'implicit-arrow-linebreak': 0,
@@ -32,23 +31,5 @@ module.exports = {
     'no-unused-vars': ['error', {argsIgnorePattern: 'next'}],
     'no-use-before-define': ['error', {variables: false}],
     'no-multi-str': 0,
-    'prettier/prettier': [
-      'error',
-      {
-        printWidth: 80,
-        tabWidth: 2,
-        useTabs: false,
-        semi: true,
-        singleQuote: true,
-        jsxSingleQuote: true,
-        trailingComma: 'all',
-        bracketSpacing: false,
-        arrowParens: 'avoid',
-        rangeStart: 0,
-        requirePragma: false,
-        insertPragma: false,
-        proseWrap: 'always',
-      },
-    ],
   },
 };

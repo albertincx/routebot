@@ -1,18 +1,5 @@
 const {validate} = require('@tma.js/init-data-node');
 
-const validateTmaAuth = authData => {
-  let result = false;
-
-  try {
-    validate(authData, process.env.TBTKN);
-    result = true;
-  } catch (e) {
-    console.error(e);
-  }
-
-  return result;
-};
-
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 
 const auth = (req, res, next) => {
@@ -47,6 +34,5 @@ const auth = (req, res, next) => {
 };
 
 module.exports = {
-  validateTmaAuth,
   auth,
 };
