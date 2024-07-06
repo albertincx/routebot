@@ -35,6 +35,10 @@ const auth = (req, res, next) => {
     console.log(validTgUser);
     if (validTgUser) {
       next();
+    } else {
+      res.status(401).json({
+        error: new Error('Invalid request!'),
+      });
     }
   } catch (e) {
     res.status(401).json({
