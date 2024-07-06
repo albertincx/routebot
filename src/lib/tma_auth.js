@@ -2,6 +2,22 @@ const {validate} = require('@tma.js/init-data-node');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 
+const validateTmaAuth = (initData) => {
+  let result = false;
+
+  try {
+    validate(initData, process.env.TBTKN);
+    result = true;
+  } catch (e) {
+    // console.error("---tma_auth----");
+    // console.error(new Date());
+    // console.error(e);
+    // console.error(requestBody);
+    // console.error("---------------");
+  }
+  return result;
+};
+
 const auth = (req, res, next) => {
   try {
     let authData = req.body.query;
@@ -11,8 +27,7 @@ const auth = (req, res, next) => {
         authData = authHeader.split(' ')[1];
       }
     }
-    validate(authData, process.env.TBTKN);
-    let validTgUser = true;
+    let validTgUser = validateTmaAuth(authData);
     try {
       const url = new URL(`https://test/?${authData}`).searchParams.get('user');
       const parsedUser = JSON.parse(url);
