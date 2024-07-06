@@ -30,6 +30,7 @@ function checkHash(checkStr) {
   // eslint-disable-next-line no-undef
   return createHmac('sha256', key).update(checkStr).digest('hex');
 }
+const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 
 // Validate an existing user and issue a JWT
 router.post('/login', (req, res, next) => {
@@ -49,7 +50,7 @@ router.post('/login', (req, res, next) => {
       const uu = JSON.parse(
         new URL(`https://test/?${u.query}`).searchParams.get('user'),
       );
-      if (uu.id !== TGADMIN) {
+      if (uu.id !== TG_ADMIN) {
         throw 'no access';
       }
       if (uu) u = uu;
