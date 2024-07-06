@@ -7,43 +7,42 @@ const validateTmaAuth = authData => {
     validate(authData, process.env.TBTKN);
     result = true;
   } catch (e) {
-    // console.error(e);
+    console.error(e);
   }
 
-  return !!process.env.DEV || result;
+  return result;
 };
+
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 
 const auth = (req, res, next) => {
   try {
     const authData = req.body.query || req.headers.authorization.split(' ')[1];
-    validateTmaAuth(authData);
+    validate(authData, process.env.TBTKN);
     let validTgUser = true;
     try {
-      const uu = JSON.parse(
-        new URL(`https://test/?${authData}`).searchParams.get('user'),
-      );
-      if (uu.id !== TG_ADMIN) {
-        throw 'no access';
+      const url = new URL(`https://test/?${authData}`).searchParams.get('user');
+      const parsedUser = JSON.parse(url);
+
+      if (parsedUser.id !== TG_ADMIN) {
+        res.status(401).json({
+          error: new Error('Invalid request!'),
+        });
+      } else {
+        req.user = parsedUser;
       }
-      req.user = uu;
-      // hasHash = true;
     } catch (e) {
       validTgUser = false;
-      console.log(e);
     }
-    console.log(validTgUser);
     if (validTgUser) {
       next();
     } else {
-      res.status(401).json({
+      res.status(403).json({
         error: new Error('Invalid request!'),
       });
     }
   } catch (e) {
-    res.status(401).json({
-      error: new Error('Invalid request!'),
-    });
+    next(e);
   }
 };
 

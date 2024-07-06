@@ -443,11 +443,6 @@ class BotHelper {
     return db.subscribers(_id, this.notifyUsersDelCb);
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  async jobMessage(task) {
-    console.log('from rab', task);
-  }
-
   async clearReq(ctx) {
     try {
       const [, collId] = ctx.message.text.split('/clearreq_');
