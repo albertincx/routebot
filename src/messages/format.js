@@ -246,7 +246,7 @@ ${getENV(getLangLast(l, 'CREATE_TXT_L'))}`,
   sendRequest: l => getLang(l, 'SEND_R'),
   sendRequest3: l => getLang(l, 'SEND_R3'),
   sendRequestNotify: l => getLang(l, 'SEND_RNOTIFY'),
-  routeExists: l => getLang(l, 'ROUTE_EX'),
+  routeExists: l => `❗️ ${getLang(l, 'ROUTE_EX')}`,
   icon: s => `${s === 0 || !s ? '🔴' : '🟢'}`,
   support: links => {
     let s = 'For support:';

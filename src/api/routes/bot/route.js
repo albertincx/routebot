@@ -13,10 +13,12 @@ function checkLocLong(l) {
   const val = parseFloat(l);
   return !Number.isNaN(val) && val <= 180 && val >= -180;
 }
+
 function checkLocLat(l) {
   const val = parseFloat(l);
   return !Number.isNaN(val) && val <= 90 && val >= -90;
 }
+
 function checkLocation(loc) {
   return checkLocLong(loc[0]) && checkLocLat(loc[1]);
 }
@@ -84,19 +86,19 @@ class BotHelper {
 
     const exists = await db.getRoute({userId, name});
     let txt;
+    let txtMessage;
     let keyb;
     if (!exists) {
       keyb = keyboards.nextProcess(1, lang);
       txt = messages.point(1, lang);
       await db.addRoute({userId}, {name});
     } else {
-      const txt1 = messages.routeExists(lang);
-      await ctx.reply(txt1);
+      txtMessage = messages.routeExists(lang);
       txt = messages.driverStartNewRoute(lang);
       keyb = keyboards.fr();
     }
     try {
-      ctx.reply(txt, keyb);
+      ctx.reply(`${txtMessage ? `${txtMessage}\n` : ''}${txt}`, keyb);
     } catch (e) {
       this.sendError(e, 'nextProcessName');
     }

@@ -65,7 +65,12 @@ router.get(
   passport.authenticate('jwt', {session: false}),
   async (req, res) => {
     const {range = '[0,5]', filter: F} = req.query;
-    const F2 = JSON.parse(F);
+    let F2 = {};
+    try {
+      F2 = JSON.parse(F);
+    } catch (e) {
+      //
+    }
 
     const filter = {
       userId: req.user.toJSON().userId,

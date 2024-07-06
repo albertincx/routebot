@@ -5,6 +5,7 @@ const {createHmac, createHash} = require('node:crypto');
 const User = mongoose.model('User');
 const utils = require('../lib/utils');
 const db = require('../api/utils/db');
+const {validateTmaAuth} = require('../lib/tma_auth');
 
 function genChkString(dataCheck) {
   let res = '';
@@ -32,19 +33,34 @@ function checkHash(checkStr) {
 
 // Validate an existing user and issue a JWT
 router.post('/login', (req, res, next) => {
-  const u = req.body;
+  let u = req.body;
   let validTgUser = false;
-  if (u.hash) {
+  let hasHash = u.hash;
+  if (hasHash) {
     const checkedHash = checkHash(genChkString(u));
     if (!checkedHash || checkedHash !== u.hash) {
       res.status(401).json({success: false, msg: 'could not find user'});
       return;
     }
     validTgUser = true;
+  } else if (u.query) {
+    validTgUser = validateTmaAuth(u);
+    try {
+      const uu = JSON.parse(
+        new URL(`https://test/?${u.query}`).searchParams.get('user'),
+      );
+      if (uu.id !== TGADMIN) {
+        throw 'no access';
+      }
+      if (uu) u = uu;
+      hasHash = true;
+    } catch (e) {
+      console.log(e);
+    }
   }
   User.findOne({username: u.username})
     .then(async user => {
-      if (u.hash && !user) {
+      if (hasHash && !user) {
         await db.updateUser(u);
         // eslint-disable-next-line no-param-reassign
         user = u;
