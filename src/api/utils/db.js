@@ -262,7 +262,6 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
   if ($project && $project.userId) {
     $aMatch.notify = 1;
   }
-  // console.log($aMatch);
   const {MAX_POINT_A_CNT: l} = constants;
   const pipeline = getPipeline(route, $aMatch, 0, l);
   const aggr = await routesCol.aggregate(pipeline);
@@ -281,7 +280,6 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
       pointAId: {$in: pointAIds},
     };
     pointBMatch.hourB = {$gte: route.hourB - 2};
-    // console.log(pointBMatch);
     const pipelineB = getPipeline(route, pointBMatch, skip, limit, DIR_B, {
       name: 1,
       pointAId: 1,

@@ -35,10 +35,8 @@ router.post('/login', (req, res, next) => {
   let u = req.user;
   User.findOne({username: u.username})
     .then(async user => {
-      console.log(user);
       if (!user) {
         await db.updateUser(u);
-        // eslint-disable-next-line no-param-reassign
         user = u;
       }
       if (!user) {

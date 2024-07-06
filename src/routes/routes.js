@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
   if (filter.name) {
     filter.name = new RegExp(filter.name);
   }
-  const countTotal = await Route.count(filter);
+  const countTotal = await Route.countDocuments(filter);
   Route.find(filter, 'id name createdAt status hourA hourB', opts).then(r =>
     res
       .set('Content-Range', `items ${skip}-${limit2}/${countTotal}`)
