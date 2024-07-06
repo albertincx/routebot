@@ -4,8 +4,8 @@ const validateTmaAuth = requestBody => {
   let result = false;
 
   try {
-    result = validate(requestBody.query, process.env.TBTKN);
-    // result = true;
+    validate(requestBody.query, process.env.TBTKN);
+    result = true;
   } catch (e) {
     // console.error(e);
   }
