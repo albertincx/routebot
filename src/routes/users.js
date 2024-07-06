@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const router = require('express')
-  .Router();
+const router = require('express').Router();
 const {createHmac, createHash} = require('node:crypto');
 
 const User = mongoose.model('User');
@@ -27,13 +26,9 @@ function genChkString(dataCheck) {
 
 function checkHash(checkStr) {
   // eslint-disable-next-line no-undef
-  const key = createHash('sha256')
-    .update(process.env.TBTKN)
-    .digest();
+  const key = createHash('sha256').update(process.env.TBTKN).digest();
   // eslint-disable-next-line no-undef
-  return createHmac('sha256', key)
-    .update(checkStr)
-    .digest('hex');
+  return createHmac('sha256', key).update(checkStr).digest('hex');
 }
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
@@ -46,8 +41,7 @@ router.post('/login', (req, res, next) => {
   if (hasHash) {
     const checkedHash = checkHash(genChkString(u));
     if (!checkedHash || checkedHash !== u.hash) {
-      res.status(401)
-        .json({success: false, msg: 'could not find user'});
+      res.status(401).json({success: false, msg: 'could not find user'});
       return;
     }
     validTgUser = true;
@@ -77,8 +71,7 @@ router.post('/login', (req, res, next) => {
         user = u;
       }
       if (!user) {
-        res.status(401)
-          .json({success: false, msg: 'could not find user'});
+        res.status(401).json({success: false, msg: 'could not find user'});
         return;
       }
       let isValid;
@@ -89,12 +82,11 @@ router.post('/login', (req, res, next) => {
       }
       if (isValid) {
         const tokenObject = utils.issueJWT(user);
-        res.status(200)
-          .json({
-            success: true,
-            token: tokenObject.token,
-            expiresIn: tokenObject.expires,
-          });
+        res.status(200).json({
+          success: true,
+          token: tokenObject.token,
+          expiresIn: tokenObject.expires,
+        });
       } else {
         res
           .status(401)
@@ -115,10 +107,9 @@ router.post('/register', (req, res) => {
   const newUser = new User({username: req.body.username, hash, salt});
 
   try {
-    newUser.save()
-      .then(user => {
-        res.json({success: true, user});
-      });
+    newUser.save().then(user => {
+      res.json({success: true, user});
+    });
   } catch (err) {
     res.json({success: false, msg: err});
   }
