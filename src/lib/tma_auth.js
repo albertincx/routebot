@@ -33,7 +33,7 @@ const auth = (req, res, next) => {
       const parsedUser = JSON.parse(url);
 
       if (parsedUser.id !== TG_ADMIN) {
-        res.status(401)
+        res.status(403)
           .json({
             error: new Error('Invalid request!'),
           });
@@ -46,7 +46,7 @@ const auth = (req, res, next) => {
     if (validTgUser) {
       next();
     } else {
-      res.status(403)
+      res.status(401)
         .json({
           error: new Error('Invalid request!'),
         });
