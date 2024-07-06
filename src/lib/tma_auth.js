@@ -4,7 +4,13 @@ const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 
 const auth = (req, res, next) => {
   try {
-    const authData = req.body.query || req.headers.authorization.split(' ')[1];
+    let authData = req.body.query;
+    if (!authData) {
+      let authHeader = req.headers.authorization;
+      if (authHeader) {
+        authData = authHeader.split(' ')[1];
+      }
+    }
     validate(authData, process.env.TBTKN);
     let validTgUser = true;
     try {
@@ -12,9 +18,10 @@ const auth = (req, res, next) => {
       const parsedUser = JSON.parse(url);
 
       if (parsedUser.id !== TG_ADMIN) {
-        res.status(401).json({
-          error: new Error('Invalid request!'),
-        });
+        res.status(401)
+          .json({
+            error: new Error('Invalid request!'),
+          });
       } else {
         req.user = parsedUser;
       }
@@ -24,9 +31,10 @@ const auth = (req, res, next) => {
     if (validTgUser) {
       next();
     } else {
-      res.status(403).json({
-        error: new Error('Invalid request!'),
-      });
+      res.status(403)
+        .json({
+          error: new Error('Invalid request!'),
+        });
     }
   } catch (e) {
     next(e);
