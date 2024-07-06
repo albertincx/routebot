@@ -1,7 +1,7 @@
 {
   "name": "routecab",
   "version": "1.2.0",
-  "description": "Telegram Bot For InstantView",
+  "description": "Telegram Bot For RouteCabBot",
   "author": "Al <albertincx@gmail.com>",
   "main": "src/index.js",
   "private": false,
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:/albertincx/formatbot1.git"
+    "url": "git@github.com:/albertincx/routecab.git"
   },
   "keywords": [
     "nodejs",
