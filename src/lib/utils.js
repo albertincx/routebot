@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const jsonwebtoken = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 

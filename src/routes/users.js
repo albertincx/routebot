@@ -5,7 +5,6 @@ const {createHmac, createHash} = require('node:crypto');
 const User = mongoose.model('User');
 const utils = require('../lib/utils');
 const db = require('../api/utils/db');
-const {validateTmaAuth} = require('../lib/tma_auth');
 
 function genChkString(dataCheck) {
   let res = '';
@@ -31,43 +30,13 @@ function checkHash(checkStr) {
   return createHmac('sha256', key).update(checkStr).digest('hex');
 }
 
-const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
-
 // Validate an existing user and issue a JWT
 router.post('/login', (req, res, next) => {
-  let u = req.body;
-  let validTgUser = false;
-  let hasHash = u.hash;
-  if (hasHash) {
-    const checkedHash = checkHash(genChkString(u));
-    if (!checkedHash || checkedHash !== u.hash) {
-      res.status(401).json({success: false, msg: 'could not find user'});
-      return;
-    }
-    validTgUser = true;
-  } else if (u.query) {
-    validTgUser = validateTmaAuth(u);
-    if (validTgUser) {
-      try {
-        const uu = JSON.parse(
-          new URL(`https://test/?${u.query}`).searchParams.get('user'),
-        );
-        if (uu.id !== TG_ADMIN) {
-          throw 'no access';
-        }
-        if (uu) {
-          u = uu;
-        }
-        hasHash = true;
-      } catch (e) {
-        validTgUser = false;
-        console.log(e);
-      }
-    }
-  }
+  let u = req.user;
   User.findOne({username: u.username})
     .then(async user => {
-      if (validTgUser && hasHash && !user) {
+      console.log(user);
+      if (!user) {
         await db.updateUser(u);
         // eslint-disable-next-line no-param-reassign
         user = u;
@@ -76,20 +45,9 @@ router.post('/login', (req, res, next) => {
         res.status(401).json({success: false, msg: 'could not find user'});
         return;
       }
-
-      if (validTgUser) {
-        const tokenObject = utils.issueJWT(user);
-
-        res.status(200).json({
-          success: true,
-          token: tokenObject.token,
-          expiresIn: tokenObject.expires,
-        });
-      } else {
-        res
-          .status(401)
-          .json({success: false, msg: 'you entered the wrong password'});
-      }
+      res.status(200).json({
+        success: true,
+      });
     })
     .catch(err => {
       next(err);

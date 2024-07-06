@@ -4,7 +4,6 @@ const router = require('express').Router();
 
 const Route = mongoose.model('Route');
 
-const passport = require('passport');
 const {getPoint} = require('../lib/utils');
 
 const db = require('../api/utils/db');
@@ -45,63 +44,54 @@ const getData = body => {
   }
   return update;
 };
-router.get(
-  '/:id',
-  passport.authenticate('jwt', {session: false}),
-  (req, res) => {
-    const filter = {
-      userId: req.user.toJSON().userId,
-      _id: req.params.id,
-    };
-    Route.find(filter)
-      .then(r => res.status(200).json(r[0]))
-      .catch(err => {
-        res.json({success: false, message: err});
-      });
-  },
-);
-router.get(
-  '/',
-  passport.authenticate('jwt', {session: false}),
-  async (req, res) => {
-    const {range = '[0,5]', filter: F} = req.query;
-    let F2 = {};
-    try {
-      F2 = JSON.parse(F);
-    } catch (e) {
-      //
-    }
+router.get('/:id', (req, res) => {
+  const filter = {
+    userId: req.user.id,
+    _id: req.params.id,
+  };
+  Route.find(filter)
+    .then(r => res.status(200).json(r[0]))
+    .catch(err => {
+      res.json({success: false, message: err});
+    });
+});
+router.get('/', async (req, res) => {
+  const {range = '[0,5]', filter: F} = req.query;
+  let F2 = {};
+  try {
+    F2 = JSON.parse(F);
+  } catch (e) {
+    //
+  }
 
-    const filter = {
-      userId: req.user.toJSON().userId,
-      ..._.pick(F2, ['status', 'name']),
-    };
-    const [skip, limit] = JSON.parse(range);
-    const limit2 = limit + 1 - skip;
-    const opts = {limit: limit2, skip};
-    if (typeof F2.point !== 'undefined') {
-      filter.pointA = {$exists: F2.point};
-      filter.pointB = {$exists: F2.point};
-    }
-    if (filter.name) {
-      filter.name = new RegExp(filter.name);
-    }
-    const countTotal = await Route.count(filter);
-    Route.find(filter, 'id name createdAt status hourA hourB', opts).then(r =>
-      res
-        .set('Content-Range', `items ${skip}-${limit2}/${countTotal}`)
-        .status(200)
-        .json(r),
-    );
-  },
-);
+  const filter = {
+    userId: req.user.id,
+    ..._.pick(F2, ['status', 'name']),
+  };
+  const [skip, limit] = JSON.parse(range);
+  const limit2 = limit + 1 - skip;
+  const opts = {limit: limit2, skip};
+  if (typeof F2.point !== 'undefined') {
+    filter.pointA = {$exists: F2.point};
+    filter.pointB = {$exists: F2.point};
+  }
+  if (filter.name) {
+    filter.name = new RegExp(filter.name);
+  }
+  const countTotal = await Route.count(filter);
+  Route.find(filter, 'id name createdAt status hourA hourB', opts).then(r =>
+    res
+      .set('Content-Range', `items ${skip}-${limit2}/${countTotal}`)
+      .status(200)
+      .json(r),
+  );
+});
 
 router.post(
   '/',
-  passport.authenticate('jwt', {session: false}),
   // eslint-disable-next-line consistent-return
   async (req, res) => {
-    const {userId} = req.user.toJSON();
+    const {id: userId} = req.user;
     const filter = {name: req.body.name, userId};
     const exists = await Route.findOne(filter, '_id');
     if (exists) {
@@ -146,10 +136,9 @@ router.post(
 
 router.put(
   '/:id',
-  passport.authenticate('jwt', {session: false}),
   // eslint-disable-next-line consistent-return
   async (req, res) => {
-    const {userId} = req.user.toJSON();
+    const {id: userId} = req.user;
     const {id: _id} = req.params;
     const update = getData(req.body);
     try {
@@ -163,10 +152,9 @@ router.put(
 
 router.delete(
   '/:id',
-  passport.authenticate('jwt', {session: false}),
   // eslint-disable-next-line consistent-return
   async (req, res) => {
-    const {userId} = req.user.toJSON();
+    const {id: userId} = req.user;
     const filter = {_id: req.params.id, userId};
     const exists = await Route.findOne(filter, '_id');
     if (!exists) {

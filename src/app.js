@@ -1,25 +1,22 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const passport = require('passport');
 // Must first load the models
 require('./models/user');
 
-// Pass the global passport object into the configuration function
-require('./config/passport')(passport);
 const routes = require('./routes');
+const {auth} = require('./lib/tma_auth');
 
 /**
  * -------------- GENERAL SETUP ----------------
  */
 module.exports.setup = function setup(app) {
-  // This will initialize the passport object on every request
-  app.use(passport.initialize());
   // Instead of using body-parser middleware, use the new Express implementation of the same thing
   app.use(express.json());
   app.use(express.urlencoded({extended: true}));
   // Allows our Angular application to make HTTP requests to Express application
   app.use(cors());
+  app.use(auth);
   app.use((req, res, next) => {
     // res.append('Access-Control-Allow-Origin', ['*']);
     // res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');

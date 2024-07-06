@@ -17,7 +17,4 @@ UserSchema.virtual('id').get(function () {
 });
 
 // Ensure virtual fields are serialised.
-UserSchema.set('toJSON', {
-  virtuals: true,
-});
 mongoose.model('User', UserSchema);
