@@ -56,6 +56,7 @@ router.post('/login', (req, res, next) => {
       if (uu) u = uu;
       hasHash = true;
     } catch (e) {
+      validTgUser = false;
       console.log(e);
     }
   }
