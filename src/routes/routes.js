@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const mongoose = require('mongoose');
-const router = require('express').Router();
+const router = require('express')
+  .Router();
 
 const Route = mongoose.model('Route');
 
@@ -9,6 +10,7 @@ const {getPoint} = require('../lib/utils');
 const db = require('../api/utils/db');
 const {DIR_A, DIR_B} = require('../api/utils/db');
 const BotHelper = require('../api/routes/bot/route');
+const {maxRouteLimit} = require('../config/vars');
 
 const botHelper = new BotHelper();
 
@@ -49,12 +51,14 @@ router.get('/:id', (req, res) => {
     userId: req.user.id,
     _id: req.params.id,
   };
-  Route.find(filter)
-    .then(r => res.status(200).json(r[0]))
+  Route.findOne(filter)
+    .then(r => res.status(200)
+      .json(r))
     .catch(err => {
       res.json({success: false, message: err});
     });
 });
+
 router.get('/', async (req, res) => {
   const {range = '[0,5]', filter: F} = req.query;
   let F2 = {};
@@ -69,7 +73,7 @@ router.get('/', async (req, res) => {
     ..._.pick(F2, ['status', 'name']),
   };
   const [skip, limit] = JSON.parse(range);
-  const limit2 = limit + 1 - skip;
+  const limit2 = limit - skip;
   const opts = {limit: limit2, skip};
   if (typeof F2.point !== 'undefined') {
     filter.pointA = {$exists: F2.point};
@@ -79,12 +83,14 @@ router.get('/', async (req, res) => {
     filter.name = new RegExp(filter.name);
   }
   const countTotal = await Route.countDocuments(filter);
-  Route.find(filter, 'id name createdAt status hourA hourB', opts).then(r =>
-    res
-      .set('Content-Range', `items ${skip}-${limit2}/${countTotal}`)
-      .status(200)
-      .json(r),
-  );
+  // console.log(filter, countTotal);
+  Route.find(filter, 'id name createdAt status hourA hourB', opts)
+    .then(r =>
+      res
+        .set('Content-Range', `items ${skip}-${limit2}/${countTotal}`)
+        .status(200)
+        .json(r),
+    );
 });
 
 router.post(
@@ -94,24 +100,33 @@ router.post(
     const {id: userId} = req.user;
     const filter = {name: req.body.name, userId};
     const exists = await Route.findOne(filter, '_id');
+
+    let error = '';
     if (exists) {
-      res.status(403).json({
-        success: false,
-        message: 'route with this name is already exists',
-      });
+      error = 'route with this name is already exists';
+    } else {
+      const totalUserCount = await Route.countDocuments({userId});
+      if (totalUserCount >= maxRouteLimit) {
+        error = 'limit routes';
+      }
+    }
+
+    if (error) {
+      res.status(403)
+        .json({success: false, message: error});
       return;
     }
+
     const update = getData(req.body);
     const {
-      // eslint-disable-next-line no-unused-vars
       _id: routeId,
-      // eslint-disable-next-line no-unused-vars
       id,
       pointA,
       pointB,
       name,
       ...newRoute
     } = new Route(update).toJSON();
+
     newRoute.userId = userId;
     const routeData = {
       ...newRoute,
@@ -120,16 +135,24 @@ router.post(
       type: newRoute.type || 3,
       status: 0,
     };
+    let rID;
+    let aID;
+    let bID;
     try {
-      const {_id: rID} = await db.addRoute({userId}, {name});
-      await db.addRouteA(routeData, pointA, DIR_A, name);
+      const {_id} = await db.addRoute({userId}, {name});
+      rID = _id;
+      aID = await db.addRouteA(routeData, pointA, DIR_A, name);
       // literally B
-      await db.addRouteA(routeData, pointB, DIR_B, name);
-      const route = await Route.find({userId, _id: rID.toHexString()});
-      res.json(route[0]);
-      // res.json({});
+      const {lastUpdatedId} = await db.addRouteB(routeData, pointB, name);
+      bID = lastUpdatedId;
+      const route = await Route.findOne({userId, _id: rID.toHexString()});
+      route.success = true;
+      res.json(route);
     } catch (err) {
-      res.json({success: false, message: err});
+      if (bID) await db.deleteRoute(bID);
+      if (aID) await db.deleteRoute(aID);
+      if (rID) await db.deleteRoute(rID);
+      res.json({success: false, message: `${err}`});
     }
   },
 );

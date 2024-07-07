@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 require('../../models/any');
+const {DIR_A, DIR_B, constants} = require('./consts');
 
 const Any = mongoose.model('Any');
 
@@ -11,19 +12,20 @@ const CONFIGS = process.env.MONGO_COLL_CONGIFS_B || 'configs';
 
 global.connCbTest = () => {
   const col = Any.collection.conn.model(CONFIGS, Any.schema);
-  col.find({glob: 'glob'}).then(rows => {
-    // eslint-disable-next-line no-restricted-syntax
-    for (const row of rows) {
-      const oo = Object.keys(row);
-      // eslint-disable-next-line array-callback-return,no-loop-func
-      oo.map(kk => {
-        if (kk.match('_RU|_EN')) {
-          // eslint-disable-next-line no-undef
-          globalSUPPLINKS[kk] = row[kk];
-        }
-      });
-    }
-  });
+  col.find({glob: 'glob'})
+    .then(rows => {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const row of rows) {
+        const oo = Object.keys(row);
+        // eslint-disable-next-line array-callback-return,no-loop-func
+        oo.map(kk => {
+          if (kk.match('_RU|_EN')) {
+            // eslint-disable-next-line no-undef
+            globalSUPPLINKS[kk] = row[kk];
+          }
+        });
+      }
+    });
 };
 
 const collsSystem = [REQUESTS, CONFIGS];
@@ -31,14 +33,6 @@ const collsSystem = [REQUESTS, CONFIGS];
 const usersCol = Any.collection.conn.model(USERS, Any.schema);
 const routesCol = Any.collection.conn.model(ROUTES, Any.schema);
 const routesBCol = Any.collection.conn.model(ROUTES_B, Any.schema);
-
-const DIR_A = 'pointA';
-const DIR_B = 'pointB';
-
-const constants = {
-  MAX_POINT_A_CNT: 50,
-  TYPE_PASS: 3,
-};
 
 const stat = filter => routesCol.countDocuments(filter);
 const groupUsers = field =>
@@ -136,6 +130,7 @@ const setField = async (filter, field, data, collection = routesCol) => {
 
 const addRouteAFirst = async (data, loc, name = '') =>
   addRouteA(data, loc, DIR_A, name);
+
 const addRouteA = async (data, loc, dir = DIR_A, name = '') => {
   const saveRoute = {...data};
   saveRoute[dir] = loc;
@@ -180,8 +175,8 @@ const addRoute = async (
       upsert: true,
       new: true,
     })
-    .catch(() => {
-      throw new Error('bounds');
+    .catch((e) => {
+      throw new Error(`${e}`);
     });
   const upd = {};
   if (!routes) {
@@ -315,7 +310,9 @@ const getRoutes = (filter, pageP, perPage) => {
   const page = parseInt(pageP, 10) || 1;
   const limit = parseInt(perPage, 10) || 5;
   const startIndex = (page - 1) * limit;
-  return routesCol.find(filter).skip(startIndex).limit(limit);
+  return routesCol.find(filter)
+    .skip(startIndex)
+    .limit(limit);
 };
 const getRoute = (filter, project = null) =>
   getFromCollection(filter, routesCol, false, project);
@@ -331,9 +328,10 @@ const statusRoute = async (userId, _id, update) => {
   );
 };
 
-async function deleteRoute(_id) {
+async function deleteRoute(deleteId) {
+  const _id = new mongoose.Types.ObjectId(deleteId);
   await routesCol.deleteOne({_id});
-  return routesBCol.deleteOne({pointAId: mongoose.Types.ObjectId(_id)});
+  return routesBCol.deleteOne({pointAId: _id});
 }
 
 async function deleteMany(filter, collId) {
