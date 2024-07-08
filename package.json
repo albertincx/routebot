@@ -12,7 +12,7 @@
   "scripts": {
     "precommit": "yarn lint",
     "start": "NODE_ENV=production node ./src/index.js",
-    "dev": "NODE_ENV=production nodemon ./src/index.js"
+    "dev": "DEV=1 NODE_ENV=development nodemon ./src/index.js"
   },
   "repository": {
     "type": "git",

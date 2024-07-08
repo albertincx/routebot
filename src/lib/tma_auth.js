@@ -24,22 +24,19 @@ const auth = (req, res, next) => {
       }
     }
     let validTgUser = validateTmaAuth(authData);
-    if (validTgUser) {
-      try {
-        const url = new URL(`https://test/?${authData}`).searchParams.get('user');
-        const parsedUser = JSON.parse(url);
 
-        if (parsedUser.id !== TG_ADMIN) {
-          validTgUser = false;
-        } else {
-          req.user = parsedUser;
-        }
-      } catch (e) {
-        validTgUser = false;
+    if (validTgUser) {
+      const url = new URL(`https://test/?${authData}`).searchParams.get('user');
+      const parsedUser = JSON.parse(url);
+
+      if (parsedUser.id !== TG_ADMIN) {
+        //
+      } else {
+        req.user = parsedUser;
       }
     }
 
-    if (validTgUser) {
+    if (req.user) {
       next();
     } else {
       res.status(401)
