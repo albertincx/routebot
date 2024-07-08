@@ -9,11 +9,7 @@ const validateTmaAuth = (initData) => {
     validate(initData, process.env.TBTKN);
     result = true;
   } catch (e) {
-    // console.error("---tma_auth----");
-    // console.error(new Date());
-    // console.error(e);
-    // console.error(requestBody);
-    // console.error("---------------");
+    //
   }
   return result;
 };
@@ -28,21 +24,21 @@ const auth = (req, res, next) => {
       }
     }
     let validTgUser = validateTmaAuth(authData);
-    try {
-      const url = new URL(`https://test/?${authData}`).searchParams.get('user');
-      const parsedUser = JSON.parse(url);
+    if (validTgUser) {
+      try {
+        const url = new URL(`https://test/?${authData}`).searchParams.get('user');
+        const parsedUser = JSON.parse(url);
 
-      if (parsedUser.id !== TG_ADMIN) {
-        res.status(403)
-          .json({
-            error: new Error('Invalid request!'),
-          });
-      } else {
-        req.user = parsedUser;
+        if (parsedUser.id !== TG_ADMIN) {
+          validTgUser = false;
+        } else {
+          req.user = parsedUser;
+        }
+      } catch (e) {
+        validTgUser = false;
       }
-    } catch (e) {
-      validTgUser = false;
     }
+
     if (validTgUser) {
       next();
     } else {
