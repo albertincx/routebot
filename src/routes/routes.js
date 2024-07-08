@@ -99,7 +99,10 @@ router.post(
   async (req, res) => {
     const {id: userId} = req.user;
     const filter = {name: req.body.name, userId};
-    const exists = await Route.findOne(filter, '_id');
+    const exists = await Route.findOne({
+      ...filter,
+      name: new RegExp(filter.name, 'i'),
+    }, '_id');
 
     let error = '';
     if (exists) {
@@ -149,8 +152,8 @@ router.post(
       route.success = true;
       res.json(route);
     } catch (err) {
-      if (bID) await db.deleteRoute(bID);
-      if (aID) await db.deleteRoute(aID);
+      // if (bID) await db.deleteRoute(bID);
+      // if (aID) await db.deleteRoute(aID);
       if (rID) await db.deleteRoute(rID);
       res.json({success: false, message: `${err}`});
     }
@@ -186,7 +189,7 @@ router.delete(
     }
     try {
       await db.deleteRoute(req.params.id);
-      res.json({});
+      res.json({success: true});
     } catch (err) {
       res.json({success: false, msg: err});
     }

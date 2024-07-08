@@ -9,6 +9,7 @@ exports.connect = uri => {
   mongoose.connect(
     dbUri,
     {
+      dbName: process.env.DB || 'test',
       connectTimeoutMS: 30000,
     });
   return mongoose.connection;

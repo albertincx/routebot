@@ -2,17 +2,17 @@ const BUTTONS = {
   driver: {
     label: '🚘 Driver (with car)',
     labelRU: '🚘 Водитель (свое авто)',
-    command: '/driver',
+    command: 'driver',
   },
   sharingDriver: {
     label: '🚖 Car sharing driver',
     labelRU: '🚖 Водитель (каршеринг)',
-    command: '/sharing',
+    command: 'sharing',
   },
   passenger: {
     label: '🐶 Passenger',
     labelRU: '🐶 Пассажир',
-    command: '/passenger',
+    command: 'passenger',
   },
 };
 module.exports = BUTTONS;

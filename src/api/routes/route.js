@@ -95,7 +95,7 @@ function getPagi(cnt, perPage, pageNum = 1, fromRoute = '') {
 
 const format = (bot, botHelper) => {
   const BH2 = new BotHelper2(botHelper);
-  bot.command(['/createBroadcast', '/startBroadcast'], ctx =>
+  bot.command(['createBroadcast', 'startBroadcast'], ctx =>
     BH2.broadcast(ctx, botHelper),
   );
   bot.hears(/([0-9.]+),[\s+]?([0-9.]+)/, async ctx => {

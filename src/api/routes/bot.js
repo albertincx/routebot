@@ -88,7 +88,7 @@ const botRoute = (bot, conn) => {
     botHelper.sendAdmin('db conn error');
   }
 
-  bot.command(['/start', '/help'], ctx => startOrHelp(ctx, botHelper));
+  bot.command(['start', 'help'], ctx => startOrHelp(ctx, botHelper));
   bot.command('support', ctx => support(ctx, botHelper));
 
   bot.command('config', ({message}) => {
