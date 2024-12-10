@@ -118,7 +118,9 @@ class BotHelper {
   }
 
   startBroad(ctx) {
-    this.conn = createConnection(process.env.MONGO_URI_SECOND);
+    if (ctx.message.text.match('createBroadcast')) {
+      this.conn = createConnection(process.env.MONGO_URI_SECOND);
+    }
     this.connSend = createConnection(process.env.MONGO_URI_BROAD);
     broadcast(ctx, this);
   }
