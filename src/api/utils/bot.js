@@ -1,4 +1,6 @@
 const fs = require('fs');
+const broadcast = require('tgsend');
+const {createConnection} = require('mongoose');
 
 const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
 const OFF = 'Off';
@@ -45,20 +47,30 @@ class BotHelper {
 
   parseConfig(params) {
     let content;
-    let param;
-    const c = params.replace(' _content', '_content').split(/\s/);
-    if (c.length === 2) {
-      [param] = c;
-      content = c[1].replace(/~/g, ' ');
+    if (params[0] === '_') {
+      // eslint-disable-next-line no-unused-vars
+      const [_, param, ...val] = params.split('_');
+      params = `${param} ${val.join('_')}`;
+    }
+    let config = params.replace(' _content', '_content');
+    config = config.split(/\s/);
+    let [param] = config;
+
+    if (config.length === 2) {
+      content = config[1].replace(/~/g, ' ');
+      if (this.config[param] === content) content = OFF;
     } else {
-      [param] = c;
-      if (this.config[param] === ON) {
+      if (this.config[param] === ON || this.config[param]) {
         content = OFF;
       } else {
         content = ON;
       }
     }
-    return {param, content};
+
+    return {
+      param,
+      content
+    };
   }
 
   toggleConfig(msg) {
@@ -92,6 +104,23 @@ class BotHelper {
 
   getBot() {
     return this.bot;
+  }
+  getConf(param) {
+    let configParam = this.config[param] || this.config[`_${param}`];
+
+    return configParam === OFF ? '' : configParam;
+  }
+
+  getMidMessage(mId) {
+    let mMessage = process.env[`MID_MESSAGE${mId}`] || '';
+    mMessage = mMessage.replace('*', '\n');
+    return mMessage;
+  }
+
+  startBroad(ctx) {
+    this.conn = createConnection(process.env.MONGO_URI_SECOND);
+    this.connSend = createConnection(process.env.MONGO_URI_BROAD);
+    broadcast(ctx, this);
   }
 }
 

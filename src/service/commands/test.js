@@ -1,15 +1,26 @@
-const fetch = require('node-fetch');
-
-const {showError} = require('../../api/utils');
-
 async function run(params, botHelper) {
   try {
-    const url = process.env.TEST_API;
-    if (!url) return;
-    await fetch(url);
-    await botHelper.sendAdmin('cron test check url', process.env.TGGROUPLOGS);
+    const chat = {
+      chat: {id: botHelper.tgAdmin},
+      text: '',
+    };
+
+    const broadcastIsOn = botHelper.getConf('broadcast');
+    console.log('broadcastIsOn = ', broadcastIsOn);
+    if (broadcastIsOn) {
+      botHelper.startBroad({
+        message: {
+          ...chat,
+          text: `/${broadcastIsOn}`
+        },
+        reply: (s) => {
+          botHelper.sendAdmin(s);
+          return {catch: (cb) => cb()};
+        }
+      });
+    }
   } catch (e) {
-    showError(e);
+    console.log(e);
   }
 }
 

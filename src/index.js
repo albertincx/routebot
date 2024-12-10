@@ -6,12 +6,16 @@ const botRoute = require('./api/routes/bot');
 const botInstance = require('./config/bot');
 require('./links');
 const {setup} = require('./app');
+const init = require('./cron');
 
 const conn = mongoose.connect();
 const app = express();
 setup(app);
 if (process.env.TBTKN && botInstance) {
-  const {router} = botRoute(botInstance, conn);
+  const {router, bot: bh} = botRoute(botInstance, conn);
+  if (bh) {
+    init(bh);
+  }
   app.use('/bot', router);
 }
 

@@ -12,6 +12,9 @@ if (fs.existsSync(envPath)) {
   });
 }
 
+const confFile = path.join(__dirname, '../../.conf');
+if (!fs.existsSync(confFile)) fs.mkdirSync(confFile);
+
 module.exports = {
   root: path.join(__dirname, '/../../'),
   PORT: process.env.PORT || 4000,

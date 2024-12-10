@@ -128,14 +128,24 @@ const botRoute = (bot, conn) => {
             let app = 'Format';
             if (message.text.match(/routes/)) app = 'Routes';
 
-            // eslint-disable-next-line global-require
             const {spawn} = require('child_process');
             const rest = spawn('pm2', ['restart', app]);
             rest.stdout.pipe(process.stdin);
             botHelper.sendAdmin('restarted');
         }
     });
-    route(bot, botHelper, startOrHelp);
+
+    bot.command(['createBroadcast', 'startBroadcast'], ctx =>
+        botHelper.startBroad(ctx),
+    );
+
+    bot.command(/^config/, ({message}) => {
+        if (botHelper.isAdmin(message.chat.id)) {
+            botHelper.toggleConfig(message);
+        }
+    });
+
+    route(bot, botHelper);
     bot.launch();
 
     if (startCnt % 10 === 0 || process.env.DEV) {
