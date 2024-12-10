@@ -122,6 +122,12 @@ class BotHelper {
     this.connSend = createConnection(process.env.MONGO_URI_BROAD);
     broadcast(ctx, this);
   }
+  forwardMes(mid, from, to) {
+    if (this.worker) {
+      return Promise.resolve();
+    }
+    return this.bot.forwardMessage(to, from, mid);
+  }
 }
 
 module.exports = BotHelper;
