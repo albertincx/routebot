@@ -264,8 +264,6 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
     if (aggr[0]) {
         const {data} = aggr[0];
         data.forEach(r => pointAIds.push(r._id));
-        // console.log(JSON.stringify(pipeline, null, 4));
-        // console.log(JSON.stringify(aggr, null, 4));
     }
     let aggrB = [];
     if (pointAIds.length) {
@@ -286,8 +284,6 @@ const findRoutes = async (route, skip, limit, type = 4, $project = null) => {
             ...($project || {}),
         });
         aggrB = await routesBCol.aggregate(pipelineB);
-        // console.log(JSON.stringify(pipelineB, null, 4));
-        // console.log(JSON.stringify(aggrB, null, 4));
     }
     let r;
     let cnt;

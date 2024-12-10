@@ -133,7 +133,6 @@ const route = (bot, botHelper) => {
 
     bot.action(/.*/, async ctx => {
         if (checkAdmin(ctx)) {
-            console.log('no adm')
             return;
         }
         const msg = ctx.update.callback_query;
@@ -625,7 +624,6 @@ const route = (bot, botHelper) => {
             return;
         }
         let {message: m2} = ctx;
-        console.log(m2);
         if (
             m2 &&
             m2.text &&

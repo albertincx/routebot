@@ -83,7 +83,6 @@ router.get('/', async (req, res) => {
     filter.name = new RegExp(filter.name);
   }
   const countTotal = await Route.countDocuments(filter);
-  // console.log(filter, countTotal);
   Route.find(filter, 'id name createdAt status hourA hourB', opts)
     .then(r =>
       res

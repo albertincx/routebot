@@ -6,7 +6,6 @@ async function run(params, botHelper) {
     };
 
     const broadcastIsOn = botHelper.getConf('broadcast');
-    console.log('broadcastIsOn = ', broadcastIsOn);
     if (broadcastIsOn) {
       botHelper.startBroad({
         message: {

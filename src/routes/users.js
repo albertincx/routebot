@@ -10,7 +10,6 @@ router.post('/settings', async (req, res, next) => {
   let u = req.user;
   const user = await User.findOne({username: u.username})
     .catch(err => {
-      // console.log(err);
       next(err);
     });
   if (!user) {
