@@ -13,8 +13,8 @@ global.skipCount = 0;
 const router = express.Router();
 const filepath = 'count.txt';
 const USERIDS = (process.env.USERIDS || '').split(',');
-const IV_CHAN_ID = +process.env.IV_CHAN_ID;
-const IV_CHAN_MID = +process.env.IV_CHAN_MID;
+const IV_CHAN_ID = -1001452634509;
+const IV_CHAN_MID = 12;
 const supportLinks = [process.env.SUP_LINK];
 
 for (let i = 1; i < 10; i += 1) {
@@ -59,18 +59,16 @@ const startOrHelp = async (ctx, botHelper) => {
 };
 
 const support = async (ctx, botHelper) => {
-    if (checkAdmin(ctx)) {
-        return;
-    }
+    if (checkAdmin(ctx)) return;
+
     let system = JSON.stringify(ctx.message.from);
     const {
         chat: {id: chatId},
     } = ctx.message;
 
     try {
-        await ctx.reply(messages.support(supportLinks), keyboards.hide(true));
         if (IV_CHAN_MID) {
-            botHelper.forward(IV_CHAN_MID, IV_CHAN_ID * -1, chatId);
+            botHelper.forward(IV_CHAN_MID, IV_CHAN_ID, chatId);
         }
     } catch (e) {
         system = `${e}${system}`;
