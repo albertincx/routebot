@@ -17,7 +17,8 @@ const validateTmaAuth = (initData) => {
 
 const auth = (req, res, next) => {
   try {
-    let authData = req.body.query;
+
+    let authData = req.body && req.body.query;
     if (!authData) {
       let authHeader = req.headers.authorization;
       if (authHeader) {
