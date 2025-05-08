@@ -138,7 +138,7 @@ class BotHelper {
       log += `${data}`;
     });
     gPull.stdout.on('end', () => {
-      logger(log);
+      // logger(log);
       this.sendAdmin(log);
     });
   }
