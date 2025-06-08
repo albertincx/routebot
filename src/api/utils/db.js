@@ -137,10 +137,13 @@ const addRouteA = async (data, loc, dir = DIR_A, name = '') => {
     const {userId} = data;
     const routes = dir === DIR_B ? 3 : 2;
     const res = await addRoute({userId, name}, saveRoute, routes);
+    // console.log('res');
+    // console.log(res);
     let lastUpdatedId = '';
     if (dir === DIR_B) {
-        saveRoute.pointAId = res._id;
         lastUpdatedId = res._id;
+        saveRoute.pointAId = lastUpdatedId;
+
         await addRoute({userId, name}, saveRoute, routes, routesBCol);
         const {TYPE_PASS: t3} = constants;
         if (saveRoute.type !== t3) {

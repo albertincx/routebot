@@ -18,6 +18,7 @@ if (!fs.existsSync(confFile)) fs.mkdirSync(confFile);
 module.exports = {
   root: path.join(__dirname, '/../../'),
   PORT: process.env.PORT || 4000,
+  TGADMIN: +process.env.TGADMIN || 0,
   mongo: {
     uri: process.env.MONGO_URI,
   },
