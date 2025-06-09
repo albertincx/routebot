@@ -18,7 +18,10 @@ module.exports.setup = function setup(app) {
     app.use(express.json());
     app.use(express.urlencoded({extended: true}));
     // Allows our Angular application to make HTTP requests to Express application
-    app.use(cors());
+    app.use(cors({
+        origin: 'https://web.route.cab',
+        credentials: true,
+    }));
     app.use(auth);
     app.use((req, res, next) => {
         // res.append('Access-Control-Allow-Origin', ['*']);
