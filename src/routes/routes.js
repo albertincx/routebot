@@ -69,7 +69,12 @@ router.get('/', async (req, res) => {
         //
     }
     const _F2 = {status, name} = F2
-    const filter = {userId: req.user.id, ..._F2};
+    // console.log(req.user)
+    if (!req.user) {
+        return res.status(401)
+            .json({success: false, message: 'not authorized'});
+    }
+    const filter = {userId: req.user?.id, ..._F2};
 
     let [skip, limit] = JSON.parse(range);
 

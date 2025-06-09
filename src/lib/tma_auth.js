@@ -1,10 +1,11 @@
 const {OAuth2Client} = require('google-auth-library');
 const jwt = require('jsonwebtoken');
+const {validate, parse} = require('@telegram-apps/init-data-node');
 
 const {DEV} = require('../config/vars');
 const {verifySignature} = require('./login');
-const {validate, parse} = require('@telegram-apps/init-data-node');
 const db = require('../api/utils/db');
+
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const validateTmaAuth = (qUStrOrObj = '') => {
@@ -15,14 +16,15 @@ const validateTmaAuth = (qUStrOrObj = '') => {
         url.delete('auth');
         url.delete('ref');
         url.delete('v');
-        const u = Object.fromEntries(url);
+        result = Object.fromEntries(url);
 
         let isWidget = auth === 'widget';
         const botToken = process.env.TBTKN;
+
         if (!DEV) {
             if (isWidget) {
-                const isValid = verifySignature(u, botToken);
-                return isValid && u;
+                const isValid = verifySignature(result, botToken);
+                return isValid && result;
             } else {
                 let q = url.toString();
                 // console.log(q);
@@ -30,12 +32,7 @@ const validateTmaAuth = (qUStrOrObj = '') => {
                 // console.log('u');
                 return parse(q).user;
             }
-        } else {
-            // test id
-            // u.id = 36058859;
-            // u.id = 487323673;
         }
-        return u;
     } catch (e) {
         console.log(e);
     }
@@ -98,24 +95,17 @@ const googleAuth = async (token) => {
     });
 
     const payload = ticket.getPayload();
-    const userId = payload['sub'];
-
-    // Here you would typically:
-    // 1. Check if user exists in your database
-    // 2. Create user if they don't exist
-    // 3. Generate your own JWT token or session
 
     const user = {
-        id: userId,
+        id: payload['sub'],
         email: payload['email'],
         name: payload['name'],
         picture: payload['picture'],
-        verified: payload['email_verified']
-    };
-    await db.updateUser({
-        ...user,
+        verified: payload['email_verified'],
         google: 1
-    });
+    };
+
+    await db.updateUser(user);
 
     return user
 }
