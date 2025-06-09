@@ -108,6 +108,8 @@ const googleAuth = async (token) => {
         ...user,
         google: 1
     });
+
+    return user
 }
 
 module.exports = {auth, validateTmaAuth, googleAuth};

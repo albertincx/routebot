@@ -99,15 +99,16 @@ module.exports.setup = function setup(app) {
             );
 
             // 3. Set it as HttpOnly cookie
-            res.cookie('token', userJwt, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'None',
-                domain: 'route.cab', // ensures cookie works on both web.route.cab and api.route.cab
-                maxAge: 600 * 1000, // 1 hour
-            });
+            // res.cookie('token', userJwt, {
+            //     httpOnly: true,
+            //     secure: true,
+            //     sameSite: 'None',
+            //     domain: 'route.cab', // ensures cookie works on both web.route.cab and api.route.cab
+            //     maxAge: 600 * 1000, // 1 hour
+            // });
             res.json({
                 success: true,
+                token: userJwt,
                 user: user
             });
 
