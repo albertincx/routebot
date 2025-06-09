@@ -47,7 +47,7 @@ const auth = async (req, res, next) => {
       validTgUser = true;
     }
     if (validTgUser) {
-      const u = await db.get('users', {id: validTgUser.id});
+      const u = await db.GetUser(validTgUser.id);
       if (u) validTgUser.invitePoints = u.invitePoints;
       req.user = validTgUser;
       return next();
