@@ -1,54 +1,62 @@
-const {validate} = require('@tma.js/init-data-node');
+const {DEV} = require('../config/vars');
+const {verifySignature} = require('./login');
+const {validate, parse} = require('@telegram-apps/init-data-node');
+const db = require('../api/utils/db');
 
-const TG_ADMIN = parseInt(process.env.TGADMIN, 10);
-const TG_ADMIN_2 = parseInt(process.env.TGADMIN_2, 10);
-
-const validateTmaAuth = (initData) => {
+const validateTmaAuth = (qUStrOrObj = '') => {
   let result = false;
-
   try {
-    validate(initData, process.env.TBTKN);
-    result = true;
+    let url = new URLSearchParams(qUStrOrObj);
+    const auth = url.get('auth');
+    url.delete('auth');
+    url.delete('ref');
+    url.delete('v');
+    const u = Object.fromEntries(url);
+
+    let isWidget = auth === 'widget';
+    const botToken = process.env.TBTKN;
+    if (!DEV) {
+      if (isWidget) {
+        const isValid = verifySignature(u, botToken);
+        return isValid && u;
+      } else {
+        let q = url.toString();
+        // console.log(q);
+        validate(q, botToken, {expiresIn: 3600});
+        // console.log('u');
+        return parse(q).user;
+      }
+    } else {
+      // test id
+      // u.id = 36058859;
+      // u.id = 487323673;
+    }
+    return u;
   } catch (e) {
-    //
+    console.log(e);
   }
+
   return result;
 };
 
-const auth = (req, res, next) => {
+const auth = async (req, res, next) => {
   try {
-
-    let authData = req.body && req.body.query;
-    if (!authData) {
-      let authHeader = req.headers.authorization;
-      if (authHeader) {
-        authData = authHeader.split(' ')[1];
-      }
-    }
+    let authData = (req.headers.authorization || '').split(' ')[1];
     let validTgUser = validateTmaAuth(authData);
     if (process.env.DEV) {
       validTgUser = true;
     }
     if (validTgUser) {
-      const url = new URL(`https://test/?${authData}`).searchParams.get('user');
-      const parsedUser = JSON.parse(url);
-      let isValidId = parsedUser && [TG_ADMIN, TG_ADMIN_2].includes(parsedUser.id);
-
-      if (isValidId) {
-        req.user = parsedUser;
-        return next();
-      }
+      const u = await db.get('users', {id: validTgUser.id});
+      if (u) validTgUser.invitePoints = u.invitePoints;
+      req.user = validTgUser;
+      return next();
     }
 
-    res.status(401)
-      .json({
-        error: new Error('Invalid request!'),
-      });
+    res.status(401).json({error: new Error('Invalid request!')});
   } catch (e) {
     next(e);
   }
 };
 
-module.exports = {
-  auth,
-};
+module.exports = {auth, validateTmaAuth};
