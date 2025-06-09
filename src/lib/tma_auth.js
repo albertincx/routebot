@@ -1,4 +1,5 @@
 const {OAuth2Client} = require('google-auth-library');
+const jwt = require('jsonwebtoken');
 
 const {DEV} = require('../config/vars');
 const {verifySignature} = require('./login');
@@ -46,13 +47,12 @@ const auth = async (req, res, next) => {
     try {
         let authData = (req.headers.authorization || '').split(' ')[1];
         if (authData && !authData.match('user=')) {
-            const userG = jwt.verify(authData, process.env.JWT_SECRET);
-            const ticket = await client.verifyIdToken({
-                idToken: userG.token,
-                audience: process.env.GOOGLE_CLIENT_ID,
-            });
-
             try {
+                const userG = jwt.verify(authData, process.env.JWT_SECRET);
+                const ticket = await client.verifyIdToken({
+                    idToken: userG.token,
+                    audience: process.env.GOOGLE_CLIENT_ID,
+                });
                 const payload = ticket.getPayload();
                 req.user = payload;
                 // res.json({message: 'Protected data', user: payload.email});
@@ -60,6 +60,7 @@ const auth = async (req, res, next) => {
                 return next();
             } catch (e) {
                 //
+                res.status(401).json({error: new Error('Invalid request!')});
             }
         }
         if (!authData) return next();
