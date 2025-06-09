@@ -54,7 +54,13 @@ const auth = async (req, res, next) => {
                     audience: process.env.GOOGLE_CLIENT_ID,
                 });
                 const payload = ticket.getPayload();
-                req.user = payload;
+                req.user = {
+                    id: payload.sub,
+                    email: payload.email,
+                    name: payload.name,
+                    picture: payload.picture,
+                    loginTime: new Date()
+                };
                 // res.json({message: 'Protected data', user: payload.email});
                 // throw new Error('Invalid request!');
                 return next();
