@@ -22,5 +22,5 @@ module.exports = {
   mongo: {
     uri: process.env.MONGO_URI,
   },
-  maxRouteLimit: process.env.MAX_LIMIT || 10,
+  maxRouteLimit: process.env.MAX_LIMIT || 5,
 };

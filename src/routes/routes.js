@@ -47,6 +47,7 @@ const getData = body => {
     }
     return update;
 };
+
 router.get('/:id', (req, res) => {
     const filter = {
         userId: req.user.id, _id: req.params.id,
@@ -70,7 +71,12 @@ router.get('/', async (req, res) => {
     const _F2 = {status, name} = F2
     const filter = {userId: req.user.id, ..._F2};
 
-    const [skip, limit] = JSON.parse(range);
+    let [skip, limit] = JSON.parse(range);
+
+    if (limit > maxRouteLimit) {
+        limit = maxRouteLimit;
+    }
+
     const limit2 = limit - skip;
     const opts = {limit: limit2, skip};
     if (typeof F2.point !== 'undefined') {

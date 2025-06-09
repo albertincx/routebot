@@ -7,7 +7,7 @@ require('../models/route');
 
 router.use('/users', require('./users'));
 router.use('/routes', require('./routes'));
-router.use('/search', require('./search'));
+// router.use('/search', require('./search'));
 
 const Route = mongoose.model('Route');
 
