@@ -99,10 +99,6 @@ const checkUser = (id, project = 'name') =>
     getFromCollection({userId: id}, usersCol, false, project);
 
 const GetUser = async (id, project = null) => {
-    if (id && typeof id === 'string') {
-        // eslint-disable-next-line no-param-reassign
-        id = +id;
-    }
     // check from old DB without insert
     const me = await getFromCollection({userId: id}, usersCol, false, project);
     // if (!me) {

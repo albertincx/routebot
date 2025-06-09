@@ -59,6 +59,7 @@ const auth = async (req, res, next) => {
                     email: payload.email,
                     name: payload.name,
                     picture: payload.picture,
+                    google: 1,
                     loginTime: new Date()
                 };
                 // res.json({message: 'Protected data', user: payload.email});
