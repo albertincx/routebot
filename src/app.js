@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const jwt = require('jsonwebtoken');
+
 // Must first load the models
 require('./models/user');
 
@@ -86,9 +88,21 @@ module.exports.setup = function setup(app) {
     app.post('/auth/google', async (req, res) => {
         const {token} = req.body;
         try {
-
             const user = await googleAuth(token)
+            const userJwt = jwt.sign(
+                {...user, token: token},
+                process.env.JWT_SECRET,
+                {expiresIn: '1h'}
+            );
 
+            // 3. Set it as HttpOnly cookie
+            res.cookie('token', userJwt, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'None',
+                domain: 'route.cab', // ensures cookie works on both web.route.cab and api.route.cab
+                maxAge: 600 * 1000, // 1 hour
+            });
             res.json({
                 success: true,
                 user: user

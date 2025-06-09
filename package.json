@@ -38,6 +38,7 @@
     "google-auth-library": "^9.15.1",
     "isomorphic-fetch": "^3.0.0",
     "jsbn": "^1.1.0",
+    "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "mongoose": "^8.14.1",
     "node-fetch": "^3.3.2",
