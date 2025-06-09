@@ -61,7 +61,7 @@ const auth = async (req, res, next) => {
                 //
             }
         }
-
+        if (!authData) return next();
         // console.log(authData)
         let validTgUser = false;
         if (process.env.DEV) {
