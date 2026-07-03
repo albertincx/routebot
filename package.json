@@ -12,7 +12,8 @@
   "scripts": {
     "precommit": "yarn lint",
     "start": "NODE_ENV=production node ./src/index.js",
-    "dev": "DEV=1 NODE_ENV=development nodemon ./src/index.js"
+    "dev": "DEV=1 NODE_ENV=development nodemon ./src/index.js",
+    "db:check": "node check-mongo.js"
   },
   "repository": {
     "type": "git",
@@ -26,37 +27,33 @@
     "routecab"
   ],
   "dependencies": {
-    "@telegram-apps/init-data-node": "^2.0.7",
-    "amqplib": "^0.10.8",
+    "@telegram-apps/init-data-node": "^2.0.10",
+    "amqplib": "^2.0.1",
     "atob": "^2.1.2",
     "co": "^4.6.0",
-    "cors": "^2.8.5",
-    "cron": "^4.3.0",
-    "dotenv": "^16.5.0",
+    "cors": "^2.8.6",
+    "cron": "^4.4.0",
+    "dotenv": "^17.4.2",
     "dotenv-safe": "^9.1.0",
-    "express": "^5.1.0",
-    "google-auth-library": "^9.15.1",
+    "express": "^5.2.1",
+    "google-auth-library": "^10.9.0",
     "isomorphic-fetch": "^3.0.0",
     "jsbn": "^1.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "lodash": "^4.17.21",
-    "mongoose": "^8.14.1",
+    "jsonwebtoken": "^9.0.3",
+    "lodash": "^4.18.1",
+    "mongoose": "^9.7.3",
     "node-fetch": "^3.3.2",
-    "nodemon": "^3.1.10",
-    "npm-check-updates": "^18.0.1",
-    "showdown": "^2.1.0",
-    "statuses": "^2.0.1",
+    "nodemon": "^3.1.14",
+    "npm-check-updates": "^22.2.9",
+    "statuses": "^2.0.2",
     "sync-request": "^6.1.0",
     "telegraf": "^4.16.3",
     "tgsend": "^0.0.9",
     "wget-improved": "^3.4.0"
   },
   "devDependencies": {
-    "ava": "^6.3.0",
+    "ava": "^8.0.1",
     "babel-eslint": "^10.1.0",
-    "eslint": "^9.26.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-flowtype": "^8.0.3",
-    "eslint-plugin-import": "^2.31.0"
+    "eslint": "^10.6.0"
   }
 }
