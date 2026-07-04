@@ -63,3 +63,4 @@ src/tests/*
 .glitch-assets
 .wget-hsts
 .pki
+.firebase
